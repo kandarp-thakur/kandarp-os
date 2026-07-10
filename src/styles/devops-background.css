@@ -1,0 +1,256 @@
+/**
+ * DevOpsBackground styles — the animated DevOps ecosystem.
+ *
+ * Redesigned (hero-background-redesign) for a clean, premium, engineering
+ * aesthetic. The background now enhances the content instead of competing
+ * with it:
+ *
+ *  - No animated gradient wash / glow blobs (removed).
+ *  - No galactic grid ring (removed — visual clutter).
+ *  - No depth-of-field blur on medallions (removed — was the source of the
+ *    "blurry" read). Depth is conveyed via opacity + scale only.
+ *  - No heavy vignette (toned down to a barely-there edge fade).
+ *  - Medallions are low-opacity, monochrome glass — engineering icons that
+ *    float slowly behind the content. Minimal movement, never distracting.
+ *
+ * All motion is `transform` + `opacity` only (compositor-friendly). Per-medallion
+ * variation is driven by CSS custom properties set inline by the component, so
+ * there is exactly one stylesheet rule per animation — no per-instance CSS.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Root layer                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.devops-bg {
+    position: fixed;
+    inset: 0;
+    /* Deepest layer: sits below the CloudInfinity 3D hero canvas (z-index -1)
+       so the signature object renders above this ambient constellation. Both
+       remain behind page content (z-index 0+). */
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+    /* Parallax offset is written here by JS (single rAF, no re-render). */
+    --bg-px: 0px;
+    --bg-py: 0px;
+    /* Accent tint inherited by every medallion (monochrome glass). */
+    --devops-tint: var(--accent-solid);
+    /* Parallax magnitude applied to the constellation group. */
+    --parallax-amp: 1;
+    color: var(--devops-tint);
+}
+
+.devops-bg--absolute {
+    position: absolute;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Layer 1 — the constellation                                                */
+/* -------------------------------------------------------------------------- */
+
+.devops-bg__constellation {
+    position: absolute;
+    inset: 0;
+    /* The whole field drifts with the pointer (parallax). Far shells move
+       more because each medallion scales its own offset by --m-parallax. */
+    transform: translate3d(var(--bg-px), var(--bg-py), 0);
+    will-change: transform;
+    /* Skip paint for off-screen shells (perf). */
+    content-visibility: auto;
+    contain: layout style paint;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Medallion — the glass object                                               */
+/* -------------------------------------------------------------------------- */
+
+.devops-medallion {
+    position: absolute;
+    width: var(--m-size);
+    height: var(--m-size);
+    margin-left: calc(var(--m-size) / -2);
+    margin-top: calc(var(--m-size) / -2);
+    opacity: var(--m-opacity);
+    /* Self-rotation spins the whole medallion (icon + glass). */
+    animation: devops-spin var(--m-spin) linear infinite;
+    /* Per-medallion parallax: deeper shells move more (atmospheric). */
+    transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
+            calc(var(--bg-py) * var(--m-parallax) * -1),
+            0);
+    will-change: transform, opacity;
+    /* No DOF blur — depth comes from opacity + scale only. The blur was the
+       primary source of the "blurry / low quality" read. */
+    /* Negative delay so motion is already underway on mount (no sync start). */
+    animation-delay: var(--m-float-phase);
+}
+
+.devops-medallion__inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    /* Glass medallion material: translucent, soft border, very subtle glow.
+       Toned down from the original so medallions read as faint etched glass,
+       not bright floating discs. */
+    background: radial-gradient(120% 120% at 30% 25%,
+            var(--glass-bg-strong),
+            var(--glass-bg-subtle) 70%);
+    border: 1px solid var(--border-glass);
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.04),
+        0 4px 12px rgba(99, 102, 241, 0.06);
+    /* Float (vertical bob) + tilt wobble run on the inner so the glass body
+       moves independently of the self-rotation on the outer. */
+    animation:
+        devops-float var(--m-float) ease-in-out infinite,
+        devops-tilt var(--m-tilt) ease-in-out infinite;
+    animation-delay: var(--m-float-phase), var(--m-float-phase);
+    /* The icon counter-rotates so it stays upright while the medallion spins —
+       brand silhouettes read correctly at all times. */
+    --icon-counter: var(--m-spin);
+}
+
+.devops-medallion__icon {
+    width: 52%;
+    height: 52%;
+    color: var(--devops-tint);
+    /* Subtle accent halo — much softer than before (no bloom-like drop-shadow).
+       Keeps the glyph legible without glowing. */
+    opacity: 0.7;
+    /* Counter-rotation keeps glyphs upright against the self-spin. */
+    animation: devops-counter var(--icon-counter) linear infinite reverse;
+    animation-delay: var(--m-float-phase);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Keyframes — slow, continuous, no easing snaps (§3.4)                      */
+/* -------------------------------------------------------------------------- */
+
+@keyframes devops-spin {
+    from {
+        transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
+                calc(var(--bg-py) * var(--m-parallax) * -1),
+                0) rotate(var(--m-start));
+    }
+
+    to {
+        transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
+                calc(var(--bg-py) * var(--m-parallax) * -1),
+                0) rotate(calc(var(--m-start) + 360deg));
+    }
+}
+
+@keyframes devops-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4%);
+    }
+}
+
+@keyframes devops-tilt {
+
+    0%,
+    100% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    25% {
+        transform: rotate(2deg) scale(1.01);
+    }
+
+    75% {
+        transform: rotate(-2deg) scale(0.99);
+    }
+}
+
+@keyframes devops-counter {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Layer 0 — barely-there edge fade (replaces the heavy vignette)            */
+/* -------------------------------------------------------------------------- */
+
+.devops-bg__vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* A very soft radial fade so the constellation dissolves toward the edges
+       instead of a heavy darkening frame. Keeps the scene clean + open. */
+    background: radial-gradient(130% 100% at 50% 45%,
+            transparent 65%,
+            color-mix(in srgb, var(--canvas-base) 25%, transparent) 100%);
+    opacity: 0.5;
+}
+
+.devops-bg__label {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-quaternary);
+    opacity: 0.5;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tier gating (§7.1) — driven by data attributes on the root                 */
+/* -------------------------------------------------------------------------- */
+
+/* Low: parallax off → freeze the parallax offset at 0. */
+.devops-bg[data-parallax="off"] {
+    --bg-px: 0px;
+    --bg-py: 0px;
+}
+
+/* Motion off (reduced-motion): freeze every animation in place. The
+   constellation becomes a static glass composition. */
+.devops-bg[data-motion="off"] .devops-medallion,
+.devops-bg[data-motion="off"] .devops-medallion__inner,
+.devops-bg[data-motion="off"] .devops-medallion__icon {
+    animation: none;
+}
+
+/* Off tier: hide the constellation entirely; the clean gradient + ambient
+   lighting (from HeroBackground / the page) remain as a calm backdrop. */
+.devops-bg[data-tier="off"] .devops-bg__constellation {
+    display: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Global reduced-motion safety net (mirrors tokens.css)                     */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .devops-bg,
+    .devops-bg *,
+    .devops-bg *::before,
+    .devops-bg *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    /* Keep the composition visible — just frozen. */
+    .devops-medallion {
+        opacity: var(--m-opacity) !important;
+    }
+}

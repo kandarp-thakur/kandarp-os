@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0a0a0f" />
+
+  <!-- Prompt line -->
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace">
+    <text x="80" y="250" font-size="28" font-weight="700" fill="#7dd3fc">>_</text>
+    <text x="120" y="250" font-size="28" fill="#6b7280">kandarp@portfolio-os:~$</text>
+  </g>
+
+  <!-- Site name -->
+  <text
+    x="80"
+    y="340"
+    font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+    font-size="72"
+    font-weight="700"
+    fill="#f3f4f6"
+  >Kandarp OS</text>
+
+  <!-- Owner -->
+  <text
+    x="80"
+    y="395"
+    font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+    font-size="32"
+    fill="#9ca3af"
+  >Kandarp Khandwala</text>
+
+  <!-- URL -->
+  <text
+    x="80"
+    y="470"
+    font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+    font-size="22"
+    fill="#4b5563"
+  >kandarp-os.dev</text>
+</svg>

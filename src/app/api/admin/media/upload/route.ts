@@ -1,0 +1,145 @@
+/**
+ * POST /api/admin/media/upload — upload a file to the media library (media:write).
+ *
+ * Accepts multipart/form-data with a single `file` field. The file is
+ * written to `public/media/<uuid>.<ext>` and a media-asset record is
+ * created in the store. For images, the optimization pipeline then
+ * generates responsive variants (thumbnail/medium/large) in the original
+ * format + WebP + AVIF, plus an inline blur placeholder, and records the
+ * source dimensions. Returns the created asset.
+ *
+ * Enforced constraints:
+ *   • Max size 10 MB.
+ *   • Images: JPG, PNG, WebP, AVIF (and GIF) only.
+ *
+ * The asset's `path` is relative to the public root so the public site can
+ * reference it as `/media/<uuid>.<ext>`.
+ */
+
+import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { join } from "path";
+import { randomUUID } from "crypto";
+
+import { audit, error, json, requirePermission } from "@/lib/admin/api";
+import { create, findById, update } from "@/lib/admin/repo";
+import { revalidateCollection } from "@/lib/admin/revalidate";
+import {
+    optimizeImageAsset,
+    isOptimizable,
+} from "@/lib/admin/image-optimization";
+import type { MediaAsset } from "@/lib/admin/types";
+
+const MEDIA_DIR = join(process.cwd(), "public", "media");
+const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+
+/** Allowed image MIME types for upload (per the task spec). */
+const ALLOWED_IMAGE_MIME = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/avif",
+    "image/gif",
+]);
+
+export async function POST(req: Request) {
+    const session = await requirePermission("media:write");
+    if (session instanceof Response) return session;
+
+    const formData = await req.formData().catch(() => null);
+    if (!formData) return error("Expected multipart/form-data", 400);
+
+    const file = formData.get("file");
+    if (!(file instanceof File)) return error("No file provided", 400);
+    if (file.size > MAX_SIZE) return error("File too large (max 10 MB)", 413);
+
+    // Validate image MIME type (non-image files are allowed for documents).
+    if (file.type.startsWith("image/") && !ALLOWED_IMAGE_MIME.has(file.type)) {
+        return error(
+            "Unsupported image format. Allowed: JPG, PNG, WebP, AVIF.",
+            415,
+            415,
+        );
+    }
+
+    // Ensure the media directory exists.
+    if (!existsSync(MEDIA_DIR)) mkdirSync(MEDIA_DIR, { recursive: true });
+
+    // Generate a unique filename, preserving the extension.
+    const ext = file.name.includes(".") ? file.name.split(".").pop() : "";
+    const filename = ext ? `${randomUUID()}.${ext}` : randomUUID();
+    const absPath = join(MEDIA_DIR, filename);
+    const relPath = `/media/${filename}`;
+
+    const bytes = await file.arrayBuffer();
+    writeFileSync(absPath, Buffer.from(bytes));
+
+    // Create the asset record first (so it has an id + name for variant files).
+    const asset = await create<MediaAsset>(
+        "media",
+        {
+            name: filename,
+            originalName: file.name,
+            mimeType: file.type || "application/octet-stream",
+            size: file.size,
+            path: relPath,
+            alt: "",
+            folder: "/",
+            tags: [],
+            metadata: {},
+            usageCount: 0,
+            optimized: false,
+            variants: [],
+            blurDataUrl: "",
+            focalPoint: null,
+            archivedAt: null,
+        },
+        session.sub,
+    );
+
+    // Run the optimization pipeline for images (non-blocking-failure: if it
+    // errors, the original is still usable; we just mark optimized=false).
+    if (isOptimizable(asset.mimeType)) {
+        try {
+            const result = await optimizeImageAsset({
+                path: asset.path,
+                mimeType: asset.mimeType,
+                name: asset.name,
+            });
+            if (result) {
+                const updated = await update<MediaAsset>(
+                    "media",
+                    asset.id,
+                    {
+                        width: result.width,
+                        height: result.height,
+                        variants: result.variants,
+                        blurDataUrl: result.blurDataUrl,
+                        optimized: true,
+                    },
+                    session.sub,
+                );
+                if (updated) {
+                    audit(
+                        session,
+                        "media.upload",
+                        "media",
+                        updated.id,
+                        file.name,
+                    );
+                    revalidateCollection("media");
+                    return json(updated, 201);
+                }
+            }
+        } catch {
+            // Optimization failed — return the un-optimized asset so the
+            // upload still succeeds; the admin can re-optimize later.
+        }
+    }
+
+    // Re-read the created asset (the create() return may be stale if update
+    // was attempted but returned null).
+    const fresh = findById<MediaAsset>("media", asset.id) ?? asset;
+    audit(session, "media.upload", "media", fresh.id, file.name);
+    revalidateCollection("media");
+    return json(fresh, 201);
+}

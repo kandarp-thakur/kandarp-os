@@ -1,0 +1,147 @@
+/**
+ * Admin Design Tokens — Internal Engineering Console.
+ *
+ * The admin console shares the same dark "OS" aesthetic as the public site.
+ * The overrides are scoped to `[data-admin="true"]` so they never leak into
+ * the public site. The public tokens (tokens.css) remain the source of truth
+ * for the marketing surface; here we re-bind the same custom-property names
+ * to the dark palette so the shared UI primitives (Button, Card, Input,
+ * Badge…) render correctly in the console without duplication.
+ *
+ * Design language: glass UI, minimal, professional, engineering dashboard,
+ * premium spacing, responsive.
+ */
+
+[data-admin="true"] {
+    /* ── Canvas (Dark Theme — matches public site) ────────────────────── */
+    --canvas-base: #0a0a0f;
+    --canvas-elevated: #111118;
+    --canvas-sunken: #1a1a24;
+    --canvas-tint: #2a2a38;
+
+    /* ── Text ─────────────────────────────────────────────────────────── */
+    --text-primary: #f5f5f5;
+    --text-secondary: #dadada;
+    --text-tertiary: #bababa;
+    --text-quaternary: #9a9aac;
+    --text-inverse: #0a0a0f;
+
+    /* ── Accent (Indigo → Violet → Pink gradient — on-brand with public) ─ */
+    --accent-from: #6366f1;
+    --accent-via: #8b5cf6;
+    --accent-to: #ec4899;
+    --accent-solid: #7dd3fc;
+    --accent-hover: #d9f0ff;
+    --accent-subtle: rgba(125, 211, 252, 0.12);
+    --accent-gradient: linear-gradient(
+        135deg,
+        #6366f1 0%,
+        #8b5cf6 50%,
+        #ec4899 100%
+    );
+
+    /* ── Glass Surfaces (dark — frosted obsidian) ─────────────────────── */
+    --glass-bg: rgba(26, 26, 36, 0.65);
+    --glass-bg-strong: rgba(17, 17, 24, 0.55);
+    --glass-bg-subtle: rgba(26, 26, 36, 0.45);
+    --glass-blur: 16px;
+    --glass-blur-strong: 24px;
+    --glass-blur-subtle: 8px;
+    --glass-saturation: 180%;
+
+    /* ── Semantic Colors ──────────────────────────────────────────────── */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --info: #3b82f6;
+
+    /* ── Borders (dark) ───────────────────────────────────────────────── */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --border-glass: rgba(255, 255, 255, 0.12);
+    --border-focus: #7dd3fc;
+    --border-accent: rgba(125, 211, 252, 0.4);
+
+    /* ── Overlay & Scrim ──────────────────────────────────────────────── */
+    --scrim: rgba(15, 15, 20, 0.4);
+    --overlay-hover: rgba(255, 255, 255, 0.04);
+    --overlay-active: rgba(255, 255, 255, 0.08);
+
+    /* ── Admin-specific layout tokens ─────────────────────────────────── */
+    --admin-sidebar-w: 264px;
+    --admin-sidebar-w-collapsed: 72px;
+    --admin-topbar-h: 60px;
+    --admin-content-max: 1440px;
+    --admin-radius: 12px;
+}
+
+/* Admin body surface — a deep, premium engineering backdrop.
+   A near-invisible vertical gradient + soft indigo/violet ambient glows
+   that read as a modern dark SaaS dashboard, never as floating blobs. */
+[data-admin="true"] body,
+.admin-surface {
+    background-color: var(--canvas-base);
+    background-image:
+        radial-gradient(
+            900px 500px at 100% -10%,
+            rgba(99, 102, 241, 0.1),
+            transparent 60%
+        ),
+        radial-gradient(
+            700px 400px at -10% 0%,
+            rgba(139, 92, 246, 0.08),
+            transparent 55%
+        );
+    color: var(--text-primary);
+}
+
+/* Admin glass surface — dark frosted card with a crisp 1px border and a
+   soft layered shadow. Reads like a Vercel/Linear panel. */
+.admin-glass {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(var(--glass-blur))
+        saturate(var(--glass-saturation));
+    border: 1px solid var(--border-default);
+    box-shadow:
+        inset 0 1px 0 0 var(--border-glass),
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.admin-glass-strong {
+    background-color: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur-strong))
+        saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong))
+        saturate(var(--glass-saturation));
+    border: 1px solid var(--border-default);
+    box-shadow:
+        inset 0 1px 0 0 var(--border-glass),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Premium thin scrollbar for admin panels — appears on hover, Raycast-like. */
+.admin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+}
+
+.admin-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.admin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-scroll::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 8px;
+}
+
+.admin-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: var(--border-strong);
+}
