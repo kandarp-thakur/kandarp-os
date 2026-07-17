@@ -313,7 +313,7 @@ When a container is clicked, a detail panel slides in revealing the full **conta
 │                                                                │
 │  🔌 EXPOSED PORTS                                              │
 │  :3000  →  Live demo ↗                                         │
-│  repo   →  github.com/kktha/kandarp-os ↗                       │
+│  repo   →  github.com/kandarp-thakur/kandarp-os ↗              │
 │  docs   →  kandarp-os.dev/docs ↗                               │
 │                                                                │
 │  📊 VOLUMES (METRICS)                                          │

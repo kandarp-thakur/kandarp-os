@@ -163,7 +163,7 @@ const rawNodes = [
         stack: ["Git", "GitHub", "Actions", "Pages"],
         specs: [
             { label: "Host", value: "github.com" },
-            { label: "User", value: "@kktha" },
+            { label: "User", value: "@kandarp-thakur" },
             { label: "Repos", value: "10+" },
             { label: "Branch", value: "main" },
         ],
