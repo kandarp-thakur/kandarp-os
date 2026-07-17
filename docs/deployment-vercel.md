@@ -1,5 +1,11 @@
 # Deploying Kandarp OS to Vercel with a Custom Domain
 
+> 🔒 **Security rule:** This document must **never** contain real secret
+> values (API keys, JWT secrets, passwords). All secrets belong only in the
+> Vercel **Environment Variables** dashboard. If a secret was ever committed
+> to this repo by accident, rotate it immediately and purge it from git
+> history.
+
 This guide walks you through deploying the portfolio to **Vercel** and
 pointing a **custom domain** at it. The public site (home, blog, projects,
 experience, skills, infrastructure, contact) is fully static/SSR and deploys
@@ -60,9 +66,21 @@ Use the **Production** environment (and Preview if you want it there too).
 
 | Name | Value | Notes |
 |---|---|---|
-| `ADMIN_JWT_SECRET` | `7a6f3a6f6aded38c7921f509a0c9a7270cc6faa4e0c22ef4c3e43c6641f746d85f1baff62e4595848ade9fd7726acead` | 96-byte hex string generated for you. HMAC-signs admin session JWTs. **Keep private.** |
+| `ADMIN_JWT_SECRET` | _generate your own — see below_ | 96-byte hex string. HMAC-signs admin session JWTs. **Keep private; never commit to git.** |
 | `ADMIN_OWNER_EMAIL` | `you@yourdomain.com` | The first admin account seeded on boot. Change the password immediately after first login. |
 | `ADMIN_OWNER_PASSWORD` | a strong, unique password | Change on first login. |
+
+> **Generate `ADMIN_JWT_SECRET` locally — never paste a real secret into this
+> file or commit it to git.** Run this in your terminal and copy the output
+> into the Vercel dashboard only:
+>
+> ```bash
+> node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+> ```
+>
+> The result is a 96-character hex string. Paste it into the Vercel
+> **Environment Variables** UI as `ADMIN_JWT_SECRET`. Do **not** store it in
+> `.env.local`, `.env.example`, this doc, or any committed file.
 
 ### Optional (only if you use the feature)
 
