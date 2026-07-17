@@ -194,10 +194,11 @@ export default function AdminSecurityPage() {
                             authenticator app.
                         </p>
                         <div
-                            className={`flex items-center gap-3 rounded-lg border p-4 ${user?.totpEnabled
+                            className={`flex items-center gap-3 rounded-lg border p-4 ${
+                                user?.totpEnabled
                                     ? "border-[var(--success)]/20 bg-[var(--success)]/5"
                                     : "border-[var(--warning)]/20 bg-[var(--warning)]/5"
-                                }`}
+                            }`}
                         >
                             {user?.totpEnabled ? (
                                 <CheckCircle className="h-5 w-5 shrink-0 text-[var(--success)]" />
@@ -234,8 +235,8 @@ export default function AdminSecurityPage() {
                                 <span className="font-medium text-[var(--text-primary)]">
                                     {user?.lastLoginAt
                                         ? new Date(
-                                            user.lastLoginAt,
-                                        ).toLocaleString()
+                                              user.lastLoginAt,
+                                          ).toLocaleString()
                                         : "Never"}
                                 </span>
                             </div>

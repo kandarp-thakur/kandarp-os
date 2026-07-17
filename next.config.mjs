@@ -30,17 +30,10 @@ const nextConfig = {
     },
 
     // Tree-shake barrel-exported packages at the import-graph level.
-    // Each entry maps a package to its barrel file so Next can rewrite
-    // deep imports and drop unused symbols.
+    // R3F packages are intentionally excluded: their custom reconciler relies
+    // on package entrypoints and can break when rewritten to deep imports.
     experimental: {
-        optimizePackageImports: [
-            "lucide-react",
-            "framer-motion",
-            "@react-three/drei",
-            "@react-three/fiber",
-            "three",
-            "gsap",
-        ],
+        optimizePackageImports: ["lucide-react", "framer-motion", "gsap"],
     },
 
     // Security + size hygiene.

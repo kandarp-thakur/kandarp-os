@@ -1,4 +1,9 @@
-import type { ElementType, HTMLAttributes, ReactNode } from "react";
+import {
+    createElement,
+    type ElementType,
+    type HTMLAttributes,
+    type ReactNode,
+} from "react";
 
 import { cn } from "@/utils/cn";
 
@@ -82,9 +87,11 @@ export function Card({
     children,
     ...props
 }: CardProps) {
-    return (
-        <Tag
-            className={cn(
+    return createElement(
+        Tag,
+        {
+            ...props,
+            className: cn(
                 "relative overflow-hidden",
                 VARIANT_CLASSES[variant],
                 RADIUS_CLASSES[radius],
@@ -92,11 +99,9 @@ export function Card({
                 interactive &&
                     "transition-[box-shadow,transform,border-color] duration-normal ease-standard hover:-translate-y-1 hover:shadow-glass-hover hover:border-accent focus-within:border-accent focus-within:shadow-glass-hover",
                 className,
-            )}
-            {...props}
-        >
-            {children}
-        </Tag>
+            ),
+        },
+        children,
     );
 }
 

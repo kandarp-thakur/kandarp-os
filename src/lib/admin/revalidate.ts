@@ -79,7 +79,9 @@ const GLOBAL_COLLECTIONS: ReadonlySet<CollectionName> = new Set([
  * that may have gained/lost a back-reference are also revalidated so "Related
  * X" sections refresh. Mirrors the relationship engine's MIRRORS map.
  */
-const RELATIONSHIP_NEIGHBORS: Partial<Record<CollectionName, CollectionName[]>> = {
+const RELATIONSHIP_NEIGHBORS: Partial<
+    Record<CollectionName, CollectionName[]>
+> = {
     projects: ["blogPosts", "skills", "experience", "infraNodes"],
     blogPosts: ["projects", "skills", "infraNodes"],
     experience: ["projects", "skills"],

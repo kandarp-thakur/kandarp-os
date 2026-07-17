@@ -4,10 +4,7 @@ import { SkillsMesh } from "@/components/sections/SkillsMesh";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatPills } from "@/components/shared/StatPills";
 import { deriveEdges } from "@/data/skills";
-import {
-    getPublicSkillStats,
-    getPublicSkills,
-} from "@/lib/admin/public-data";
+import { getPublicSkillStats, getPublicSkills } from "@/lib/admin/public-data";
 import { getSiteConfig } from "@/hooks/useSiteConfig";
 import { skillsHeading, skillsIntro } from "@/lib/skillsSummary";
 

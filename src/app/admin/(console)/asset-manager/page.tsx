@@ -131,10 +131,11 @@ export default function AdminAssetManagerPage() {
                             <li key={folder}>
                                 <button
                                     onClick={() => setActiveFolder(folder)}
-                                    className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors ${activeFolder === folder
+                                    className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors ${
+                                        activeFolder === folder
                                             ? "bg-[var(--accent-subtle)] text-[var(--accent-solid)]"
                                             : "text-[var(--text-secondary)] hover:bg-[var(--overlay-hover)]"
-                                        }`}
+                                    }`}
                                 >
                                     <Folder className="h-4 w-4 shrink-0" />
                                     <span className="truncate">
@@ -162,10 +163,11 @@ export default function AdminAssetManagerPage() {
                                                 t === tag ? null : tag,
                                             )
                                         }
-                                        className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors ${activeTag === tag
+                                        className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors ${
+                                            activeTag === tag
                                                 ? "bg-[var(--accent-solid)] text-white"
                                                 : "bg-[var(--canvas-sunken)] text-[var(--text-tertiary)] hover:bg-[var(--overlay-hover)]"
-                                            }`}
+                                        }`}
                                     >
                                         <Tag className="h-3 w-3" />
                                         {tag}
@@ -346,8 +348,7 @@ export default function AdminAssetManagerPage() {
                                             Dimensions
                                         </span>
                                         <span className="text-[var(--text-secondary)]">
-                                            {selected.width} ×{" "}
-                                            {selected.height}
+                                            {selected.width} × {selected.height}
                                         </span>
                                     </div>
                                 )}

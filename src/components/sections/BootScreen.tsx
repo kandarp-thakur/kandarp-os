@@ -170,7 +170,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
                                 </span>
                             )}
                             {line.status === "done" && (
-                                <span className="ml-2 font-bold text-[#6366f1]">
+                                <span className="ml-2 font-bold text-[#2496ED]">
                                     [ DONE ]
                                 </span>
                             )}
@@ -179,7 +179,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
 
                     {/* Blinking cursor on the active line. */}
                     {visibleLines < BOOT_SEQUENCE.length && (
-                        <span className="inline-block h-[1.1em] w-[0.55ch] translate-y-[0.15em] bg-[#6366f1] animate-cursor-blink" />
+                        <span className="inline-block h-[1.1em] w-[0.55ch] translate-y-[0.15em] bg-[#2496ED] animate-cursor-blink" />
                     )}
                 </div>
             </motion.div>

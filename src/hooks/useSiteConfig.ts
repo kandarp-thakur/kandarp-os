@@ -33,11 +33,10 @@ const CACHE_TAGS = [PUBLIC_TAGS.settings, PUBLIC_TAGS.profiles];
  * `getPublicSiteIdentity` directly so they share the same cached read and
  * revalidate together when settings/profile change.
  */
-export const getSiteConfig: () => Promise<PublicSiteIdentity> =
-    unstable_cache(
-        async () => getPublicSiteIdentity(),
-        CACHE_TAGS.length ? [CACHE_KEY] : [CACHE_KEY],
-        {
-            tags: CACHE_TAGS,
-        },
-    );
+export const getSiteConfig: () => Promise<PublicSiteIdentity> = unstable_cache(
+    async () => getPublicSiteIdentity(),
+    CACHE_TAGS.length ? [CACHE_KEY] : [CACHE_KEY],
+    {
+        tags: CACHE_TAGS,
+    },
+);

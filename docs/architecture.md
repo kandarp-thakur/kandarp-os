@@ -1,7 +1,9 @@
 # Architecture — Kandarp OS
 
 > **Status:** ✅ Active
-> **Last Updated:** 2026-07-06
+> **Last Updated:** 2026-07-16
+
+> **Reality note (2026-07-16):** This document originally described an intended design. It has been synced to the code. Notable divergences from the original plan, now reflected below: the data layer lives in **`src/lib/admin/`** (a JSON-backed store), not the planned `src/services/` (which is empty); there is a full **Admin CMS** with HMAC-JWT auth and ~120 API routes under `/api/admin/` (no public `/api/contact` or `/api/projects`); the contact experience is a **terminal UI**, not a form; the theme is **dark-only** (no toggle/context); and there are **no GLSL shaders** (standard Three.js materials only). Sections below marked _(planned)_ describe intent that is not yet built.
 
 ---
 
@@ -65,42 +67,47 @@ Kandarp OS is a **single-tenant, client-heavy, server-augmented** Next.js applic
 
 | Route | Strategy | Rationale |
 |-------|----------|-----------|
-| `/` (home) | SSG + ISR (revalidate 1h) | Fast, SEO-critical, rarely changes |
-| `/about` | SSG | Static content |
-| `/projects` | SSG + ISR (revalidate 6h) | Updates when projects added |
-| `/projects/[slug]` | SSG + `generateStaticParams` | Per-project SEO |
-| `/experience` | SSG | Static timeline |
-| `/skills` | SSG | Static list |
-| `/contact` | SSR (dynamic) | Form + CSRF considerations |
-| `/blog` | SSG + ISR | Content-driven |
-| `/api/contact` | Edge runtime | Low-latency form handling |
-| `/api/projects` | Node runtime | May need DB access later |
+| `/` (home) | Server component + ISR (CMS-revalidated) | Single-page composition, SEO-critical |
+| `/about` | Server component | CMS content with seed fallback |
+| `/projects` | Server component | Reads CMS/seed data |
+| `/experience`, `/skills`, `/infrastructure` | Server component | CMS/seed data |
+| `/contact` | Server component | Terminal UI (commands), not a form |
+| `/blog`, `/blog/tags`, `/blog/tags/[tag]` | SSG | MDX + CMS content |
+| `/blog/[slug]` | SSG + `generateStaticParams` | Per-post SEO, static export |
+| `/admin/*` | Dynamic (auth-gated) | HMAC-JWT session via middleware |
+| `/api/admin/*` | Node runtime (auth-gated) | ~120 CMS route handlers |
+
+> **Note:** There is no `/projects/[slug]`, `/api/contact`, or `/api/projects`. Projects render on the `/projects` listing and the home composition; the only API surface is `/api/admin/*` (plus a public `POST /api/admin/analytics`).
 
 ---
 
 ## 4. Data Flow
 
 ```
-┌──────────────┐     Zod parse     ┌──────────────┐     import     ┌──────────────┐
-│  Raw Source   │ ───────────────▶ │  Service Layer│ ─────────────▶ │  Component   │
-│  (JSON/MDX)   │                  │  (validation) │                │  (RSC/CSR)   │
-└──────────────┘                   └──────────────┘                └──────────────┘
+┌──────────────┐    Zod parse    ┌────────────────────┐   props   ┌──────────────┐
+│  CMS store /  │ ─────────────▶ │  src/lib/admin/     │ ────────▶ │  Server       │
+│  seed / MDX   │                │  public-data.ts     │           │  Component    │
+└──────────────┘                 └────────────────────┘           └──────────────┘
+     (.admin-data JSON, src/data seeds, content/blog MDX)
 ```
 
 ### 4.1 Data Sources
-- **Structured data** lives in `src/data/` as typed TypeScript/JSON modules.
-- **Content** (if added later) lives as MDX in a content directory.
-- **External data** (GitHub repos, etc.) is fetched via services in `src/services/`.
+- **Structured seed data** lives in `src/data/` (12 typed modules) as the fallback source of truth.
+- **CMS data** is the primary source: a JSON-backed store under `src/lib/admin/` (`store.ts`, `repo.ts`, `public-data.ts`) persisted to `.admin-data/`. Public pages read from it via `public-data.ts` and fall back to `src/data/` seeds.
+- **Blog content** lives as MDX in `content/blog/`, read by `src/lib/blog.ts`.
+- **External data** (GitHub repos, etc.) is _(planned)_ — `src/services/` exists but is empty; no external API integration is built yet.
 
-### 4.2 Service Layer
-- Services in `src/services/` are the **only** modules allowed to fetch external data.
-- They return **validated, typed** data — never raw responses.
-- Components never call `fetch()` directly.
+### 4.2 Data Access Layer
+- The data access layer is **`src/lib/admin/`**, not the originally planned `src/services/`.
+- `public-data.ts` returns **validated, typed** data (Zod-parsed against `src/types/` schemas) to public server components.
+- `crud.ts`, `repo.ts`, and `store.ts` back the admin CMS; `revalidate.ts` triggers ISR on content change.
+- Public components receive data as props from server components; they never fetch directly.
 
 ### 4.3 Client State
-- Global UI state (theme, navigation, 3D state) lives in `src/context/`.
-- Local component state uses `useState` / `useReducer`.
-- Server state (cached data) uses React's built-in `cache()` and RSC data fetching — **no external data-fetching library** unless complexity demands it.
+- The app uses **no global client state library and no `src/context/`** (the directory is empty). Providers compose in `src/providers/` (`AnimationProvider` → `ThreeProvider`).
+- Local component state uses `useState` / `useReducer` and small custom hooks (`src/hooks/`).
+- Server state uses RSC data fetching from `src/lib/admin/public-data.ts` — **no external data-fetching library**.
+- Theme is **dark-only**, set statically via `data-theme="dark"` on `<html>` — no theme context or toggle.
 
 ---
 
@@ -110,19 +117,29 @@ The 3D layer is isolated in `src/3d/` to keep it modular and replaceable.
 
 ```
 src/3d/
-├── models/       # 3D model assets & loaders
-├── scenes/       # Composed scenes (e.g., HeroScene, ProjectOrbScene)
-├── shaders/      # GLSL shaders (vertex/fragment)
-├── materials/    # Reusable Three.js materials
-├── animations/   # Animation rigs and timelines
-└── hooks/        # R3F-specific hooks (useFrame wrappers, etc.)
+├── Canvas3D.tsx      # Canvas wrapper (dynamically imported, ssr: false)
+├── Environment3D.tsx # Environment / IBL setup
+├── CameraRig.tsx     # Camera rig
+├── LightingRig.tsx   # Lighting setup
+├── PostProcessing.tsx# Bloom → DOF → Vignette → CA → Noise → SMAA (tier-gated)
+├── PerformanceMonitor.tsx
+├── presets.ts        # Tier presets
+├── scenes/           # Scene3D + SceneFallback (2D fallback)
+├── cloudInfinity/    # Signature object: geometry, material, particles, nodes
+├── coderModel/       # Coder model + hologram
+└── hooks/            # useDeviceTier, useReducedMotion, useCamera, useMouse, ...
 ```
 
+> **Note:** There is no `shaders/` directory and no custom GLSL. Signature visuals use standard Three.js materials (`MeshPhysicalMaterial` transmission on high tier, `MeshStandardMaterial` fallback) with animation — code comments explicitly note effects are achieved "without a custom shader." Custom GLSL remains a Phase 3 aspiration.
+
 ### 5.1 Performance Contract
-- 3D assets are **GLTF/GLB** with Draco compression.
-- Textures are **WebP/KTX2** — never uncompressed PNGs in 3D.
-- The 3D canvas mounts **only after** the page is interactive (post-LCP).
-- A `prefers-reduced-motion` check disables heavy 3D and falls back to static imagery.
+
+> _(Planned items below)_ Draco/KTX2 asset compression is not yet applied — signature 3D objects are procedural geometry, not loaded GLTF assets. The canvas is tier-gated by `useDeviceTier` and postprocessing is tier-gated (low/off render no effects).
+
+- Device-tier detection (`useDeviceTier.ts`) scales scene complexity and gates postprocessing (low/off tiers render no post effects).
+- The 3D canvas is dynamically imported with `{ ssr: false }` and mounts client-side only.
+- A `prefers-reduced-motion` check (`useReducedMotion.ts`) disables animated effects.
+- 3D asset compression (Draco/KTX2) is **not yet applied** — a Phase 3 item.
 
 ### 5.2 Fallback Strategy
 - Every 3D scene has a **2D fallback** (image or CSS animation).
@@ -133,13 +150,20 @@ src/3d/
 
 ## 6. API Layer
 
-API routes live in `src/app/api/` and follow RESTful conventions.
+API routes live in `src/app/api/` and follow RESTful conventions. In practice **all routes are under `src/app/api/admin/`** (~120 `route.ts` files) — there is no public `/api/contact` or `/api/projects`. The public site is rendered from server components reading `src/lib/admin/public-data.ts`, not from public API calls.
 
-| Endpoint | Method | Purpose | Runtime |
-|----------|--------|---------|---------|
-| `/api/contact` | POST | Handle contact form | Edge |
-| `/api/auth/*` | GET/POST | Auth callbacks (future) | Node |
-| `/api/projects` | GET | List projects (future CMS) | Node |
+| Endpoint group | Method | Purpose | Runtime |
+|----------------|--------|---------|---------|
+| `/api/admin/auth/{login,logout,me,forgot}` | POST/GET | Admin session auth (HMAC-JWT cookie) | Node |
+| `/api/admin/<entity>` | GET/POST | CRUD per entity (projects, blog, skills, …) | Node |
+| `/api/admin/<entity>/[id]` | GET/PATCH/DELETE | Single-record ops (+ archive/restore/versions) | Node |
+| `/api/admin/<entity>/{bulk,export,import,reorder}` | POST | Batch operations | Node |
+| `/api/admin/media/upload` + `/media/[id]/{crop,focal-point,optimize}` | POST | Media pipeline (`sharp`) | Node |
+| `/api/admin/analytics` | POST | Event capture (public POST) | Node |
+
+Auth is enforced by `src/middleware.ts`, which edge-verifies the `kos_admin_session` HMAC-JWT cookie for `/admin` and `/api/admin`, and sets `x-is-admin` to strip public chrome. RBAC lives in `src/lib/admin/rbac.ts`.
+
+> **Not built:** contact form endpoint + email service (contact is a terminal UI), GitHub API integration.
 
 ### 6.1 API Contracts
 - Every API route has a **Zod schema** for input validation.

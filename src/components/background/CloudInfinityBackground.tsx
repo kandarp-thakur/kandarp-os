@@ -6,6 +6,30 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/utils/cn";
 
 /**
+ * The R3F canvas host + in-canvas scene — client-only, never SSR'd.
+ *
+ * These pull in `@react-three/fiber` + `three`, which are client-only APIs
+ * (`Canvas`, `useFrame`, `useThree`). Statically importing them into a
+ * component rendered by the server `layout.tsx` pulls the R3F module graph
+ * into the server bundle, where webpack's lazy factory is not initialized —
+ * producing `Cannot read properties of undefined (reading 'call')` at
+ * `options.factory` during `resolveLazy`. `next/dynamic` with `ssr: false`
+ * keeps the entire 3D subtree out of the server bundle (mirrors
+ * `HeroPortrait3D` + `PageBackground`).
+ */
+const Canvas3D = dynamic(() => import("@3d/Canvas3D").then((m) => m.Canvas3D), {
+    ssr: false,
+});
+
+const CloudInfinityScene = dynamic(
+    () =>
+        import("@3d/cloudInfinity/CloudInfinityScene").then(
+            (m) => m.CloudInfinityScene,
+        ),
+    { ssr: false },
+);
+
+/**
  * CloudInfinityBackground — the signature 3D object mounted behind the hero.
  *
  * This is the host that mounts the R3F canvas containing the
@@ -52,20 +76,6 @@ export interface CloudInfinityBackgroundProps {
     disableScroll?: boolean;
 }
 
-/** The R3F canvas host — client-only, never SSR'd. */
-const Canvas3D = dynamic(() => import("@3d/Canvas3D").then((m) => m.Canvas3D), {
-    ssr: false,
-});
-
-/** The in-canvas scene — client-only (depends on R3F context). */
-const CloudInfinityScene = dynamic(
-    () =>
-        import("@3d/cloudInfinity/CloudInfinityScene").then(
-            (m) => m.CloudInfinityScene,
-        ),
-    { ssr: false },
-);
-
 export function CloudInfinityBackground({
     className,
     disableScroll = false,
@@ -74,12 +84,9 @@ export function CloudInfinityBackground({
     // Held in a ref so the frame loop reads it without React re-renders.
     const scrollProgressRef = useRef(0);
 
-    // Whether the 3D render loop should be running. Starts `false` — the
-    // IntersectionObserver will flip it to `true` once the hero is on-screen.
-    // Toggled to `false` when the hero leaves the viewport OR the tab is
-    // backgrounded / window loses focus (task §Performance: "render only
-    // what's visible"). This drives the R3F `frameloop` prop.
-    const [frameloop, setFrameloop] = useState<"always" | "never">("never");
+    // Start immediately so the hero background paints on first hydration. The
+    // visibility effect below still pauses it when the hero/tab is hidden.
+    const [frameloop, setFrameloop] = useState<"always" | "never">("always");
 
     // Single passive scroll listener → write progress into the ref. The hero
     // is the first section; progress maps the hero's viewport exit to 0→1.
@@ -184,7 +191,7 @@ export function CloudInfinityBackground({
         <div
             aria-hidden="true"
             className={cn(
-                "cloud-infinity-bg pointer-events-none fixed inset-0 -z-[1] overflow-hidden",
+                "cloud-infinity-bg pointer-events-none fixed inset-0 z-0 overflow-hidden",
                 className,
             )}
         >
@@ -201,6 +208,7 @@ export function CloudInfinityBackground({
             <Canvas3D
                 lightingPreset="soft"
                 environmentPreset="studio"
+                effectPreset="off"
                 enableControls={false}
                 frameloop={frameloop}
                 passiveCamera
@@ -212,7 +220,10 @@ export function CloudInfinityBackground({
                 disableEnvironment
                 className="absolute inset-0"
             >
-                <CloudInfinityScene scrollProgressRef={scrollProgressRef} />
+                <CloudInfinityScene
+                    tier="medium"
+                    scrollProgressRef={scrollProgressRef}
+                />
             </Canvas3D>
         </div>
     );
@@ -220,36 +231,42 @@ export function CloudInfinityBackground({
 
 /**
  * The immediate, non-animated backdrop shown before the canvas mounts (and as
- * the no-WebGL fallback). A clean gradient + two soft ambient glows — the same
- * treatment as [`HeroBackground`](../sections/HeroBackground.tsx) so the
- * transition into 3D is seamless. No glow blobs, no dot-grid (those were the
- * sources of the "blurry / low quality" read).
+ * the no-WebGL fallback). Two soft, translucent ambient glows only — no opaque
+ * base gradient. The body already carries `bg-canvas-base` (#050816), and this
+ * layer sits directly above the animated DevOps constellation
+ * ([`PageBackground`](./PageBackground.tsx)); an opaque sheet here would
+ * occlude that constellation and hide the background loop. Keeping it
+ * translucent lets the constellation show through both this fallback and the
+ * transparent (`alpha: true`) 3D canvas. No glow blobs, no dot-grid (those
+ * were the sources of the "blurry / low quality" read).
  */
 function CloudInfinityFallback() {
     return (
         <div className="absolute inset-0">
-            {/* Clean gradient — the calm base. */}
-            <div
-                className="absolute inset-0"
-                style={{ backgroundImage: "var(--hero-bg-gradient)" }}
-            />
+            {/* No opaque base gradient here. The body already carries
+                `bg-canvas-base` (#050816), and this layer sits directly above
+                the animated DevOps constellation ([`PageBackground`](./PageBackground.tsx)).
+                An opaque full-viewport gradient would paint over that
+                constellation and hide the background loop entirely. We keep
+                only translucent ambient glows so the constellation stays
+                visible through the transparent 3D canvas + this fallback. */}
 
             {/* Ambient lighting — soft blue glow (upper-left). Diffuse light,
                 not a floating blob. */}
             <div
-                className="absolute -left-[20%] -top-[25%] h-[80vh] w-[80vh] rounded-full blur-[120px]"
+                className="absolute -left-[18%] -top-[22%] h-[64vh] w-[64vh] rounded-full blur-[72px]"
                 style={{
                     background:
                         "radial-gradient(circle at center, var(--hero-ambient-blue), transparent 70%)",
                 }}
             />
 
-            {/* Ambient lighting — soft violet glow (lower-right). */}
+            {/* Ambient lighting — AWS Orange plus Cloud Cyan reflection. */}
             <div
-                className="absolute -right-[20%] -bottom-[25%] h-[80vh] w-[80vh] rounded-full blur-[120px]"
+                className="absolute -right-[18%] -bottom-[22%] h-[64vh] w-[64vh] rounded-full blur-[72px]"
                 style={{
                     background:
-                        "radial-gradient(circle at center, var(--hero-ambient-violet), transparent 70%)",
+                        "radial-gradient(circle at 35% 35%, var(--hero-ambient-orange), transparent 62%), radial-gradient(circle at 65% 65%, var(--hero-ambient-cyan), transparent 70%)",
                 }}
             />
         </div>

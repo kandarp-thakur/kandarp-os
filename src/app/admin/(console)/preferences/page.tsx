@@ -159,8 +159,7 @@ export default function AdminPreferencesPage() {
                                         setPrefs({
                                             ...prefs,
                                             density: e.target.value as
-                                                | "comfortable"
-                                                | "compact",
+                                                "comfortable" | "compact",
                                         })
                                     }
                                     className={inputClass}
@@ -247,9 +246,9 @@ export default function AdminPreferencesPage() {
                                         Enable animations
                                     </span>
                                     <p className="text-xs text-[var(--text-tertiary)]">
-                                        Motion + transitions on the public
-                                        site. Disabled for reduced-motion
-                                        users regardless.
+                                        Motion + transitions on the public site.
+                                        Disabled for reduced-motion users
+                                        regardless.
                                     </p>
                                 </div>
                             </label>
@@ -263,9 +262,7 @@ export default function AdminPreferencesPage() {
                                     onChange={(e) =>
                                         setPerformanceMode(
                                             e.target.value as
-                                            | "auto"
-                                            | "high"
-                                            | "eco",
+                                                "auto" | "high" | "eco",
                                         )
                                     }
                                     className={inputClass}

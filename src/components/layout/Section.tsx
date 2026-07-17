@@ -1,4 +1,9 @@
-import type { ElementType, HTMLAttributes, ReactNode } from "react";
+import {
+    createElement,
+    type ElementType,
+    type HTMLAttributes,
+    type ReactNode,
+} from "react";
 
 import { cn } from "@/utils/cn";
 
@@ -62,10 +67,13 @@ export function Section({
     children,
     ...props
 }: SectionProps) {
-    return (
-        <Tag className={cn(SPACING_CLASSES[spacing], className)} {...props}>
-            {children}
-        </Tag>
+    return createElement(
+        Tag,
+        {
+            ...props,
+            className: cn(SPACING_CLASSES[spacing], className),
+        },
+        children,
     );
 }
 

@@ -31,21 +31,34 @@ interface UseParallaxOptions {
     damp?: number;
     /** Max shift in px applied to the constellation container. Default 18. */
     range?: number;
+    /**
+     * Optional per-frame callback invoked inside the shared rAF tick, right
+     * after the position is damped. Use it to apply the smoothed offset to the
+     * DOM (e.g. write CSS custom properties) so damping + application happen in
+     * a single rAF — no second loop, no per-frame React renders.
+     */
+    onFrame?: (state: ParallaxState, range: number) => void;
 }
 
 /**
  * Track the pointer and expose a smoothed parallax offset via a ref. The caller
- * applies the offset to the scene container through CSS custom properties in
- * the same rAF tick (see DevOpsBackground).
+ * may pass an `onFrame` callback to apply the offset to the scene container
+ * through CSS custom properties in the same rAF tick (see DevOpsBackground),
+ * keeping the whole parallax on a single shared rAF loop.
  */
 export function useParallax({
     enabled,
     damp = 0.08,
     range = 18,
+    onFrame,
 }: UseParallaxOptions) {
     const state = useRef<ParallaxState>({ x: 0, y: 0 });
     const target = useRef<ParallaxState>({ x: 0, y: 0 });
     const raf = useRef<number | null>(null);
+    // Keep the latest callback in a ref so the rAF closure stays stable and we
+    // don't restart the loop when the caller's callback identity changes.
+    const onFrameRef = useRef(onFrame);
+    onFrameRef.current = onFrame;
 
     useEffect(() => {
         if (!enabled) {
@@ -67,6 +80,8 @@ export function useParallax({
             // Exponential smoothing toward the target.
             state.current.x += (target.current.x - state.current.x) * damp;
             state.current.y += (target.current.y - state.current.y) * damp;
+            // Apply in the same tick — single rAF for damping + DOM writes.
+            onFrameRef.current?.(state.current, range);
             raf.current = requestAnimationFrame(tick);
         };
 
@@ -89,7 +104,7 @@ export function useParallax({
             if (raf.current !== null) cancelAnimationFrame(raf.current);
             raf.current = null;
         };
-    }, [enabled, damp]);
+    }, [enabled, damp, range]);
 
     return { state, range };
 }

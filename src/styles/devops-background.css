@@ -25,10 +25,9 @@
 .devops-bg {
     position: fixed;
     inset: 0;
-    /* Deepest layer: sits below the CloudInfinity 3D hero canvas (z-index -1)
-       so the signature object renders above this ambient constellation. Both
-       remain behind page content (z-index 0+). */
-    z-index: -2;
+    /* Decorative layer: content is lifted above it by AppShell's z-index.
+       Avoid negative z-index so the body canvas does not paint over it. */
+    z-index: 0;
     overflow: hidden;
     pointer-events: none;
     /* Parallax offset is written here by JS (single rAF, no re-render). */
@@ -75,9 +74,11 @@
     /* Self-rotation spins the whole medallion (icon + glass). */
     animation: devops-spin var(--m-spin) linear infinite;
     /* Per-medallion parallax: deeper shells move more (atmospheric). */
-    transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
-            calc(var(--bg-py) * var(--m-parallax) * -1),
-            0);
+    transform: translate3d(
+        calc(var(--bg-px) * var(--m-parallax) * -1),
+        calc(var(--bg-py) * var(--m-parallax) * -1),
+        0
+    );
     will-change: transform, opacity;
     /* No DOF blur — depth comes from opacity + scale only. The blur was the
        primary source of the "blurry / low quality" read. */
@@ -92,17 +93,21 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    /* Glass medallion material: translucent, soft border, very subtle glow.
-       Toned down from the original so medallions read as faint etched glass,
-       not bright floating discs. */
-    background: radial-gradient(120% 120% at 30% 25%,
-            var(--glass-bg-strong),
-            var(--glass-bg-subtle) 70%);
-    border: 1px solid var(--border-glass);
+    /* Graphite glass medallion material: dark translucent glass with a soft
+       top highlight, Docker Blue edge glow, and Cloud Cyan inner energy.
+       Reads like a premium engineered sculpture, not a bright floating disc. */
+    background: radial-gradient(
+        130% 130% at 35% 20%,
+        rgba(56, 189, 248, 0.08),
+        rgba(15, 23, 42, 0.6) 40%,
+        rgba(15, 23, 42, 0.85) 80%
+    );
+    border: 1px solid rgba(36, 150, 237, 0.2);
     box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-        inset 0 -1px 0 0 rgba(0, 0, 0, 0.04),
-        0 4px 12px rgba(99, 102, 241, 0.06);
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.15),
+        0 0 12px rgba(36, 150, 237, 0.12),
+        inset 0 0 20px rgba(56, 189, 248, 0.04);
     /* Float (vertical bob) + tilt wobble run on the inner so the glass body
        moves independently of the self-rotation on the outer. */
     animation:
@@ -117,10 +122,11 @@
 .devops-medallion__icon {
     width: 52%;
     height: 52%;
-    color: var(--devops-tint);
-    /* Subtle accent halo — much softer than before (no bloom-like drop-shadow).
-       Keeps the glyph legible without glowing. */
-    opacity: 0.7;
+    color: var(--cloud-cyan);
+    /* Cloud Cyan tint for the icon — reads as inner energy against the
+       graphite glass body. Soft opacity keeps it understated. */
+    opacity: 0.55;
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.15));
     /* Counter-rotation keeps glyphs upright against the self-spin. */
     animation: devops-counter var(--icon-counter) linear infinite reverse;
     animation-delay: var(--m-float-phase);
@@ -132,20 +138,25 @@
 
 @keyframes devops-spin {
     from {
-        transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
+        transform: translate3d(
+                calc(var(--bg-px) * var(--m-parallax) * -1),
                 calc(var(--bg-py) * var(--m-parallax) * -1),
-                0) rotate(var(--m-start));
+                0
+            )
+            rotate(var(--m-start));
     }
 
     to {
-        transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
+        transform: translate3d(
+                calc(var(--bg-px) * var(--m-parallax) * -1),
                 calc(var(--bg-py) * var(--m-parallax) * -1),
-                0) rotate(calc(var(--m-start) + 360deg));
+                0
+            )
+            rotate(calc(var(--m-start) + 360deg));
     }
 }
 
 @keyframes devops-float {
-
     0%,
     100% {
         transform: translateY(0);
@@ -157,7 +168,6 @@
 }
 
 @keyframes devops-tilt {
-
     0%,
     100% {
         transform: rotate(0deg) scale(1);
@@ -192,9 +202,11 @@
     pointer-events: none;
     /* A very soft radial fade so the constellation dissolves toward the edges
        instead of a heavy darkening frame. Keeps the scene clean + open. */
-    background: radial-gradient(130% 100% at 50% 45%,
-            transparent 65%,
-            color-mix(in srgb, var(--canvas-base) 25%, transparent) 100%);
+    background: radial-gradient(
+        130% 100% at 50% 45%,
+        transparent 65%,
+        color-mix(in srgb, var(--canvas-base) 25%, transparent) 100%
+    );
     opacity: 0.5;
 }
 
@@ -239,7 +251,6 @@
 /* -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-
     .devops-bg,
     .devops-bg *,
     .devops-bg *::before,

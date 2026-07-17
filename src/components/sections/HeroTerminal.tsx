@@ -10,6 +10,8 @@ import { cn } from "@/utils/cn";
 interface HeroTerminalProps {
     /** Extra classes for the outer terminal shell. */
     className?: string;
+    /** SSH-style user@host string for the title bar. Defaults to "kandarp@portfolio". */
+    userAtHost?: string;
 }
 
 /**
@@ -24,7 +26,10 @@ interface HeroTerminalProps {
  * a visually-hidden live region announces the active role for screen readers.
  * Hovering the window (pointer devices only) pauses the typing loop.
  */
-export function HeroTerminal({ className }: HeroTerminalProps) {
+export function HeroTerminal({
+    className,
+    userAtHost = "kandarp@portfolio",
+}: HeroTerminalProps) {
     const { lines, typing, roleIndex, pause, resume } = useHeroTerminal();
     const liveId = useId();
 
@@ -46,7 +51,8 @@ export function HeroTerminal({ className }: HeroTerminalProps) {
                 <span className="h-3 w-3 rounded-full bg-traffic-minimize" />
                 <span className="h-3 w-3 rounded-full bg-traffic-zoom" />
                 <span className="ml-2 font-mono text-2xs text-text-tertiary">
-                    kandarp@portfolio: ~
+                    <span className="text-term-prompt">{userAtHost}</span>
+                    <span className="text-term-directory">:~$</span>
                 </span>
             </div>
 
@@ -63,11 +69,11 @@ export function HeroTerminal({ className }: HeroTerminalProps) {
                 {/* Active typing line with blinking cursor */}
                 {typing !== "" && (
                     <div className="flex items-baseline gap-1.5">
-                        <span className="select-none text-accent-solid">$</span>
+                        <span className="select-none text-term-prompt">$</span>
                         <span className="whitespace-pre-wrap break-words">
                             {typing}
                             <span
-                                className="ml-px inline-block h-[1.1em] w-[0.55ch] translate-y-[0.15em] bg-accent-solid animate-cursor-blink"
+                                className="ml-px inline-block h-[1.1em] w-[0.55ch] translate-y-[0.15em] bg-term-cursor animate-cursor-blink"
                                 aria-hidden="true"
                             />
                         </span>
@@ -77,9 +83,9 @@ export function HeroTerminal({ className }: HeroTerminalProps) {
                 {/* Idle prompt cursor (between commands / before first type) */}
                 {typing === "" && lines.length >= 0 && (
                     <div className="flex items-baseline gap-1.5">
-                        <span className="select-none text-accent-solid">$</span>
+                        <span className="select-none text-term-prompt">$</span>
                         <span
-                            className="inline-block h-[1.1em] w-[0.55ch] translate-y-[0.15em] bg-accent-solid animate-cursor-blink"
+                            className="inline-block h-[1.1em] w-[0.55ch] translate-y-[0.15em] bg-term-cursor animate-cursor-blink"
                             aria-hidden="true"
                         />
                     </div>
@@ -104,8 +110,8 @@ function HeroLineView({ line, roleIndex }: HeroLineViewProps) {
     if (line.kind === "command") {
         return (
             <div className="flex items-baseline gap-1.5">
-                <span className="select-none text-accent-solid">$</span>
-                <span className="whitespace-pre-wrap break-words text-text-primary">
+                <span className="select-none text-term-prompt">$</span>
+                <span className="whitespace-pre-wrap break-words text-term-command">
                     {line.text}
                 </span>
             </div>
@@ -114,7 +120,7 @@ function HeroLineView({ line, roleIndex }: HeroLineViewProps) {
 
     if (line.kind === "output") {
         return (
-            <div className="whitespace-pre-wrap break-words pl-3 text-text-secondary">
+            <div className="whitespace-pre-wrap break-words pl-3 text-term-value">
                 {line.text}
             </div>
         );

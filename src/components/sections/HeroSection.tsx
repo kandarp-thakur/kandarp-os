@@ -5,19 +5,19 @@ import {
     motion,
     useReducedMotion,
     useScroll,
+    useTransform,
     type Variants,
 } from "framer-motion";
 import { ArrowRight, ArrowDown, Mail } from "lucide-react";
 
 import { HeroBackground } from "@/components/sections/HeroBackground";
 import { HeroTerminal } from "@/components/sections/HeroTerminal";
-import { HeroPortrait } from "@/components/sections/HeroPortrait";
 import { HeroScrollIndicator } from "@/components/sections/HeroScrollIndicator";
+import { HeroPortrait } from "@/features/hero/components/HeroPortrait";
 import { HERO_MOTION, HERO_BOOT_BANNER, HERO_BOOT_STATUS } from "@/data/hero";
 import { SECTIONS, SITE } from "@/utils/constants";
 import { scrollToSection } from "@/utils/navigation";
 import { cn } from "@/utils/cn";
-import type { PublicImage } from "@/lib/admin/public-data";
 
 /** Default split name for the gradient-on-first-word treatment (hero-design §2). */
 const DEFAULT_FIRST_NAME = "KANDARP";
@@ -37,12 +37,6 @@ const DEFAULT_LAST_NAME = "KUMAR THAKUR";
  * per §8. Reduced motion renders everything statically with no transforms.
  */
 interface HeroSectionProps {
-    /**
-     * Resolved profile image descriptor (from `getPublicHeroPortrait`). When
-     * `null`, the hero renders the monogram placeholder. The image is
-     * eager-loaded (priority) because it is above-the-fold LCP content.
-     */
-    heroPortrait?: PublicImage | null;
     /** CMS-driven owner name (falls back to the hardcoded default). */
     ownerName?: string;
     /** CMS-driven user@host string (falls back to SITE.userAtHost). */
@@ -52,7 +46,6 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({
-    heroPortrait,
     ownerName,
     userAtHost,
     resumeUrl,
@@ -65,8 +58,7 @@ export function HeroSection({
     // hardcoded default.
     const fullName = ownerName ?? `${DEFAULT_FIRST_NAME} ${DEFAULT_LAST_NAME}`;
     const spaceIdx = fullName.indexOf(" ");
-    const firstName =
-        spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName;
+    const firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName;
     const lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1) : "";
     const reduced = useReducedMotion() === true;
     const ref = useRef<HTMLElement>(null);
@@ -77,23 +69,61 @@ export function HeroSection({
         offset: ["start start", "end start"],
     });
 
+    // Parallax scroll-exit: content fades + lifts as user scrolls past hero
+    const contentOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+    const contentY = useTransform(scrollYProgress, [0, 0.5], [0, -40]);
+
     return (
         <section
             ref={ref}
-            className="relative mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col items-center justify-center gap-10 px-4 pb-24 pt-16 sm:px-6 lg:gap-16"
+            className={cn(
+                // The Hero owns the stacking context (task §Position:
+                // "Hero position: relative"). `overflow-hidden` clips the
+                // portrait so it can NEVER cover the navbar, the whole page,
+                // or other sections — everything stays inside the Hero
+                // (task §Overflow). The portrait is anchored to the Hero
+                // (not the viewport) via the right column below.
+                "hero relative mx-auto flex min-h-[100svh] w-full max-w-7xl flex-col items-center justify-center gap-10 overflow-hidden px-4 pb-24 pt-16 sm:px-6 lg:gap-16",
+            )}
         >
-            {/* Background placeholder — static layer until the 3D constellation lands. */}
+            {/* Background placeholder — static layer until the 3D constellation
+                lands. The animated DevOps Infinity Loop (CloudInfinityBackground)
+                is mounted globally in layout.tsx as a fixed full-viewport
+                canvas at z-index: 0, so it sits behind this hero content. */}
             <HeroBackground />
 
-            <div className="grid w-full grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
-                {/* Content column (7/12) */}
-                <div className="flex flex-col items-start gap-6 lg:col-span-7">
+            {/* hero-grid — the two-column grid (task §Hero Grid). LEFT (45%)
+                holds the name / terminal / buttons; RIGHT (55%) holds the
+                DevOps Infinity Loop + portrait + ambient particles. The grid
+                uses CSS Grid (NOT viewport positioning) with
+                `grid-template-columns: 45% 55%` on desktop and collapses to a
+                single column on mobile. `align-items: center` vertically
+                centers both columns. z-30 keeps the content ABOVE the portrait
+                (z-20) so the portrait never covers the text / terminal /
+                buttons. The portrait lives INSIDE the right column (task
+                §Structure: "The portrait belongs ONLY inside the right
+                column"), so it is anchored to the column (position: relative),
+                never to the viewport. */}
+            <motion.div
+                className="hero-grid grid w-full grid-cols-1 items-center gap-10 lg:gap-8 lg:z-30 lg:[grid-template-columns:45%_55%]"
+                style={
+                    reduced
+                        ? undefined
+                        : { opacity: contentOpacity, y: contentY }
+                }
+            >
+                {/* hero-left — the content column (45% on desktop). Holds the
+                    boot banner, name (LCP <h1>), terminal, and CTA buttons.
+                    The portrait on the right never overlaps this column
+                    (task §Responsive, §Final Goal). */}
+                <div className="hero-left flex w-full flex-col items-start gap-6">
                     {/* Boot banner — the OS welcome line */}
                     <motion.div
                         className="flex flex-col gap-1"
                         variants={reduced ? undefined : fadeUp}
                         initial={reduced ? false : "hidden"}
-                        animate={reduced ? undefined : "visible"}
+                        whileInView={reduced ? undefined : "visible"}
+                        viewport={{ once: false, margin: "-100px" }}
                         custom={HERO_MOTION.delay.eyebrow}
                     >
                         <p className="font-mono text-2xs uppercase tracking-[0.15em] text-text-tertiary">
@@ -109,19 +139,20 @@ export function HeroSection({
 
                     {/* Name — the LCP <h1> */}
                     <motion.h1
-                        className="font-sans text-5xl font-extrabold leading-[1.05] tracking-tight text-text-primary sm:text-6xl lg:text-7xl xl:text-[4.5rem]"
+                        className="font-sans text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl xl:text-[4.5rem]"
                         variants={reduced ? undefined : fadeUp}
                         initial={reduced ? false : "hidden"}
-                        animate={reduced ? undefined : "visible"}
+                        whileInView={reduced ? undefined : "visible"}
+                        viewport={{ once: false, margin: "-100px" }}
                         custom={HERO_MOTION.delay.name}
                     >
-                        <span className="bg-accent-gradient text-gradient">
-                            {firstName}
-                        </span>
+                        <span className="text-accent-solid">{firstName}</span>
                         {lastName && (
                             <>
                                 {" "}
-                                <span>{lastName}</span>
+                                <span className="text-text-primary">
+                                    {lastName}
+                                </span>
                             </>
                         )}
                     </motion.h1>
@@ -131,10 +162,11 @@ export function HeroSection({
                         className="w-full"
                         variants={reduced ? undefined : fadeUp}
                         initial={reduced ? false : "hidden"}
-                        animate={reduced ? undefined : "visible"}
+                        whileInView={reduced ? undefined : "visible"}
+                        viewport={{ once: false, margin: "-100px" }}
                         custom={HERO_MOTION.delay.terminal}
                     >
-                        <HeroTerminal />
+                        <HeroTerminal userAtHost={prompt} />
                     </motion.div>
 
                     {/* Buttons */}
@@ -142,7 +174,8 @@ export function HeroSection({
                         className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap"
                         variants={reduced ? undefined : containerStagger}
                         initial={reduced ? false : "hidden"}
-                        animate={reduced ? undefined : "visible"}
+                        whileInView={reduced ? undefined : "visible"}
+                        viewport={{ once: false, margin: "-100px" }}
                         custom={HERO_MOTION.delay.buttons}
                     >
                         <HeroButton
@@ -180,14 +213,34 @@ export function HeroSection({
                     </motion.div>
                 </div>
 
-                {/* Portrait column (5/12) */}
-                <div className="flex justify-center lg:col-span-5 lg:justify-end">
-                    <HeroPortrait
-                        scrollProgress={scrollYProgress}
-                        image={heroPortrait}
-                    />
+                {/* hero-right — the visual column (55% on desktop). Holds the
+                    DevOps Infinity Loop (the global fixed CloudInfinityBackground
+                    canvas, z-0, renders behind everything) and the portrait.
+                    `position: relative` + `overflow: hidden` + flex-centered so
+                    the portrait (position: absolute, anchored to THIS column)
+                    sits on the right side, vertically centered, and never
+                    escapes the column (task §Hero Right, §Portrait Position).
+                    The portrait is a child of this column — NOT a direct child
+                    of the Hero <section> — so it is anchored to the column, not
+                    the viewport. On mobile the grid collapses to a single column
+                    and the portrait re-enters normal flow below the hero text
+                    (task §Mobile). */}
+                <div className="hero-right relative flex w-full items-center justify-center overflow-hidden lg:min-h-[600px]">
+                    {/* Portrait — a normal React component (never inside the
+                        Canvas). Lives ONLY inside the right column (task
+                        §Structure). Anchored to this column (position: absolute;
+                        right: 8%; top: 50%; transform: translateY(-50%);
+                        z-index: 20) so it sits on the right side, vertically
+                        centered, with the DevOps Infinity Loop BEHIND it (the
+                        global CloudInfinityBackground canvas is z-index: 0; the
+                        portrait is z-index: 20). It never exceeds ~35% of the
+                        Hero width and never leaves the column (overflow-hidden
+                        clips it). On mobile it drops the absolute anchor and
+                        re-enters normal flow below the hero text, centered. See
+                        [`HeroPortrait`](../../features/hero/components/HeroPortrait.tsx). */}
+                    <HeroPortrait />
                 </div>
-            </div>
+            </motion.div>
 
             {/* Scroll indicator — bottom center */}
             <HeroScrollIndicator
@@ -228,11 +281,11 @@ function HeroButton({
     const className = cn(
         "group inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-sans text-sm font-medium transition-all duration-slow ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid focus-visible:ring-offset-2 focus-visible:ring-offset-canvas-base",
         variant === "primary" &&
-        "bg-accent-gradient text-white shadow-glow-sm hover:shadow-glow-md hover:brightness-110",
+            "bg-accent-solid text-white shadow-glow-sm hover:bg-accent-hover hover:shadow-warm-glow-md hover:-translate-y-0.5",
         variant === "glass" &&
-        "glass-surface text-text-primary hover:shadow-glass-hover",
+            "glass-surface text-text-secondary hover:text-cyan hover:border-cyan/30 hover:shadow-glass-hover",
         variant === "ghost" &&
-        "text-text-secondary hover:bg-accent-subtle hover:text-accent-solid",
+            "text-text-tertiary hover:text-accent-hover hover:bg-warm-subtle hover:shadow-warm-glow-sm",
     );
 
     const content = (

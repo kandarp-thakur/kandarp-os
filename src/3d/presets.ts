@@ -35,29 +35,29 @@ export const CAMERA_PRESETS: Record<CameraPresetName, CameraPreset> = {
 /* ------------------------------------------------------------------ */
 
 const LIGHT = {
-    ambient: { type: "ambient", color: "#FFFFFF", intensity: 0.4 },
+    ambient: { type: "ambient", color: "#0F172A", intensity: 0.5 },
     key: {
         type: "directional",
-        color: "#FFFFFF",
-        intensity: 1.2,
+        color: "#38BDF8",
+        intensity: 1.0,
         position: [5, 8, 5],
         castShadow: true,
     },
     fill: {
         type: "directional",
-        color: "#EEF0FF",
-        intensity: 0.5,
+        color: "#2496ED",
+        intensity: 0.4,
         position: [-5, 3, 2],
     },
     rim: {
         type: "directional",
-        color: "#8B5CF6",
-        intensity: 0.8,
+        color: "#FF9900",
+        intensity: 0.6,
         position: [0, 5, -8],
     },
     accent: {
         type: "point",
-        color: "#6366F1",
+        color: "#2496ED",
         intensity: 2.0,
         position: [0, 2, 4],
     },
@@ -107,28 +107,28 @@ export const ENVIRONMENT_PRESETS: Record<
     EnvironmentPresetName,
     EnvironmentPreset
 > = {
-    // Default product lighting — neutral, seamless with the page.
+    // Default product lighting — dark engineering canvas.
     studio: {
         name: "studio",
         background: "transparent",
-        fogColor: "#FBFBFD",
-        fogDensity: 0.02,
+        fogColor: "#050816",
+        fogDensity: 0.025,
         enableFog: true,
     },
-    // Warm hero scenes.
+    // Warm hero scenes — dark canvas.
     sunset: {
         name: "sunset",
         background: "transparent",
-        fogColor: "#1A1A2E",
-        fogDensity: 0.02,
+        fogColor: "#050816",
+        fogDensity: 0.025,
         enableFog: true,
     },
     // Procedural brand gradient — zero asset weight, abstract scenes.
     "gradient-env": {
         name: "gradient-env",
         background: "transparent",
-        fogColor: "#FBFBFD",
-        fogDensity: 0.015,
+        fogColor: "#050816",
+        fogDensity: 0.02,
         enableFog: false,
     },
 };

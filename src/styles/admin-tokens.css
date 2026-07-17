@@ -13,58 +13,58 @@
  */
 
 [data-admin="true"] {
-    /* ── Canvas (Dark Theme — matches public site) ────────────────────── */
-    --canvas-base: #0a0a0f;
-    --canvas-elevated: #111118;
-    --canvas-sunken: #1a1a24;
-    --canvas-tint: #2a2a38;
+    /* ── Canvas (Dark Engineering Theme) ─────────────────────────────── */
+    --canvas-base: #0b1120;
+    --canvas-elevated: #131c2e;
+    --canvas-sunken: #080d18;
+    --canvas-tint: #0f1726;
 
     /* ── Text ─────────────────────────────────────────────────────────── */
-    --text-primary: #f5f5f5;
-    --text-secondary: #dadada;
-    --text-tertiary: #bababa;
-    --text-quaternary: #9a9aac;
-    --text-inverse: #0a0a0f;
+    --text-primary: #e6edf6;
+    --text-secondary: #b6c2d4;
+    --text-tertiary: #8b98ac;
+    --text-quaternary: #5d6b80;
+    --text-inverse: #0b1120;
 
-    /* ── Accent (Indigo → Violet → Pink gradient — on-brand with public) ─ */
-    --accent-from: #6366f1;
-    --accent-via: #8b5cf6;
-    --accent-to: #ec4899;
-    --accent-solid: #7dd3fc;
-    --accent-hover: #d9f0ff;
-    --accent-subtle: rgba(125, 211, 252, 0.12);
-    --accent-gradient: linear-gradient(
-        135deg,
-        #6366f1 0%,
-        #8b5cf6 50%,
-        #ec4899 100%
-    );
+    /* ── Accent (AWS Orange → Docker Blue — cloud engineering brand) ──── */
+    --aws-orange: #f59e0b;
+    --docker-blue: #60a5fa;
+    --kubernetes-blue: #7dd3fc;
+    --cloud-cyan: #a5f3fc;
+    --linux-green: #7cb342;
+    --accent-from: var(--aws-orange);
+    --accent-via: var(--docker-blue);
+    --accent-to: var(--docker-blue);
+    --accent-solid: var(--docker-blue);
+    --accent-hover: #fbbf24;
+    --accent-subtle: rgba(96, 165, 250, 0.16);
+    --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #60a5fa 100%);
 
-    /* ── Glass Surfaces (dark — frosted obsidian) ─────────────────────── */
-    --glass-bg: rgba(26, 26, 36, 0.65);
-    --glass-bg-strong: rgba(17, 17, 24, 0.55);
-    --glass-bg-subtle: rgba(26, 26, 36, 0.45);
+    /* ── Glass Surfaces (dark — frosted slate) ───────────────────────── */
+    --glass-bg: rgba(19, 28, 46, 0.72);
+    --glass-bg-strong: rgba(19, 28, 46, 0.88);
+    --glass-bg-subtle: rgba(19, 28, 46, 0.54);
     --glass-blur: 16px;
     --glass-blur-strong: 24px;
     --glass-blur-subtle: 8px;
-    --glass-saturation: 180%;
+    --glass-saturation: 160%;
 
     /* ── Semantic Colors ──────────────────────────────────────────────── */
-    --success: #10b981;
+    --success: #22c55e;
     --warning: #f59e0b;
     --error: #ef4444;
-    --info: #3b82f6;
+    --info: #38bdf8;
 
-    /* ── Borders (dark) ───────────────────────────────────────────────── */
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-default: rgba(255, 255, 255, 0.1);
-    --border-strong: rgba(255, 255, 255, 0.16);
-    --border-glass: rgba(255, 255, 255, 0.12);
-    --border-focus: #7dd3fc;
-    --border-accent: rgba(125, 211, 252, 0.4);
+    /* ── Borders (dark slate) ─────────────────────────────────────────── */
+    --border-subtle: rgba(148, 163, 184, 0.16);
+    --border-default: rgba(148, 163, 184, 0.28);
+    --border-strong: rgba(96, 165, 250, 0.4);
+    --border-glass: rgba(255, 255, 255, 0.06);
+    --border-focus: var(--docker-blue);
+    --border-accent: rgba(96, 165, 250, 0.4);
 
     /* ── Overlay & Scrim ──────────────────────────────────────────────── */
-    --scrim: rgba(15, 15, 20, 0.4);
+    --scrim: rgba(0, 0, 0, 0.6);
     --overlay-hover: rgba(255, 255, 255, 0.04);
     --overlay-active: rgba(255, 255, 255, 0.08);
 
@@ -76,21 +76,21 @@
     --admin-radius: 12px;
 }
 
-/* Admin body surface — a deep, premium engineering backdrop.
-   A near-invisible vertical gradient + soft indigo/violet ambient glows
-   that read as a modern dark SaaS dashboard, never as floating blobs. */
+/* Admin body surface — a dark, premium engineering backdrop.
+   Deep slate base + restrained cool accent glows that read as a modern SaaS
+   dashboard, never as floating blobs. */
 [data-admin="true"] body,
 .admin-surface {
     background-color: var(--canvas-base);
     background-image:
         radial-gradient(
             900px 500px at 100% -10%,
-            rgba(99, 102, 241, 0.1),
+            rgba(96, 165, 250, 0.1),
             transparent 60%
         ),
         radial-gradient(
             700px 400px at -10% 0%,
-            rgba(139, 92, 246, 0.08),
+            rgba(245, 158, 11, 0.08),
             transparent 55%
         );
     color: var(--text-primary);
@@ -106,8 +106,8 @@
     border: 1px solid var(--border-default);
     box-shadow:
         inset 0 1px 0 0 var(--border-glass),
-        0 1px 2px rgba(0, 0, 0, 0.3),
-        0 4px 12px rgba(0, 0, 0, 0.35);
+        0 1px 2px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 .admin-glass-strong {
@@ -119,7 +119,7 @@
     border: 1px solid var(--border-default);
     box-shadow:
         inset 0 1px 0 0 var(--border-glass),
-        0 4px 16px rgba(0, 0, 0, 0.4);
+        0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* Premium thin scrollbar for admin panels — appears on hover, Raycast-like. */

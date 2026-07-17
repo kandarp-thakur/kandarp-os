@@ -91,6 +91,155 @@ export default function AdminSettingsPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+                {/* ── Hero Avatar ─────────────────────────────────────────── */}
+                <div className={cardClass}>
+                    <div className="mb-4">
+                        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                            Hero Avatar
+                        </h2>
+                        <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                            Ready Player Me GLB/VRM model controls for the hero
+                            mascot.
+                        </p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="sm:col-span-2">
+                            <label className={labelClass}>Avatar URL</label>
+                            <input
+                                value={form.heroAvatar?.avatarUrl ?? ""}
+                                onChange={(e) =>
+                                    patch({
+                                        heroAvatar: {
+                                            ...form.heroAvatar,
+                                            avatarUrl: e.target.value,
+                                        },
+                                    })
+                                }
+                                className={inputClass}
+                                placeholder="/models/kandarp-ready-player-me.glb"
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClass}>Avatar Scale</label>
+                            <input
+                                type="number"
+                                step="0.05"
+                                value={form.heroAvatar?.avatarScale ?? 1}
+                                onChange={(e) =>
+                                    patch({
+                                        heroAvatar: {
+                                            ...form.heroAvatar,
+                                            avatarScale: Number(e.target.value),
+                                        },
+                                    })
+                                }
+                                className={inputClass}
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClass}>
+                                Animation Speed
+                            </label>
+                            <input
+                                type="number"
+                                step="0.05"
+                                value={form.heroAvatar?.animationSpeed ?? 1}
+                                onChange={(e) =>
+                                    patch({
+                                        heroAvatar: {
+                                            ...form.heroAvatar,
+                                            animationSpeed: Number(
+                                                e.target.value,
+                                            ),
+                                        },
+                                    })
+                                }
+                                className={inputClass}
+                            />
+                        </div>
+                        <VectorField
+                            label="Avatar Position"
+                            value={
+                                form.heroAvatar?.avatarPosition ?? [0, -1.35, 0]
+                            }
+                            onChange={(avatarPosition) =>
+                                patch({
+                                    heroAvatar: {
+                                        ...form.heroAvatar,
+                                        avatarPosition,
+                                    },
+                                })
+                            }
+                            inputClass={inputClass}
+                            labelClass={labelClass}
+                        />
+                        <VectorField
+                            label="Avatar Rotation"
+                            value={form.heroAvatar?.avatarRotation ?? [0, 0, 0]}
+                            onChange={(avatarRotation) =>
+                                patch({
+                                    heroAvatar: {
+                                        ...form.heroAvatar,
+                                        avatarRotation,
+                                    },
+                                })
+                            }
+                            inputClass={inputClass}
+                            labelClass={labelClass}
+                        />
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <ToggleField
+                            label="Idle Animation"
+                            checked={form.heroAvatar?.idleAnimation ?? true}
+                            onChange={(idleAnimation) =>
+                                patch({
+                                    heroAvatar: {
+                                        ...form.heroAvatar,
+                                        idleAnimation,
+                                    },
+                                })
+                            }
+                        />
+                        <ToggleField
+                            label="Mouse Follow"
+                            checked={form.heroAvatar?.mouseFollow ?? true}
+                            onChange={(mouseFollow) =>
+                                patch({
+                                    heroAvatar: {
+                                        ...form.heroAvatar,
+                                        mouseFollow,
+                                    },
+                                })
+                            }
+                        />
+                        <ToggleField
+                            label="Enable Shadows"
+                            checked={form.heroAvatar?.enableShadows ?? true}
+                            onChange={(enableShadows) =>
+                                patch({
+                                    heroAvatar: {
+                                        ...form.heroAvatar,
+                                        enableShadows,
+                                    },
+                                })
+                            }
+                        />
+                        <ToggleField
+                            label="Enable Bloom"
+                            checked={form.heroAvatar?.enableBloom ?? true}
+                            onChange={(enableBloom) =>
+                                patch({
+                                    heroAvatar: {
+                                        ...form.heroAvatar,
+                                        enableBloom,
+                                    },
+                                })
+                            }
+                        />
+                    </div>
+                </div>
+
                 {/* ── Site Info ───────────────────────────────────────────── */}
                 <div className={cardClass}>
                     <h2 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">
@@ -252,7 +401,7 @@ export default function AdminSettingsPage() {
                                     })
                                 }
                                 className={inputClass}
-                                placeholder="#6366f1"
+                                placeholder="#2496ED"
                             />
                         </div>
                         <div>
@@ -268,7 +417,7 @@ export default function AdminSettingsPage() {
                                     })
                                 }
                                 className={inputClass}
-                                placeholder="#22d3ee"
+                                placeholder="#38BDF8"
                             />
                         </div>
                         <div className="sm:col-span-2">
@@ -747,7 +896,7 @@ export default function AdminSettingsPage() {
                                 }
                                 rows={5}
                                 className={`${inputClass} font-mono`}
-                                placeholder=":root { --accent: #6366f1; }"
+                                placeholder=":root { --accent: #2496ED; }"
                             />
                         </div>
                         <div>
@@ -915,5 +1064,68 @@ export default function AdminSettingsPage() {
                 </div>
             </form>
         </>
+    );
+}
+
+function VectorField({
+    label,
+    value,
+    onChange,
+    inputClass,
+    labelClass,
+}: {
+    label: string;
+    value: [number, number, number];
+    onChange: (value: [number, number, number]) => void;
+    inputClass: string;
+    labelClass: string;
+}) {
+    const update = (index: 0 | 1 | 2, next: number) => {
+        const vector: [number, number, number] = [...value];
+        vector[index] = next;
+        onChange(vector);
+    };
+
+    return (
+        <div>
+            <label className={labelClass}>{label}</label>
+            <div className="grid grid-cols-3 gap-2">
+                {(["X", "Y", "Z"] as const).map((axis, index) => (
+                    <input
+                        key={axis}
+                        type="number"
+                        step="0.05"
+                        value={value[index]}
+                        onChange={(e) =>
+                            update(index as 0 | 1 | 2, Number(e.target.value))
+                        }
+                        className={inputClass}
+                        aria-label={`${label} ${axis}`}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ToggleField({
+    label,
+    checked,
+    onChange,
+}: {
+    label: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}) {
+    return (
+        <label className="flex items-center gap-2 rounded-lg border border-[var(--border-default)] bg-[var(--canvas-elevated)] px-3.5 py-2.5 text-sm text-[var(--text-secondary)]">
+            <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => onChange(e.target.checked)}
+                className="h-4 w-4 rounded border-[var(--border-default)] accent-[var(--accent-solid)]"
+            />
+            {label}
+        </label>
     );
 }

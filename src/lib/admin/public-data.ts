@@ -50,11 +50,7 @@ import type {
 } from "@/lib/admin/types";
 import { readCollection } from "@/lib/admin/store";
 import { findById } from "@/lib/admin/repo";
-import {
-    computeReadingTime,
-    extractHeadings,
-    stripMarkdown,
-} from "@/lib/blog";
+import { computeReadingTime, extractHeadings, stripMarkdown } from "@/lib/blog";
 import { SITE } from "@/utils/constants";
 
 /* ── Public view-models for media ──────────────────────────────────────── */
@@ -436,9 +432,15 @@ function blogPostToPublic(p: AdminBlogPost): BlogPost {
     const priority = p.featured ? "notice" : "info";
 
     // Derive a numeric PID from the id (hash → positive int).
-    const pid = Math.abs(
-        p.id.split("").reduce((hash, char) => (hash << 5) - hash + char.charCodeAt(0), 0),
-    ) % 100000;
+    const pid =
+        Math.abs(
+            p.id
+                .split("")
+                .reduce(
+                    (hash, char) => (hash << 5) - hash + char.charCodeAt(0),
+                    0,
+                ),
+        ) % 100000;
 
     return {
         slug: p.slug,
@@ -841,6 +843,17 @@ export interface PublicSiteIdentity {
     maintenanceMode: boolean;
     maintenanceMessage: string;
     animationsEnabled: boolean;
+    heroAvatar: {
+        avatarUrl: string;
+        avatarScale: number;
+        avatarPosition: [number, number, number];
+        avatarRotation: [number, number, number];
+        animationSpeed: number;
+        idleAnimation: boolean;
+        mouseFollow: boolean;
+        enableShadows: boolean;
+        enableBloom: boolean;
+    };
     /** Resolved social links (settings.socials or profile.socialLinks). */
     socials: SocialLink[];
     /** Resolved navigation items (settings.navigation). */
@@ -861,7 +874,13 @@ export interface PublicSiteIdentity {
         github: string | null;
         linkedin: string | null;
         resume: string;
-        socialLinks: { id: string; platform: string; url: string; icon?: string; label?: string }[];
+        socialLinks: {
+            id: string;
+            platform: string;
+            url: string;
+            icon?: string;
+            label?: string;
+        }[];
     } | null;
 }
 
@@ -903,7 +922,7 @@ export async function getPublicSiteIdentity(): Promise<PublicSiteIdentity> {
         favicon: settings?.favicon ?? null,
         theme: settings?.theme ?? "dark",
         brand: {
-            primaryColor: settings?.brand?.primaryColor ?? "#6366f1",
+            primaryColor: settings?.brand?.primaryColor ?? "#2496ED",
             accentColor: settings?.brand?.accentColor ?? "#22d3ee",
             tagline: settings?.brand?.tagline ?? "",
             description: settings?.brand?.description ?? SITE.description,
@@ -928,6 +947,19 @@ export async function getPublicSiteIdentity(): Promise<PublicSiteIdentity> {
         maintenanceMode: settings?.maintenanceMode ?? false,
         maintenanceMessage: settings?.maintenanceMessage ?? "",
         animationsEnabled: settings?.animationsEnabled ?? true,
+        heroAvatar: {
+            avatarUrl: settings?.heroAvatar?.avatarUrl ?? "",
+            avatarScale: settings?.heroAvatar?.avatarScale ?? 1,
+            avatarPosition: settings?.heroAvatar?.avatarPosition ?? [
+                0, -1.35, 0,
+            ],
+            avatarRotation: settings?.heroAvatar?.avatarRotation ?? [0, 0, 0],
+            animationSpeed: settings?.heroAvatar?.animationSpeed ?? 1,
+            idleAnimation: settings?.heroAvatar?.idleAnimation ?? true,
+            mouseFollow: settings?.heroAvatar?.mouseFollow ?? true,
+            enableShadows: settings?.heroAvatar?.enableShadows ?? true,
+            enableBloom: settings?.heroAvatar?.enableBloom ?? true,
+        },
         socials,
         navigation: settings?.navigation ?? [],
         footer: settings?.footer ?? {
@@ -937,16 +969,16 @@ export async function getPublicSiteIdentity(): Promise<PublicSiteIdentity> {
         },
         profile: profile
             ? {
-                name: profile.name,
-                designation: profile.designation,
-                bio: profile.bio,
-                email: profile.email,
-                phone: profile.phone,
-                github: profile.github ?? null,
-                linkedin: profile.linkedin ?? null,
-                resume: profile.resume,
-                socialLinks: profile.socialLinks,
-            }
+                  name: profile.name,
+                  designation: profile.designation,
+                  bio: profile.bio,
+                  email: profile.email,
+                  phone: profile.phone,
+                  github: profile.github ?? null,
+                  linkedin: profile.linkedin ?? null,
+                  resume: profile.resume,
+                  socialLinks: profile.socialLinks,
+              }
             : null,
     };
 }
@@ -972,7 +1004,10 @@ export async function getPublicDeploymentStats(): Promise<
         { label: "Deployments", value: String(deployments.length) },
         { label: "Uptime", value: deployments[0]?.uptime ?? "—" },
         { label: "Current", value: `${active} active` },
-        { label: "Focus", value: deployments[0]?.stack?.[0] ?? "Cloud + Security" },
+        {
+            label: "Focus",
+            value: deployments[0]?.stack?.[0] ?? "Cloud + Security",
+        },
     ];
 }
 
@@ -1128,8 +1163,10 @@ export async function getPublicMetadata(): Promise<{
     const identity = await getPublicSiteIdentity();
     const settings = await getPublicSettings();
 
-    const seoTitle = settings?.globalSeo?.title ?? `${identity.name} — ${identity.owner}`;
-    const seoDescription = settings?.globalSeo?.description ?? identity.description;
+    const seoTitle =
+        settings?.globalSeo?.title ?? `${identity.name} — ${identity.owner}`;
+    const seoDescription =
+        settings?.globalSeo?.description ?? identity.description;
 
     return {
         title: {

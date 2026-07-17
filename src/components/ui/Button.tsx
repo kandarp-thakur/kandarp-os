@@ -32,19 +32,19 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-    // Primary — accent gradient + inner top highlight + accent glow.
+    // Primary — Docker Blue solid with AWS Orange hover.
     primary: cn(
-        "bg-accent-gradient text-text-inverse",
+        "bg-accent-solid text-text-inverse",
         "shadow-glow-sm",
         "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-white/20",
-        "hover:brightness-108 hover:shadow-glow-md",
-        "active:brightness-95",
+        "hover:bg-accent-hover hover:shadow-warm-glow-md hover:-translate-y-0.5",
+        "active:brightness-95 active:translate-y-0",
     ),
-    // Secondary — glass surface (frosted) with default border.
+    // Secondary — dark glass with Cloud Cyan hover accent.
     secondary: cn(
-        "glass-surface text-text-primary",
-        "hover:shadow-glass-hover",
-        "active:bg-overlay-active",
+        "glass-surface text-text-secondary",
+        "hover:text-cyan hover:border-cyan/30 hover:shadow-glass-hover hover:-translate-y-0.5",
+        "active:bg-overlay-active active:translate-y-0",
     ),
     // Ghost — transparent, subtle hover wash.
     ghost: cn(
@@ -52,11 +52,11 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
         "hover:bg-overlay-hover",
         "active:bg-overlay-active",
     ),
-    // Outline — transparent with accent-tinted border.
+    // Outline — transparent with Docker Blue border.
     outline: cn(
         "bg-transparent text-accent-solid border border-border-accent",
-        "hover:bg-accent-subtle",
-        "active:bg-overlay-active",
+        "hover:border-warm-orange/40 hover:bg-warm-subtle hover:text-accent-hover hover:shadow-warm-glow-sm hover:-translate-y-0.5",
+        "active:bg-overlay-active active:translate-y-0",
     ),
     // Danger — flat destructive red.
     danger: cn(

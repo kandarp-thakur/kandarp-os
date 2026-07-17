@@ -85,8 +85,9 @@ export async function ThemeTokens() {
         .map(([key, value]) => `  ${key}: ${value};`)
         .join("\n");
 
-    const css = `:root[data-theme="${config.theme}"] {\n${declarations}\n}${customCss ? `\n${customCss}` : ""
-        }`;
+    const css = `:root[data-theme="${config.theme}"] {\n${declarations}\n}${
+        customCss ? `\n${customCss}` : ""
+    }`;
 
     return (
         <style

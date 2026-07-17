@@ -116,7 +116,10 @@ export default function AdminNotificationsPage() {
             ) : (
                 <div className="grid gap-4 lg:grid-cols-2">
                     {/* ── Recipients ─────────────────────────────────────── */}
-                    <form onSubmit={handleSubmit} className="admin-glass rounded-xl p-6">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="admin-glass rounded-xl p-6"
+                    >
                         <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
                             <Mail className="h-4 w-4 text-[var(--accent-solid)]" />
                             Email Recipients
@@ -212,14 +215,15 @@ export default function AdminNotificationsPage() {
                                         className="flex items-start gap-3"
                                     >
                                         <div
-                                            className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${log.level === "error"
+                                            className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                                                log.level === "error"
                                                     ? "bg-[var(--error)]"
                                                     : log.level === "warning"
-                                                        ? "bg-[var(--warning)]"
-                                                        : log.level === "success"
-                                                            ? "bg-[var(--success)]"
-                                                            : "bg-[var(--text-quaternary)]"
-                                                }`}
+                                                      ? "bg-[var(--warning)]"
+                                                      : log.level === "success"
+                                                        ? "bg-[var(--success)]"
+                                                        : "bg-[var(--text-quaternary)]"
+                                            }`}
                                         />
                                         <div className="flex-1 overflow-hidden">
                                             <p className="truncate text-sm text-[var(--text-primary)]">

@@ -6,8 +6,7 @@ import type * as THREE from "three";
 
 import { useMouse } from "../hooks/useMouse";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import type { DeviceTier } from "../types";
-import type { BreathRef } from "./CloudInfinity";
+import type { BreathRef, DeviceTier } from "../types";
 
 /**
  * CloudInfinityAnimation — the living motion of the signature object.
@@ -43,7 +42,7 @@ import type { BreathRef } from "./CloudInfinity";
 
 export interface CloudInfinityAnimationProps {
     /** The group whose transform this animation drives. */
-    targetRef: React.RefObject<THREE.Group>;
+    targetRef: React.RefObject<THREE.Group | null>;
     /**
      * Shared breath ref. The animation writes the current breathing scale here
      * so the parent ([`CloudInfinity`](./CloudInfinity.tsx)) can compose it with

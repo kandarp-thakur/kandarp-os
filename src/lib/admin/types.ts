@@ -246,7 +246,7 @@ export const skillSchema = z.object({
         .enum(["frontend", "backend", "devops", "data", "design"])
         .default("devops"),
     category: z.string().default("General"),
-    color: z.string().default("#6366f1"),
+    color: z.string().default("#2496ED"),
     description: z.string().default(""),
     status: z.enum(["active", "idle", "learning"]).default("active"),
     tagline: z.string().default(""),
@@ -650,6 +650,24 @@ export const settingsSchema = z.object({
     favicon: z.string().optional(),
     /** Hero portrait photo — uploaded via the admin media uploader. */
     heroPortrait: z.string().optional(),
+    /** Hero Ready Player Me avatar configuration. */
+    heroAvatar: z
+        .object({
+            avatarUrl: z.string().default(""),
+            avatarScale: z.number().default(1),
+            avatarPosition: z
+                .tuple([z.number(), z.number(), z.number()])
+                .default([0, -1.35, 0]),
+            avatarRotation: z
+                .tuple([z.number(), z.number(), z.number()])
+                .default([0, 0, 0]),
+            animationSpeed: z.number().default(1),
+            idleAnimation: z.boolean().default(true),
+            mouseFollow: z.boolean().default(true),
+            enableShadows: z.boolean().default(true),
+            enableBloom: z.boolean().default(true),
+        })
+        .default({}),
     email: z.string().email(),
     phone: z.string().default(""),
     /** Contact information block. */
@@ -665,7 +683,7 @@ export const settingsSchema = z.object({
     /** Brand. */
     brand: z
         .object({
-            primaryColor: z.string().default("#6366f1"),
+            primaryColor: z.string().default("#2496ED"),
             accentColor: z.string().default("#22d3ee"),
             tagline: z.string().default(""),
             description: z.string().default(""),
@@ -886,7 +904,7 @@ export const categorySchema = z.object({
     name: z.string(),
     slug: slug,
     description: z.string().default(""),
-    color: z.string().default("#6366f1"),
+    color: z.string().default("#2496ED"),
     entityTypes: z.array(z.string()).default([]),
 });
 export type Category = z.infer<typeof categorySchema>;

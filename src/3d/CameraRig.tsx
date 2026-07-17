@@ -45,7 +45,7 @@ function CameraRigInner({
     passive = false,
     children,
 }: CameraRigProps) {
-    const { camera, gl } = useThree();
+    const { camera } = useThree();
     const { stateRef } = useCamera();
     const isDesktop = useIsDesktop();
     const reducedMotion = useReducedMotion();
@@ -118,7 +118,6 @@ function CameraRigInner({
                     maxDistance={20}
                     // Pitch clamp keeps the camera from flipping under the scene.
                     maxPolarAngle={Math.PI * 0.85}
-                    args={[camera, gl.domElement]}
                 />
             ) : null}
             {children}

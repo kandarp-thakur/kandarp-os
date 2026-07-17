@@ -53,9 +53,9 @@ export interface CloudInfinityMaterialProps {
 }
 
 const LIGHT_TINT = "#ffffff";
-const DARK_TINT = "#cdd6f4";
-const LIGHT_RIM = "#8b5cf6";
-const DARK_RIM = "#7dd3fc";
+const DARK_TINT = "#0B1220";
+const LIGHT_RIM = "#22D3EE";
+const DARK_RIM = "#2496ED";
 
 /**
  * Resolves the active theme from the document root. SSR-safe — defaults to
@@ -133,21 +133,21 @@ export function useCloudInfinityMaterial(
             iridescence: 1.0,
             iridescenceIOR: 1.3,
             iridescenceThicknessRange: [100, 400],
-            // Attenuation tints the glass interior toward the rim color,
-            // giving the "thin glowing edge" a coherent hue.
-            attenuationColor: new THREE.Color(rim),
-            attenuationDistance: 2.5,
-            envMapIntensity: 1.1,
+            // Attenuation tints the glass interior toward Cloud Cyan,
+            // giving the "inner energy" a coherent hue against the Docker Blue edge.
+            attenuationColor: new THREE.Color("#38BDF8"),
+            attenuationDistance: 1.8,
+            envMapIntensity: 1.25,
             transparent: true,
             opacity: 1.0,
             side: THREE.DoubleSide,
         });
 
-        // A gentle emissive rim so the silhouette reads even where the
-        // environment is dark. Bumped from 0.06 so the object is visible
-        // against a transparent (dark) canvas — still elegant, not neon.
+        // Docker Blue edge glow — the signature rim highlight. Bumped for the
+        // dark canvas so the frosted glass silhouette reads clearly against
+        // the deep navy background while remaining elegant, not neon.
         mat.emissive = new THREE.Color(rim);
-        mat.emissiveIntensity = rimIntensity * 0.22;
+        mat.emissiveIntensity = rimIntensity * 0.35;
 
         return mat;
     }, [
@@ -213,14 +213,14 @@ export function createCloudInfinityMaterial(
         iridescence: 1.0,
         iridescenceIOR: 1.3,
         iridescenceThicknessRange: [100, 400],
-        attenuationColor: new THREE.Color(rim),
-        attenuationDistance: 2.5,
-        envMapIntensity: 1.1,
+        attenuationColor: new THREE.Color("#38BDF8"),
+        attenuationDistance: 1.8,
+        envMapIntensity: 1.25,
         transparent: true,
         opacity: 1.0,
         side: THREE.DoubleSide,
     });
     mat.emissive = new THREE.Color(rim);
-    mat.emissiveIntensity = rimIntensity * 0.22;
+    mat.emissiveIntensity = rimIntensity * 0.35;
     return mat;
 }

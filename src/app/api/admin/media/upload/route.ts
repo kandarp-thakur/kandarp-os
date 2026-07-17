@@ -41,6 +41,31 @@ const ALLOWED_IMAGE_MIME = new Set([
     "image/gif",
 ]);
 
+/**
+ * Map a validated MIME type to a safe, lowercase file extension. The
+ * extension is derived from the MIME type — never from the user-supplied
+ * filename — so a malicious name like `../../evil.js` or `shell.exe` cannot
+ * control the on-disk filename or bypass the type check.
+ */
+const MIME_TO_EXT: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/avif": "avif",
+    "image/gif": "gif",
+    // Common non-image document types (allowed for documents).
+    "application/pdf": "pdf",
+    "text/plain": "txt",
+    "text/markdown": "md",
+    "application/json": "json",
+    "application/zip": "zip",
+    "application/x-zip-compressed": "zip",
+};
+
+/** A safe fallback extension for unknown MIME types. */
+const DEFAULT_EXT = "bin";
+
 export async function POST(req: Request) {
     const session = await requirePermission("media:write");
     if (session instanceof Response) return session;
@@ -64,9 +89,11 @@ export async function POST(req: Request) {
     // Ensure the media directory exists.
     if (!existsSync(MEDIA_DIR)) mkdirSync(MEDIA_DIR, { recursive: true });
 
-    // Generate a unique filename, preserving the extension.
-    const ext = file.name.includes(".") ? file.name.split(".").pop() : "";
-    const filename = ext ? `${randomUUID()}.${ext}` : randomUUID();
+    // Generate a unique filename. The extension is derived from the validated
+    // MIME type (never the user-supplied name) to prevent path traversal and
+    // executable upload bypasses (e.g. `../../evil.js`, `shell.exe`).
+    const ext = MIME_TO_EXT[file.type] ?? DEFAULT_EXT;
+    const filename = `${randomUUID()}.${ext}`;
     const absPath = join(MEDIA_DIR, filename);
     const relPath = `/media/${filename}`;
 

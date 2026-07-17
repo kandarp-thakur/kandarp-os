@@ -45,10 +45,14 @@ export default function AdminNavigationPage() {
 
     const move = (idx: number, dir: -1 | 1) => {
         setItems((prev) => {
-            const next = [...prev];
             const target = idx + dir;
-            if (target < 0 || target >= next.length) return prev;
-            [next[idx], next[target]] = [next[target]!, next[idx]!];
+            if (target < 0 || target >= prev.length) return prev;
+            const next = [...prev];
+            const a = next[idx];
+            const b = next[target];
+            if (a === undefined || b === undefined) return prev;
+            next[idx] = b;
+            next[target] = a;
             return next;
         });
     };

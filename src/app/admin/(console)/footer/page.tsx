@@ -49,10 +49,14 @@ export default function AdminFooterPage() {
 
     const moveColumn = (idx: number, dir: -1 | 1) =>
         setColumns((prev) => {
-            const next = [...prev];
             const target = idx + dir;
-            if (target < 0 || target >= next.length) return prev;
-            [next[idx], next[target]] = [next[target]!, next[idx]!];
+            if (target < 0 || target >= prev.length) return prev;
+            const next = [...prev];
+            const a = next[idx];
+            const b = next[target];
+            if (a === undefined || b === undefined) return prev;
+            next[idx] = b;
+            next[target] = a;
             return next;
         });
 
@@ -75,17 +79,17 @@ export default function AdminFooterPage() {
             prev.map((c) =>
                 c.id === colId
                     ? {
-                        ...c,
-                        links: [
-                            ...c.links,
-                            {
-                                id: uid("lnk"),
-                                label: "New Link",
-                                href: "/",
-                                external: false,
-                            },
-                        ],
-                    }
+                          ...c,
+                          links: [
+                              ...c.links,
+                              {
+                                  id: uid("lnk"),
+                                  label: "New Link",
+                                  href: "/",
+                                  external: false,
+                              },
+                          ],
+                      }
                     : c,
             ),
         );
@@ -99,11 +103,11 @@ export default function AdminFooterPage() {
             prev.map((c) =>
                 c.id === colId
                     ? {
-                        ...c,
-                        links: c.links.map((l) =>
-                            l.id === linkId ? { ...l, ...patch } : l,
-                        ),
-                    }
+                          ...c,
+                          links: c.links.map((l) =>
+                              l.id === linkId ? { ...l, ...patch } : l,
+                          ),
+                      }
                     : c,
             ),
         );
@@ -199,7 +203,9 @@ export default function AdminFooterPage() {
                                         <button
                                             type="button"
                                             onClick={() => moveColumn(idx, 1)}
-                                            disabled={idx === columns.length - 1}
+                                            disabled={
+                                                idx === columns.length - 1
+                                            }
                                             className="rounded p-0.5 text-[var(--text-tertiary)] hover:bg-[var(--overlay-hover)] disabled:opacity-30"
                                         >
                                             <ChevronDown className="h-3.5 w-3.5" />
@@ -233,9 +239,14 @@ export default function AdminFooterPage() {
                                             <input
                                                 value={link.label}
                                                 onChange={(e) =>
-                                                    updateLink(col.id, link.id, {
-                                                        label: e.target.value,
-                                                    })
+                                                    updateLink(
+                                                        col.id,
+                                                        link.id,
+                                                        {
+                                                            label: e.target
+                                                                .value,
+                                                        },
+                                                    )
                                                 }
                                                 placeholder="Label"
                                                 className={`${inputClass} flex-1`}
@@ -243,9 +254,14 @@ export default function AdminFooterPage() {
                                             <input
                                                 value={link.href}
                                                 onChange={(e) =>
-                                                    updateLink(col.id, link.id, {
-                                                        href: e.target.value,
-                                                    })
+                                                    updateLink(
+                                                        col.id,
+                                                        link.id,
+                                                        {
+                                                            href: e.target
+                                                                .value,
+                                                        },
+                                                    )
                                                 }
                                                 placeholder="/path"
                                                 className={`${inputClass} flex-1`}

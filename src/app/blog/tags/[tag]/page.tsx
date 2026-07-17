@@ -29,30 +29,30 @@ export async function generateStaticParams() {
 }
 
 /** Per-tag SEO metadata. */
+type TagPageProps = {
+    params: Promise<{ tag: string }>;
+};
+
 export async function generateMetadata({
     params,
-}: {
-    params: { tag: string };
-}): Promise<Metadata> {
-    const posts = await getPublicPostsByTag(params.tag);
+}: TagPageProps): Promise<Metadata> {
+    const { tag } = await params;
+    const posts = await getPublicPostsByTag(tag);
     if (posts.length === 0) return {};
 
     return {
-        title: `#${params.tag} — Journal`,
-        description: `Entries tagged #${params.tag} in ${SITE.owner}'s engineering journal.`,
+        title: `#${tag} — Journal`,
+        description: `Entries tagged #${tag} in ${SITE.owner}'s engineering journal.`,
         openGraph: {
-            title: `#${params.tag} — ${SITE.name}`,
-            description: `Entries tagged #${params.tag}.`,
+            title: `#${tag} — ${SITE.name}`,
+            description: `Entries tagged #${tag}.`,
         },
     };
 }
 
-export default async function TagPage({
-    params,
-}: {
-    params: { tag: string };
-}) {
-    const posts = await getPublicPostsByTag(params.tag);
+export default async function TagPage({ params }: TagPageProps) {
+    const { tag } = await params;
+    const posts = await getPublicPostsByTag(tag);
     if (posts.length === 0) notFound();
 
     return (
@@ -64,12 +64,12 @@ export default async function TagPage({
                 </p>
                 <h1 className="mt-2 text-h1 font-bold tracking-tight text-text-primary">
                     <span className="text-accent-solid">#</span>
-                    {params.tag}
+                    {tag}
                 </h1>
                 <p className="mt-3 font-mono text-sm text-text-secondary">
                     <span className="text-text-tertiary">$</span>{" "}
                     <span className="text-text-secondary">
-                        journalctl --grep {'"'}#{params.tag}
+                        journalctl --grep {'"'}#{tag}
                         {'"'}
                     </span>
                 </p>
@@ -122,7 +122,7 @@ export default async function TagPage({
 
             {/* Screen-reader-only semantic section (a11y + SEO). */}
             <section className="sr-only">
-                <h2>Entries tagged #{params.tag}</h2>
+                <h2>Entries tagged #{tag}</h2>
                 <ol>
                     {posts.map((post) => (
                         <li key={post.slug}>

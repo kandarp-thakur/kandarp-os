@@ -25,7 +25,10 @@ import {
 } from "@/components/shared/CommandPalette";
 import { navItems as defaultNavItems } from "@/data/navigation";
 import { socials as defaultSocials } from "@/data/socials";
-import type { NavItem as AdminNavItem, SocialLink as AdminSocialLink } from "@/lib/admin/types";
+import type {
+    NavItem as AdminNavItem,
+    SocialLink as AdminSocialLink,
+} from "@/lib/admin/types";
 import {
     flattenNavItems,
     getActiveSection,
@@ -49,9 +52,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
  * (icon as a LucideIcon component). Falls back to the GitBranch icon if the
  * name is unknown.
  */
-function resolveAdminNav(
-    items: AdminNavItem[],
-): typeof defaultNavItems {
+function resolveAdminNav(items: AdminNavItem[]): typeof defaultNavItems {
     return items
         .filter((item) => item.visible)
         .map((item) => {
@@ -261,9 +262,9 @@ export function Navbar({
                         reduced
                             ? undefined
                             : {
-                                paddingTop: scrolled ? 8 : 12,
-                                paddingBottom: scrolled ? 8 : 12,
-                            }
+                                  paddingTop: scrolled ? 8 : 12,
+                                  paddingBottom: scrolled ? 8 : 12,
+                              }
                     }
                     transition={{ duration: 0.25, ease: [0.45, 0, 0.15, 1] }}
                     className={cn(
@@ -274,7 +275,11 @@ export function Navbar({
                             : "glass-surface shadow-xs",
                     )}
                 >
-                    <Logo scrolled={scrolled} siteName={siteName} userAtHost={userAtHost} />
+                    <Logo
+                        scrolled={scrolled}
+                        siteName={siteName}
+                        userAtHost={userAtHost}
+                    />
 
                     <NavList activeSection={activeSection} items={navItems} />
 

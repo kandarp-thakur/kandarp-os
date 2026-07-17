@@ -9,10 +9,11 @@ import type { DeviceTier } from "../types";
  * EnvironmentLights — the scene-level environment for the CloudInfinity hero.
  *
  * Design contract (task §Lighting + §Environment):
+ *  - Three-point lighting: Cloud Blue key, neutral-white fill, soft AWS Orange rim.
  *  - Ambient Light (soft, even base so no face is ever black).
  *  - Directional Light (the key — camera-left, slightly above).
- *  - Rim Light (violet, from behind/above — the signature edge grazer that
- *    brings out the Fresnel highlights on the frosted glass).
+ *  - Warm rim light (soft AWS Orange, from behind/above — a studio-light edge
+ *    grazer that separates the frosted glass from the blue cloud field).
  *  - HDR Environment (image-based lighting for soft reflections + refraction).
  *  - Soft Contact Shadows (a faint grounded shadow plane — high tier only).
  *  - Soft volumetric fog (distant particles recede into the page).
@@ -27,7 +28,7 @@ import type { DeviceTier } from "../types";
  *
  * The HDR environment is built **procedurally** from `Lightformer` area lights —
  * no network fetch, no HDR file. This gives the frosted glass the premium,
- * controlled reflections (soft white overhead + cool-blue left + violet right +
+ * controlled reflections (soft white overhead + cool-blue left + Kubernetes Blue right +
  * cyan under-glow) that read as Apple / Vercel / Linear, not a generic HDRI.
  * The env map is baked once (`frames={1}`) because the lightformers are static;
  * the glass still shows shifting reflections as the object rotates through the
@@ -44,7 +45,7 @@ import type { DeviceTier } from "../types";
 export interface EnvironmentLightsProps {
     /** Device tier — gates HDRI / contact shadows / fog (arch §11). */
     tier?: DeviceTier;
-    /** Multiplier for the violet rim + accent light (0–2). Default 1. */
+    /** Multiplier for the Docker Blue rim + accent light (0–2). Default 1. */
     accentStrength?: number;
     /** Y position of the contact-shadow plane (below the object). */
     shadowY?: number;
@@ -54,7 +55,7 @@ export interface EnvironmentLightsProps {
     fogDensity?: number;
 }
 
-const DARK_FOG = "#0a0a0f";
+const DARK_FOG = "#050816";
 const LIGHT_FOG = "#fbfbfd";
 
 /** Resolves the active theme from the document root. SSR-safe. */
@@ -87,31 +88,30 @@ function EnvironmentLightsImpl({
 
     return (
         <>
-            {/* Ambient base — soft, even fill. */}
-            <ambientLight color="#ffffff" intensity={0.4} />
+            {/* Ambient base — soft, even fill for the dark canvas. */}
+            <ambientLight color="#0F172A" intensity={0.6} />
 
-            {/* Directional key — camera-left, above. The main light that catches
-                the glass surface. No castShadow: the soft contact shadow is
-                owned by <ContactShadows> below (avoids a second shadow pass). */}
+            {/* Directional key — camera-left, above. Cloud Cyan tint catches
+                the frosted glass surface with a cool engineering glow. */}
             <directionalLight
-                color="#ffffff"
-                intensity={1.05}
+                color="#38BDF8"
+                intensity={0.85}
                 position={[5, 8, 5]}
             />
 
-            {/* Rim — violet, from behind/above. The signature edge grazer that
-                brings out the Fresnel highlights on the frosted glass. */}
+            {/* Warm rim — soft AWS Orange from behind/above. Provides studio
+                separation and a subtle engineering status highlight. */}
             <directionalLight
-                color="#8b5cf6"
-                intensity={0.85 * accentStrength}
-                position={[-2, 5, -8]}
+                color="#FF9900"
+                intensity={0.32 * accentStrength}
+                position={[-2.8, 4.6, -8]}
             />
 
-            {/* Cool fill — camera-right, low. Lifts the shadow side without
-                adding contrast; keeps the look soft, not dramatic. */}
+            {/* Docker Blue fill — camera-right, low. Lifts the shadow side
+                with a cool technical undertone. */}
             <directionalLight
-                color="#e6ecff"
-                intensity={0.4}
+                color="#2496ED"
+                intensity={0.35}
                 position={[-5, 2, 3]}
             />
 
@@ -120,39 +120,40 @@ function EnvironmentLightsImpl({
                 glass still shows shifting reflections as it rotates. */}
             {enableHDRI ? (
                 <Environment resolution={256} background={false} frames={1}>
-                    {/* Soft white overhead panel — the key reflection band. */}
+                    {/* Docker Blue overhead panel — the key reflection band. */}
                     <Lightformer
                         form="rect"
-                        intensity={2.2}
+                        intensity={1.8}
                         position={[0, 5, -6]}
                         scale={[10, 5, 1]}
-                        color="#ffffff"
+                        color="#2496ED"
                     />
-                    {/* Cool blue side panel — camera-left. */}
+                    {/* Cloud Cyan key reflection — camera-left. */}
                     <Lightformer
                         form="rect"
-                        intensity={1.6}
+                        intensity={1.2}
                         position={[-7, 2, 2]}
                         rotation={[0, Math.PI / 2, 0]}
                         scale={[7, 5, 1]}
-                        color="#9bb8ff"
+                        color="#38BDF8"
                     />
-                    {/* Violet side panel — camera-right. */}
+                    {/* AWS Orange rim reflection — camera-right edge only. */}
                     <Lightformer
                         form="rect"
-                        intensity={1.4}
+                        intensity={0.35}
                         position={[7, 1, 2]}
                         rotation={[0, -Math.PI / 2, 0]}
-                        scale={[7, 5, 1]}
-                        color="#c4b5fd"
+                        scale={[5, 4, 1]}
+                        color="#FF9900"
                     />
-                    {/* Cyan ring — below, for the under-glow + edge tint. */}
+                    {/* Cool cyan under-glow — below the object, for the
+                        inner energy + edge tint. */}
                     <Lightformer
                         form="ring"
-                        intensity={1.1}
+                        intensity={0.8}
                         position={[0, -4, 4]}
                         scale={[5, 5, 1]}
-                        color="#7dd3fc"
+                        color="#22D3EE"
                     />
                 </Environment>
             ) : null}
@@ -163,12 +164,12 @@ function EnvironmentLightsImpl({
             {enableContactShadows ? (
                 <ContactShadows
                     position={[0, shadowY, 0]}
-                    opacity={0.32}
+                    opacity={0.45}
                     scale={16}
                     blur={3.2}
                     far={6}
                     resolution={shadowRes}
-                    color="#05060a"
+                    color="#020617"
                 />
             ) : null}
 

@@ -108,7 +108,7 @@ export const blogUnitRegistrySchema = z.object({
     /** Full systemd unit name, e.g. `devops.service`. */
     unit: z.string(),
     /** Semantic tint used by the priority dot + unit chip. */
-    tint: z.enum(["accent", "info", "success", "warning", "pink"]),
+    tint: z.enum(["accent", "info", "success", "warning", "cloud"]),
     /** One-line description of the unit. */
     description: z.string(),
 });

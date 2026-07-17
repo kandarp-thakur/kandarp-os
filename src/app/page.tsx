@@ -25,7 +25,6 @@ import {
     getPublicDeploymentStats,
     getPublicExperience,
     getPublicFleetStats,
-    getPublicHeroPortrait,
     getPublicInfraEdges,
     getPublicInfraNodes,
     getPublicInfraStats,
@@ -34,7 +33,6 @@ import {
     getPublicSiteCustomization,
     getPublicSkillStats,
     getPublicSkills,
-    getPublicJournalStats,
 } from "@/lib/admin/public-data";
 import { getSiteConfig } from "@/hooks/useSiteConfig";
 import { formatWordCount } from "@/data/blog";
@@ -70,7 +68,7 @@ const SKILL_STAT_COLOR: Record<string, string> = {
 const ACHIEVEMENT_STAT_COLOR: Record<string, string> = {
     total: "text-text-primary",
     legendary: "text-amber-500",
-    epic: "text-violet-500",
+    epic: "text-blue-500",
     rare: "text-sky-500",
 };
 
@@ -114,10 +112,7 @@ function resolveSectionOrder(
     }
 
     // Build a lookup: type → { visible, order }
-    const lookup = new Map<
-        string,
-        { visible: boolean; order: number }
-    >();
+    const lookup = new Map<string, { visible: boolean; order: number }>();
     for (const s of customization.sections) {
         lookup.set(s.type, { visible: s.visible, order: s.order });
     }
@@ -157,7 +152,6 @@ export default async function HomePage() {
         infraEdges,
         skillNodes,
         achievements,
-        heroPortrait,
         customization,
         config,
         deploymentStats,
@@ -165,7 +159,6 @@ export default async function HomePage() {
         infraStats,
         skillStats,
         achievementStats,
-        journalStats,
         blogUnits,
         blogTags,
         blogWordCount,
@@ -178,7 +171,6 @@ export default async function HomePage() {
         getPublicInfraEdges(),
         getPublicSkills(),
         getPublicAwards(),
-        getPublicHeroPortrait(),
         getPublicSiteCustomization(),
         getSiteConfig(),
         getPublicDeploymentStats(),
@@ -186,7 +178,6 @@ export default async function HomePage() {
         getPublicInfraStats(),
         getPublicSkillStats(),
         getPublicAchievementStats(),
-        getPublicJournalStats(),
         getPublicBlogUnits(),
         getPublicBlogTags(),
         getPublicBlogWordCount(),
@@ -228,7 +219,6 @@ export default async function HomePage() {
             >
                 <Container maxWidth="wide">
                     <HeroSection
-                        heroPortrait={heroPortrait}
                         ownerName={config.owner}
                         userAtHost={config.userAtHost}
                         resumeUrl={primaryResume?.fileUrl}
@@ -447,9 +437,7 @@ export default async function HomePage() {
 
             {/* Render sections in the CMS-driven order, skipping hidden ones. */}
             {orderedSections.map((entry) => (
-                <Fragment key={entry.type}>
-                    {sectionMap[entry.type]}
-                </Fragment>
+                <Fragment key={entry.type}>{sectionMap[entry.type]}</Fragment>
             ))}
         </main>
     );

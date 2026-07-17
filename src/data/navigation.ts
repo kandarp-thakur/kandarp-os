@@ -63,8 +63,8 @@ export interface NavItem {
  *   ∞ root@kandarp
  *     ├─ Experience      → Deployment History
  *     ├─ Projects        → Running Containers (project fleet, `docker ps`)
- *     ├─ Infrastructure  → Cloud topology & nodes
  *     ├─ Toolkit         → Service mesh of skills
+ *     ├─ Infrastructure  → Cloud topology & nodes
  *     ├─ Achievements    → Unlocked badges & milestones
  *     ├─ Logs            → Engineering Logs (Blog)
  *     └─ SSH             → Interactive Contact Terminal
@@ -81,13 +81,6 @@ export interface NavItem {
  */
 export const navItems: NavItem[] = [
     {
-        label: "Experience",
-        shortLabel: "Exp",
-        href: sectionHref(SECTIONS.deployments),
-        sectionId: SECTIONS.deployments,
-        icon: GitBranch,
-    },
-    {
         label: "Projects",
         shortLabel: "Projects",
         href: sectionHref(SECTIONS.containers),
@@ -95,11 +88,11 @@ export const navItems: NavItem[] = [
         icon: Boxes,
     },
     {
-        label: "Infrastructure",
-        shortLabel: "Infra",
-        href: sectionHref(SECTIONS.infrastructure),
-        sectionId: SECTIONS.infrastructure,
-        icon: Network,
+        label: "Experience",
+        shortLabel: "Exp",
+        href: sectionHref(SECTIONS.deployments),
+        sectionId: SECTIONS.deployments,
+        icon: GitBranch,
     },
     {
         label: "Toolkit",
@@ -107,6 +100,13 @@ export const navItems: NavItem[] = [
         href: sectionHref(SECTIONS.toolkit),
         sectionId: SECTIONS.toolkit,
         icon: Wrench,
+    },
+    {
+        label: "Infrastructure",
+        shortLabel: "Infra",
+        href: sectionHref(SECTIONS.infrastructure),
+        sectionId: SECTIONS.infrastructure,
+        icon: Network,
     },
     {
         label: "Achievements",

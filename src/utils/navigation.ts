@@ -7,7 +7,7 @@
  * route (`/`).
  *
  * The navbar is a flat list of top-level links (Projects, Experience,
- * Infrastructure, Toolkit, Achievements, Logs, SSH). Consumers that need a
+ * Toolkit, Infrastructure, Achievements, Logs, SSH). Consumers that need a
  * flat, ordered list of every scrollable destination (scroll-spy, command
  * palette, footer) use [`flattenNavItems`](#flattennavitems); it expands any
  * dropdown parents into their children and passes direct links through.

@@ -63,11 +63,11 @@ export function NavList({ activeSection, items, className }: NavListProps) {
                             }}
                             className={cn(
                                 "relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5",
-                                "font-sans text-sm font-medium transition-colors duration-fast ease-standard",
+                                "font-sans text-sm font-medium transition-all duration-fast ease-standard",
                                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                                 active
-                                    ? "bg-accent-subtle text-accent-solid"
-                                    : "text-text-secondary hover:bg-overlay-hover hover:text-text-primary",
+                                    ? "bg-accent-subtle text-accent-solid after:absolute after:inset-x-3 after:bottom-0 after:h-px after:rounded-full after:bg-warm-orange/70"
+                                    : "text-text-tertiary hover:bg-accent-subtle/40 hover:text-cyan",
                             )}
                         >
                             <Icon
@@ -78,7 +78,7 @@ export function NavList({ activeSection, items, className }: NavListProps) {
                             {active ? (
                                 <span
                                     aria-hidden="true"
-                                    className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-accent-solid"
+                                    className="absolute -bottom-0.5 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-warm-orange shadow-warm-glow-sm"
                                 />
                             ) : null}
                         </a>

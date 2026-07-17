@@ -1,4 +1,9 @@
-import type { ElementType, HTMLAttributes, ReactNode } from "react";
+import {
+    createElement,
+    type ElementType,
+    type HTMLAttributes,
+    type ReactNode,
+} from "react";
 
 import { cn } from "@/utils/cn";
 
@@ -102,18 +107,20 @@ export function Heading({
                     {eyebrow}
                 </span>
             ) : null}
-            <Tag
-                className={cn(
-                    "font-sans text-text-primary",
-                    LEVEL_CLASSES[level],
-                    gradient && "text-gradient",
-                    balance && "text-balance",
-                    className,
-                )}
-                {...props}
-            >
-                {children}
-            </Tag>
+            {createElement(
+                Tag,
+                {
+                    ...props,
+                    className: cn(
+                        "font-sans text-text-primary",
+                        LEVEL_CLASSES[level],
+                        gradient && "text-gradient",
+                        balance && "text-balance",
+                        className,
+                    ),
+                },
+                children,
+            )}
         </div>
     );
 }

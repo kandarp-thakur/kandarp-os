@@ -66,9 +66,7 @@ export default function AdminSystemHealthPage() {
                 const sys = dash.system ?? {};
                 setHealth({
                     environment:
-                        sys.nodeEnv ??
-                        process.env.NODE_ENV ??
-                        "development",
+                        sys.nodeEnv ?? process.env.NODE_ENV ?? "development",
                     memoryMb: sys.memoryMB ?? 0,
                     uptimeMin: Math.round((sys.uptime ?? 0) / 60),
                     timestamp: new Date().toISOString(),
@@ -109,31 +107,31 @@ export default function AdminSystemHealthPage() {
 
     const metrics = health
         ? [
-            {
-                label: "Status",
-                value: "Operational",
-                icon: CheckCircle,
-                tint: "text-[var(--success)]",
-            },
-            {
-                label: "Environment",
-                value: health.environment,
-                icon: Server,
-                tint: "text-[var(--accent-solid)]",
-            },
-            {
-                label: "Memory (RSS)",
-                value: `${health.memoryMb} MB`,
-                icon: Cpu,
-                tint: "text-[var(--info)]",
-            },
-            {
-                label: "Uptime",
-                value: `${health.uptimeMin} min`,
-                icon: Timer,
-                tint: "text-[var(--warning)]",
-            },
-        ]
+              {
+                  label: "Status",
+                  value: "Operational",
+                  icon: CheckCircle,
+                  tint: "text-[var(--success)]",
+              },
+              {
+                  label: "Environment",
+                  value: health.environment,
+                  icon: Server,
+                  tint: "text-[var(--accent-solid)]",
+              },
+              {
+                  label: "Memory (RSS)",
+                  value: `${health.memoryMb} MB`,
+                  icon: Cpu,
+                  tint: "text-[var(--info)]",
+              },
+              {
+                  label: "Uptime",
+                  value: `${health.uptimeMin} min`,
+                  icon: Timer,
+                  tint: "text-[var(--warning)]",
+              },
+          ]
         : [];
 
     return (
@@ -242,10 +240,11 @@ export default function AdminSystemHealthPage() {
                                             className="flex items-start gap-3"
                                         >
                                             <div
-                                                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${log.level === "error"
-                                                    ? "bg-[var(--error)]"
-                                                    : "bg-[var(--warning)]"
-                                                    }`}
+                                                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                                                    log.level === "error"
+                                                        ? "bg-[var(--error)]"
+                                                        : "bg-[var(--warning)]"
+                                                }`}
                                             />
                                             <div className="flex-1 overflow-hidden">
                                                 <p className="truncate text-sm text-[var(--text-primary)]">

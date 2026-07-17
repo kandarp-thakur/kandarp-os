@@ -145,7 +145,7 @@ export default function AdminThemePage() {
                                         })
                                     }
                                     className={inputClass}
-                                    placeholder="#6366f1"
+                                    placeholder="#2496ED"
                                 />
                             </div>
                         </div>
@@ -176,7 +176,7 @@ export default function AdminThemePage() {
                                         })
                                     }
                                     className={inputClass}
-                                    placeholder="#22d3ee"
+                                    placeholder="#38BDF8"
                                 />
                             </div>
                         </div>
@@ -231,8 +231,7 @@ export default function AdminThemePage() {
                                 onChange={(e) =>
                                     patch({
                                         theme: e.target.value as
-                                            | "dark"
-                                            | "light",
+                                            "dark" | "light",
                                     })
                                 }
                                 className={inputClass}
@@ -250,9 +249,7 @@ export default function AdminThemePage() {
                                 onChange={(e) =>
                                     patch({
                                         performanceMode: e.target.value as
-                                            | "auto"
-                                            | "high"
-                                            | "eco",
+                                            "auto" | "high" | "eco",
                                     })
                                 }
                                 className={inputClass}
@@ -461,7 +458,7 @@ export default function AdminThemePage() {
                                 }
                                 rows={6}
                                 className={`font-mono ${inputClass}`}
-                                placeholder="/* :root { --accent-solid: #6366f1; } */"
+                                placeholder="/* :root { --accent-solid: #2496ED; } */"
                             />
                         </div>
                         <div>

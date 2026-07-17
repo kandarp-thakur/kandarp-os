@@ -53,13 +53,13 @@ const DIRECTORY_ALIASES: Record<string, string> = {
     containers: SECTIONS.containers,
     "docker ps": SECTIONS.containers,
 
-    // Infrastructure.
-    infrastructure: SECTIONS.infrastructure,
-    infra: SECTIONS.infrastructure,
-
     // Toolkit / skills.
     toolkit: SECTIONS.toolkit,
     skills: SECTIONS.toolkit,
+
+    // Infrastructure.
+    infrastructure: SECTIONS.infrastructure,
+    infra: SECTIONS.infrastructure,
 
     // Achievements / awards.
     achievements: SECTIONS.achievements,

@@ -123,10 +123,7 @@ export default function AdminRolesPage() {
             {/* ── Role cards ─────────────────────────────────────────────── */}
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {ROLES.map((role) => (
-                    <div
-                        key={role}
-                        className="admin-glass rounded-xl p-5"
-                    >
+                    <div key={role} className="admin-glass rounded-xl p-5">
                         <div className="mb-2 flex items-center gap-2">
                             <ShieldCheck className="h-4 w-4 text-[var(--accent-solid)]" />
                             <h3 className="text-sm font-semibold text-[var(--text-primary)]">
@@ -225,9 +222,7 @@ export default function AdminRolesPage() {
                         <thead>
                             <tr className="border-b border-[var(--border-subtle)] text-left text-xs uppercase tracking-wider text-[var(--text-quaternary)]">
                                 <th className="px-5 py-3 font-medium">Name</th>
-                                <th className="px-5 py-3 font-medium">
-                                    Email
-                                </th>
+                                <th className="px-5 py-3 font-medium">Email</th>
                                 <th className="px-5 py-3 font-medium">Role</th>
                             </tr>
                         </thead>
@@ -253,10 +248,7 @@ export default function AdminRolesPage() {
                                             className="rounded-lg border border-[var(--border-default)] bg-[var(--canvas-elevated)] px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--accent-subtle)] disabled:opacity-60"
                                         >
                                             {ROLES.map((role) => (
-                                                <option
-                                                    key={role}
-                                                    value={role}
-                                                >
+                                                <option key={role} value={role}>
                                                     {ROLE_LABELS[role]}
                                                 </option>
                                             ))}

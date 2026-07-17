@@ -25,7 +25,10 @@ interface ContactTerminalProps {
  * The visual terminal is decorative; an sr-only semantic block carries the
  * same contact info for screen readers + SEO (per about-page-design §15).
  */
-export function ContactTerminal({ className, resumeUrl }: ContactTerminalProps) {
+export function ContactTerminal({
+    className,
+    resumeUrl,
+}: ContactTerminalProps) {
     const {
         lines,
         input,

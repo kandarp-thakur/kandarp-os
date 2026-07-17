@@ -620,7 +620,7 @@ export default function WebsiteBuilderPage() {
                                                                 },
                                                             )
                                                         }
-                                                        placeholder="linear-gradient(135deg, #6366f1, #22d3ee)"
+                                                        placeholder="linear-gradient(135deg, #FF9900, #2496ED)"
                                                         className={inputClass}
                                                     />
                                                 </div>

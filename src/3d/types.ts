@@ -10,6 +10,18 @@
 /** Device capability tier. Drives every system's quality scaling (arch §11). */
 export type DeviceTier = "high" | "medium" | "low" | "off";
 
+/**
+ * The breath value written by an animation component onto a shared ref so a
+ * parent can compose the scroll-scale with the breath multiplicatively
+ * without squaring it. Lives here (not on the component that defines the
+ * animation) so the parent + the animation can both import it without forming
+ * a circular dependency between the two component modules.
+ */
+export interface BreathRef {
+    /** The current breathing scale factor (≈1 ± breathAmplitude). */
+    value: number;
+}
+
 /** Camera behaviour mode (arch §1.3). */
 export type CameraMode = "idle" | "scroll" | "cinematic" | "interactive";
 

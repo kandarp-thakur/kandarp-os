@@ -22,7 +22,8 @@
  */
 
 export { CloudInfinity } from "./CloudInfinity";
-export type { CloudInfinityProps, BreathRef } from "./CloudInfinity";
+export type { CloudInfinityProps } from "./CloudInfinity";
+export type { BreathRef } from "../types";
 
 export { CloudInfinityScene } from "./CloudInfinityScene";
 export type { CloudInfinitySceneProps } from "./CloudInfinityScene";

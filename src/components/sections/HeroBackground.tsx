@@ -10,7 +10,7 @@
  *  1. **Clean gradient.** A near-invisible vertical gradient
  *     `#050816 → #0B1020 → #111827` — the calm base. No images, no blobs.
  *  2. **Ambient lighting.** Two very-low-opacity, large-blur radial glows
- *     (soft blue + soft violet) that softly illuminate the scene. They never
+ *     (soft blue + soft Docker Blue) that softly illuminate the scene. They never
  *     read as floating blobs — they are diffuse ambient light, not objects.
  *  3. **Subtle film grain.** A 2–4% opacity grain layer for texture without
  *     visible pixels or rough static noise.
@@ -24,31 +24,24 @@
  * every section. This component owns only the hero-scoped static layer.
  */
 export function HeroBackground() {
-    return <HeroBackgroundFallback />;
+    return null;
 }
 
 /**
- * The immediate, non-animated backdrop.
- *
- * Pure CSS — no JS, no transforms, no blur-heavy filters. The gradient is the
- * base; the ambient glows are diffuse light (large radius, low opacity); the
- * grain is a tiny SVG noise texture at ~3% opacity.
+ * The immediate, non-animated backdrop kept as a fallback implementation.
+ * HeroBackground currently returns null so the hero stays transparent.
  */
-function HeroBackgroundFallback() {
+function _HeroBackgroundFallback() {
     return (
         <div
             className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
             aria-hidden="true"
         >
-            {/* 1. Clean gradient — the calm base. Almost invisible. */}
             <div
                 className="absolute inset-0"
                 style={{ backgroundImage: "var(--hero-bg-gradient)" }}
             />
 
-            {/* 2. Ambient lighting — soft blue glow (upper-left bias).
-                  Large blur radius + very low opacity = diffuse light, not a
-                  blob. It softly illuminates the scene. */}
             <div
                 className="absolute -left-[20%] -top-[25%] h-[80vh] w-[80vh] rounded-full blur-[120px]"
                 style={{
@@ -57,20 +50,14 @@ function HeroBackgroundFallback() {
                 }}
             />
 
-            {/* Ambient lighting — soft violet glow (lower-right bias).
-                  Counterbalances the blue so the light feels intentional and
-                  even, never like a single floating circle. */}
             <div
                 className="absolute -right-[20%] -bottom-[25%] h-[80vh] w-[80vh] rounded-full blur-[120px]"
                 style={{
                     background:
-                        "radial-gradient(circle at center, var(--hero-ambient-violet), transparent 70%)",
+                        "radial-gradient(circle at center, var(--hero-ambient-Docker Blue), transparent 70%)",
                 }}
             />
 
-            {/* 3. Subtle film grain — 2–4% opacity, no visible pixels.
-                  A tiny inline SVG turbulence noise keeps the surface from
-                  looking flat/CG without adding rough texture. */}
             <div
                 className="absolute inset-0 mix-blend-soft-light"
                 style={{

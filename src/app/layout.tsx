@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 
-import { SITE } from "@/utils/constants";
 import { fontVariables } from "@/assets/fonts";
 import { Providers } from "@/providers";
 import { AppShell } from "@/components/layout";
@@ -147,12 +146,18 @@ export default async function RootLayout({
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                 />
                 {/* Favicon from Settings (falls back to the default icon.svg). */}
-                {config.favicon && (
-                    <link rel="icon" href={config.favicon} />
-                )}
+                {config.favicon && <link rel="icon" href={config.favicon} />}
             </head>
             <body
                 className={`${fontVariables} min-h-screen bg-canvas-base font-sans text-text-primary antialiased`}
+                // Browser extensions (e.g. Grammarly) inject attributes such as
+                // `data-new-gr-c-s-check-loaded` / `data-gr-ext-installed` into
+                // <body> before React hydrates, causing a spurious hydration
+                // mismatch. `suppressHydrationWarning` tells React to ignore
+                // attribute-only differences here (it does NOT silence content
+                // mismatches). This is the officially recommended fix for
+                // extension-induced hydration warnings.
+                suppressHydrationWarning
             >
                 <Providers>
                     {/* The persistent, page-wide living infrastructure

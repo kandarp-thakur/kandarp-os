@@ -23,7 +23,7 @@ export function ScrollProgress({ progress, className }: ScrollProgressProps) {
             style={{ scaleX: progress }}
             className={cn(
                 "fixed inset-x-0 top-0 z-[60] h-0.5 origin-left",
-                "bg-accent-gradient opacity-80 shadow-glow-sm",
+                "bg-[linear-gradient(90deg,var(--docker-blue),var(--cloud-cyan)_72%,var(--soft-gold))] opacity-80 shadow-glow-sm",
                 className,
             )}
         />

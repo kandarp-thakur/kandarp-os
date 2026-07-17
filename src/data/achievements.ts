@@ -3,7 +3,7 @@
  *
  * Each entry is a real accomplishment rendered as a gamified OS badge with a
  * rarity tier. The tier drives the accent color + glow: legendary (gold),
- * epic (purple), rare (blue), common (neutral). Data lives here so the
+ * epic (Docker Blue), rare (blue), common (neutral). Data lives here so the
  * section component stays a thin presentational layer.
  */
 

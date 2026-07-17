@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 import { CloudInfinity } from "./CloudInfinity";
 import { EnvironmentLights } from "./EnvironmentLights";
+import { EngineeringHolograms } from "./EngineeringHolograms";
 import { NetworkNodes } from "./NetworkNodes";
 import { useIsDesktop } from "../hooks/useIsDesktop";
 import { useMouse } from "../hooks/useMouse";
@@ -70,7 +71,7 @@ export interface CloudInfinitySceneProps {
      * mobile) per task §Placement.
      */
     position?: [number, number, number];
-    /** Multiplier for the violet rim + accent light. Default 1. */
+    /** Multiplier for the Docker Blue rim + accent light. Default 1. */
     accentStrength?: number;
 }
 
@@ -79,12 +80,12 @@ const PARALLAX_AMP = 0.4;
 /** Damping for the camera parallax (0–1). Lower = smoother/slower. */
 const PARALLAX_SMOOTHING = 0.04;
 
-/** Desktop placement — right side, slightly below center (task §Placement). */
-const DESKTOP_POSITION: [number, number, number] = [2.4, -0.4, 0];
-/** Mobile placement — centered + scaled down so it never crowds content. */
-const MOBILE_POSITION: [number, number, number] = [0, -0.2, 0.5];
+/** Desktop placement — hero-right, large enough to own the signature identity. */
+const DESKTOP_POSITION: [number, number, number] = [2.95, -0.18, -0.25];
+/** Mobile placement — centered behind the stacked hero content. */
+const MOBILE_POSITION: [number, number, number] = [0.15, -0.05, 0.45];
 /** Mobile scale multiplier (object is smaller on narrow viewports). */
-const MOBILE_SCALE = 0.72;
+const MOBILE_SCALE = 0.86;
 
 function CloudInfinitySceneImpl({
     tier = "high",
@@ -104,12 +105,12 @@ function CloudInfinitySceneImpl({
         return isDesktop ? DESKTOP_POSITION : MOBILE_POSITION;
     }, [position, isDesktop]);
 
-    const objectScale = isDesktop ? scale : scale * MOBILE_SCALE;
+    const objectScale = isDesktop ? scale * 1.24 : scale * MOBILE_SCALE;
 
     // The camera's resting position (hero-wide preset). Parallax offsets from
     // here so the camera always returns to center.
-    const basePos = useRef(new THREE.Vector3(0, 0, 8));
-    const targetPos = useRef(new THREE.Vector3(0, 0, 8));
+    const basePos = useRef(new THREE.Vector3(isDesktop ? 0.7 : 0, 0.05, 8));
+    const targetPos = useRef(basePos.current.clone());
 
     useFrame((_, delta) => {
         if (reducedMotion) return;
@@ -125,7 +126,7 @@ function CloudInfinitySceneImpl({
         // Frame-rate independent damping toward the parallax target.
         const f = 1 - Math.pow(1 - PARALLAX_SMOOTHING, delta * 60);
         camera.position.lerp(targetPos.current, f);
-        camera.lookAt(0, 0, 0);
+        camera.lookAt(isDesktop ? 1.35 : 0, 0, 0);
     });
 
     return (
@@ -148,12 +149,16 @@ function CloudInfinitySceneImpl({
                 disableLights
             />
 
+            {/* Subtle engineering holograms orbit the loop but stay behind its
+                glass silhouette, preserving the infinity as the focal point. */}
+            <EngineeringHolograms tier={tier} center={objectPosition} />
+
             {/* Glowing nodes + thin lines + data packets — the cloud-
                 infrastructure motif, tighter around the object. The soft
                 floating cloud puffs were removed (hero-background-redesign):
                 they read as random blurry blobs. Only crisp engineering
                 elements remain. */}
-            <NetworkNodes tier={tier} center={objectPosition} radius={3.2} />
+            <NetworkNodes tier={tier} center={objectPosition} radius={3.75} />
         </>
     );
 }

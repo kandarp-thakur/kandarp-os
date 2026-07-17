@@ -46,12 +46,15 @@ export async function generateStaticParams() {
 }
 
 /** Per-post SEO metadata (§22.2). */
+type BlogPostPageProps = {
+    params: Promise<{ slug: string }>;
+};
+
 export async function generateMetadata({
     params,
-}: {
-    params: { slug: string };
-}): Promise<Metadata> {
-    const post = await getPublicBlogPostBySlug(params.slug);
+}: BlogPostPageProps): Promise<Metadata> {
+    const { slug } = await params;
+    const post = await getPublicBlogPostBySlug(slug);
     if (!post) return {};
 
     return {
@@ -67,12 +70,9 @@ export async function generateMetadata({
     };
 }
 
-export default async function BlogPostPage({
-    params,
-}: {
-    params: { slug: string };
-}) {
-    const post = await getPublicBlogPostBySlug(params.slug);
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+    const { slug } = await params;
+    const post = await getPublicBlogPostBySlug(slug);
     if (!post) notFound();
 
     const { previous, next } = await getPublicBlogPostNeighbors(post.slug);

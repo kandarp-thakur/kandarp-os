@@ -1,34 +1,27 @@
-import { Inter, JetBrains_Mono } from "next/font/google";
-
 /**
  * Font configuration — Kandarp OS.
  *
- * All fonts load via `next/font` for zero layout shift (coding-standards §9,
- * ui-system §2.2). Each font exposes a CSS variable that the Tailwind config
- * (`tailwind.config.ts`) and `tokens.css` consume — components never load
- * fonts via `<link>`.
+ * Fonts are defined as CSS custom properties in `src/styles/tokens.css`
+ * using system font stacks (no network fetch required). This avoids the
+ * `next/font/google` build-time fetch which fails when there is no internet
+ * access (ETIMEDOUT) and can destabilize the webpack chunk cache.
  *
  *   - **Inter** — display + body (ui-system §2.2). Geometric, SF Pro–like.
+ *     Falls back to the native system UI font stack when Inter is unavailable.
  *   - **JetBrains Mono** — code / terminal (ui-system §2.2). Ligatures,
- *     readable at small sizes.
+ *     readable at small sizes. Falls back to the native monospace stack.
  *
- * Both are subset to Latin and preloaded to keep the font budget < 100 KB
- * (architecture §9.1).
+ * The variables `--font-sans` and `--font-mono` are already declared in
+ * `tokens.css`, so `fontVariables` is intentionally empty — applying it is
+ * a no-op that keeps the layout code stable without pulling in a network
+ * font loader.
  */
 
-export const fontSans = Inter({
-    subsets: ["latin"],
-    variable: "--font-sans",
-    display: "swap",
-    preload: true,
-});
-
-export const fontMono = JetBrains_Mono({
-    subsets: ["latin"],
-    variable: "--font-mono",
-    display: "swap",
-    preload: true,
-});
-
-/** Combined className to apply on `<html>` (or `<body>`). */
-export const fontVariables = `${fontSans.variable} ${fontMono.variable}`;
+/**
+ * Combined className to apply on `<html>` (or `<body>`).
+ *
+ * Empty string because the CSS variables are declared globally in
+ * `tokens.css` (imported via `globals.css`). Kept as an export so the
+ * layout's `className` interpolation stays valid without conditional logic.
+ */
+export const fontVariables = "";

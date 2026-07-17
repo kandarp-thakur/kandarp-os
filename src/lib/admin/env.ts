@@ -21,15 +21,36 @@ function requireSecret(value: string | undefined, name: string): string {
     return value;
 }
 
+/**
+ * Admin environment configuration.
+ *
+ * Exposed as **getters** rather than eager field initialisers so that simply
+ * importing this module (which happens during `next build`'s "Collecting page
+ * data" phase for every admin API route) does NOT trigger production secret
+ * validation. Validation now runs lazily on first property access — i.e. at
+ * actual request time — so a missing `ADMIN_JWT_SECRET` fails the request
+ * instead of crashing the entire build. The fail-fast contract is preserved
+ * for real production traffic.
+ */
 export const adminEnv = {
     /** HMAC secret for signing session JWTs. */
-    jwtSecret: requireSecret(process.env.ADMIN_JWT_SECRET, "ADMIN_JWT_SECRET"),
+    get jwtSecret(): string {
+        return requireSecret(process.env.ADMIN_JWT_SECRET, "ADMIN_JWT_SECRET");
+    },
     /** Node env — drives cookie `secure` flag. */
-    nodeEnv: process.env.NODE_ENV ?? "development",
+    get nodeEnv(): string {
+        return process.env.NODE_ENV ?? "development";
+    },
     /** Default owner email — seeded on first boot if no users exist. */
-    ownerEmail: process.env.ADMIN_OWNER_EMAIL ?? "admin@kandarp-os.dev",
+    get ownerEmail(): string {
+        return process.env.ADMIN_OWNER_EMAIL ?? "admin@kandarp-os.dev";
+    },
     /** Default owner password — seeded on first boot. CHANGE IMMEDIATELY. */
-    ownerPassword: process.env.ADMIN_OWNER_PASSWORD ?? "ChangeMe!2026",
+    get ownerPassword(): string {
+        return process.env.ADMIN_OWNER_PASSWORD ?? "ChangeMe!2026";
+    },
     /** Absolute path to the JSON store root. Defaults to `.admin-data`. */
-    dataDir: process.env.ADMIN_DATA_DIR ?? ".admin-data",
+    get dataDir(): string {
+        return process.env.ADMIN_DATA_DIR ?? ".admin-data";
+    },
 } as const;

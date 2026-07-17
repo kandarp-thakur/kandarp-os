@@ -177,10 +177,7 @@ export default function AdminApiKeysPage() {
                         </div>
                     )}
                     {keys.map((k) => (
-                        <div
-                            key={k.id}
-                            className="admin-glass rounded-xl p-4"
-                        >
+                        <div key={k.id} className="admin-glass rounded-xl p-4">
                             <div className="flex flex-wrap items-center gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-subtle)] text-[var(--accent-solid)]">
                                     <KeyRound className="h-4 w-4" />

@@ -247,8 +247,8 @@ function Ports({ ports }: PortsProps) {
 
     return (
         <ul className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-            {ports.map((port) => (
-                <li key={port.url}>
+            {ports.map((port, index) => (
+                <li key={`${port.url}-${port.port}-${index}`}>
                     <a
                         href={port.url}
                         target="_blank"

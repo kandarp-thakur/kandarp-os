@@ -28,12 +28,12 @@
  *   <DevOpsBackground fixed={false} />  // absolute within a positioned parent
  */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import { DEVOPS_ICON_MAP } from "./devopsIcons";
 import { generateConstellation, type Medallion } from "./constellation";
 import { useBackgroundTier, type TierProfile } from "./useBackgroundTier";
-import { useParallax } from "./useParallax";
+import { useParallax, type ParallaxState } from "./useParallax";
 import { cn } from "@/utils/cn";
 
 export interface DevOpsBackgroundProps {
@@ -80,30 +80,20 @@ export function DevOpsBackground({
     const medallions = useMemo(() => applyTier(full, tier), [full, tier]);
 
     const containerRef = useRef<HTMLDivElement>(null);
-    const { state, range } = useParallax({ enabled: tier.parallax });
 
-    // Drive parallax by writing CSS custom properties on the container in the
-    // same rAF the parallax hook runs — no React re-render per frame.
-    useEffect(() => {
-        if (!tier.parallax) return;
-        let raf = 0;
-        const apply = () => {
-            const el = containerRef.current;
-            if (el) {
-                el.style.setProperty(
-                    "--bg-px",
-                    `${(state.current.x * range).toFixed(2)}px`,
-                );
-                el.style.setProperty(
-                    "--bg-py",
-                    `${(state.current.y * range).toFixed(2)}px`,
-                );
-            }
-            raf = requestAnimationFrame(apply);
-        };
-        raf = requestAnimationFrame(apply);
-        return () => cancelAnimationFrame(raf);
-    }, [tier.parallax, state, range]);
+    // Drive parallax by writing CSS custom properties on the container inside
+    // the parallax hook's single shared rAF tick — damping + DOM writes happen
+    // in one loop, with no second rAF and no per-frame React renders.
+    const applyParallax = useCallback((s: ParallaxState, range: number) => {
+        const el = containerRef.current;
+        if (!el) return;
+        el.style.setProperty("--bg-px", `${(s.x * range).toFixed(2)}px`);
+        el.style.setProperty("--bg-py", `${(s.y * range).toFixed(2)}px`);
+    }, []);
+    useParallax({
+        enabled: tier.parallax,
+        onFrame: applyParallax,
+    });
 
     // CSS-tier gating: the root carries data attributes consumed by the
     // stylesheet to disable motion / DOF / parallax per tier.

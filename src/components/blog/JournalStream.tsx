@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search } from "lucide-react";
@@ -250,12 +251,12 @@ export function JournalStream({
                             />
                         ))}
                         {overflowTagCount > 0 && (
-                            <a
+                            <Link
                                 href="/blog/tags"
                                 className="font-mono text-2xs text-text-tertiary transition-colors duration-fast ease-standard hover:text-accent-solid"
                             >
                                 +{overflowTagCount} tags
-                            </a>
+                            </Link>
                         )}
                     </div>
                 )}

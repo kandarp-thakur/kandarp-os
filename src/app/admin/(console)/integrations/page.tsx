@@ -66,9 +66,7 @@ export default function AdminIntegrationsPage() {
     const addConfigKey = (id: string) =>
         setIntegrations((prev) =>
             prev.map((i) =>
-                i.id === id
-                    ? { ...i, config: { ...i.config, "": "" } }
-                    : i,
+                i.id === id ? { ...i, config: { ...i.config, "": "" } } : i,
             ),
         );
 
@@ -180,10 +178,11 @@ export default function AdminIntegrationsPage() {
                                     Enabled
                                 </label>
                                 <span
-                                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${int.enabled
+                                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                                        int.enabled
                                             ? "bg-[var(--success)]/10 text-[var(--success)]"
                                             : "bg-[var(--canvas-sunken)] text-[var(--text-tertiary)]"
-                                        }`}
+                                    }`}
                                 >
                                     {int.enabled ? "Active" : "Disabled"}
                                 </span>

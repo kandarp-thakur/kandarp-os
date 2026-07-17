@@ -83,7 +83,8 @@ export default function AdminSessionsPage() {
 
     const handleRevoke = async (sessionId: string) => {
         if (!user) return;
-        if (!confirm("Revoke this session? The device will be signed out.")) return;
+        if (!confirm("Revoke this session? The device will be signed out."))
+            return;
         setRevoking(sessionId);
         try {
             const remaining = sessions.filter((s) => s.id !== sessionId);

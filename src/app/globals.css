@@ -27,7 +27,8 @@
 
 @layer utilities {
 
-    /* Signature glass surface — dual-edge border + blur + layered shadow */
+    /* Signature dark glass surface — dual-edge border + blur + layered shadow.
+       Premium frosted glass with subtle top reflection and deep shadow. */
     .glass-surface {
         background-color: var(--glass-bg);
         backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
@@ -35,8 +36,8 @@
         border: 1px solid var(--border-default);
         box-shadow:
             inset 0 1px 0 0 var(--border-glass),
-            inset 0 -1px 0 0 rgba(0, 0, 0, 0.04),
-            0 4px 16px rgba(0, 0, 0, 0.06);
+            inset 0 -1px 0 0 rgba(0, 0, 0, 0.15),
+            0 4px 20px rgba(0, 0, 0, 0.30);
     }
 
     .glass-surface-strong {
@@ -46,23 +47,23 @@
         border: 1px solid var(--border-default);
         box-shadow:
             inset 0 1px 0 0 var(--border-glass),
-            inset 0 -1px 0 0 rgba(0, 0, 0, 0.04),
-            0 4px 16px rgba(0, 0, 0, 0.06);
+            inset 0 -1px 0 0 rgba(0, 0, 0, 0.15),
+            0 8px 32px rgba(0, 0, 0, 0.40);
     }
 
-    /* Terminal surface — a dark, near-opaque glass window that reads like a
-       real Warp / Ghostty / iTerm2 session. Deep terminal background, thin
-       dual-edge border, soft layered shadow, and a subtle top sheen. */
+    /* Terminal surface — a dark glass window that reads like a premium Linux
+       console (Warp / Ghostty / iTerm2). Deep translucent background, Docker
+       Blue accent border, layered shadow with depth. */
     .terminal-surface {
         background-color: var(--term-bg);
         backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturation));
         -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturation));
         border: 1px solid var(--border-strong);
         box-shadow:
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
-            inset 0 0 0 1px rgba(0, 0, 0, 0.2),
-            0 24px 60px rgba(0, 0, 0, 0.45),
-            0 8px 24px rgba(0, 0, 0, 0.3);
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.3),
+            0 24px 60px rgba(0, 0, 0, 0.50),
+            0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
     /* Terminal header bar — slightly elevated over the body, with a hairline
@@ -83,6 +84,14 @@
     /* Gradient background utility */
     .bg-accent-gradient {
         background-image: var(--accent-gradient);
+    }
+
+    .bg-accent-gradient-hover {
+        background-image: var(--accent-gradient-hover);
+    }
+
+    .warm-hover-glow {
+        box-shadow: 0 0 28px -10px var(--warm-accent-glow);
     }
 
     /* Visually hidden but accessible to screen readers */

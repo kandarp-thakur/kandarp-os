@@ -1,4 +1,9 @@
-import type { ElementType, HTMLAttributes, ReactNode } from "react";
+import {
+    createElement,
+    type ElementType,
+    type HTMLAttributes,
+    type ReactNode,
+} from "react";
 
 import { cn } from "@/utils/cn";
 
@@ -48,17 +53,17 @@ export function Container({
     children,
     ...props
 }: ContainerProps) {
-    return (
-        <Tag
-            className={cn(
+    return createElement(
+        Tag,
+        {
+            ...props,
+            className: cn(
                 "mx-auto w-full px-4 sm:px-6 lg:px-8",
                 MAX_WIDTHS[maxWidth],
                 className,
-            )}
-            {...props}
-        >
-            {children}
-        </Tag>
+            ),
+        },
+        children,
     );
 }
 

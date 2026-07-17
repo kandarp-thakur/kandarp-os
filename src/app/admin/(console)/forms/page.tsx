@@ -61,9 +61,7 @@ export default function AdminFormsPage() {
             const data = await res.json();
             const events: AnalyticsEvent[] = data.rows ?? [];
             setRows(
-                events
-                    .filter((e) => e.type === "contact_submit")
-                    .map(toRow),
+                events.filter((e) => e.type === "contact_submit").map(toRow),
             );
         } catch {
             setError("Network error.");
@@ -116,9 +114,7 @@ export default function AdminFormsPage() {
                         <thead>
                             <tr className="border-b border-[var(--border-subtle)] text-left text-xs uppercase tracking-wider text-[var(--text-quaternary)]">
                                 <th className="px-4 py-3 font-medium">Name</th>
-                                <th className="px-4 py-3 font-medium">
-                                    Email
-                                </th>
+                                <th className="px-4 py-3 font-medium">Email</th>
                                 <th className="px-4 py-3 font-medium">
                                     Subject
                                 </th>

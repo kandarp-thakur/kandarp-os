@@ -8,19 +8,7 @@ import { createCloudInfinityGeometry } from "./cloudInfinityGeometry";
 import { useCloudInfinityMaterial } from "./CloudInfinityMaterial";
 import { CloudInfinityLights } from "./CloudInfinityLights";
 import { CloudInfinityAnimation } from "./CloudInfinityAnimation";
-import type { DeviceTier } from "../types";
-
-/**
- * The breath value written by {@link CloudInfinityAnimation} onto the group's
- * scale is read back here via this shared ref so the scroll-scale can compose
- * with it multiplicatively without squaring it. The animation writes the
- * breath to `group.scale` (for its own visual identity) AND to this ref (so
- * the mesh can apply `scrollScale * breath * scale` cleanly).
- */
-export interface BreathRef {
-    /** The current breathing scale factor (≈1 ± breathAmplitude). */
-    value: number;
-}
+import type { BreathRef, DeviceTier } from "../types";
 
 /**
  * CloudInfinity — the signature 3D object of Kandarp OS.
@@ -196,7 +184,10 @@ function CloudInfinityImpl({
                 targetRef={groupRef}
                 breathRef={breathRef}
                 tier={tier}
-                rotationSpeed={0.06 * rotationSpeedMultiplier}
+                rotationSpeed={0.035 * rotationSpeedMultiplier}
+                floatAmplitude={0.09}
+                breathAmplitude={0.012}
+                tiltAmplitude={0.12}
             />
         </group>
     );

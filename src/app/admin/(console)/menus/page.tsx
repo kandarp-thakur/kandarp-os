@@ -31,7 +31,12 @@ interface MenuLocation {
     description: string;
     href: string;
     icon: typeof NavIcon;
-    items: { label: string; href: string; external: boolean; visible: boolean }[];
+    items: {
+        label: string;
+        href: string;
+        external: boolean;
+        visible: boolean;
+    }[];
 }
 
 export default function AdminMenusPage() {
@@ -49,40 +54,38 @@ export default function AdminMenusPage() {
 
     const locations: MenuLocation[] = settings
         ? [
-            {
-                key: "primary",
-                label: "Primary Navigation",
-                description:
-                    "The main menu in the site header. Shown on every page.",
-                href: "/admin/navigation",
-                icon: NavIcon,
-                items: (settings.navigation ?? []).map(
-                    (n: NavItem) => ({
-                        label: n.label,
-                        href: n.href,
-                        external: n.external,
-                        visible: n.visible,
-                    }),
-                ),
-            },
-            {
-                key: "footer",
-                label: "Footer Menu",
-                description:
-                    "The link columns in the site footer, plus the copyright line.",
-                href: "/admin/footer",
-                icon: PanelBottom,
-                items: (settings.footer?.columns ?? []).flatMap(
-                    (col) =>
-                        col.links?.map((l) => ({
-                            label: `${col.title} › ${l.label}`,
-                            href: l.href,
-                            external: l.external,
-                            visible: true,
-                        })) ?? [],
-                ),
-            },
-        ]
+              {
+                  key: "primary",
+                  label: "Primary Navigation",
+                  description:
+                      "The main menu in the site header. Shown on every page.",
+                  href: "/admin/navigation",
+                  icon: NavIcon,
+                  items: (settings.navigation ?? []).map((n: NavItem) => ({
+                      label: n.label,
+                      href: n.href,
+                      external: n.external,
+                      visible: n.visible,
+                  })),
+              },
+              {
+                  key: "footer",
+                  label: "Footer Menu",
+                  description:
+                      "The link columns in the site footer, plus the copyright line.",
+                  href: "/admin/footer",
+                  icon: PanelBottom,
+                  items: (settings.footer?.columns ?? []).flatMap(
+                      (col) =>
+                          col.links?.map((l) => ({
+                              label: `${col.title} › ${l.label}`,
+                              href: l.href,
+                              external: l.external,
+                              visible: true,
+                          })) ?? [],
+                  ),
+              },
+          ]
         : [];
 
     return (
@@ -138,9 +141,7 @@ export default function AdminMenusPage() {
                                 </div>
 
                                 <div className="mb-3 flex gap-4 text-xs text-[var(--text-tertiary)]">
-                                    <span>
-                                        {loc.items.length} links
-                                    </span>
+                                    <span>{loc.items.length} links</span>
                                     <span>{visibleCount} visible</span>
                                     <span>
                                         {loc.items.length - visibleCount} hidden

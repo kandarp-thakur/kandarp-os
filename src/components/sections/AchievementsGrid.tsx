@@ -38,10 +38,10 @@ const TIER_STYLES: Record<
         text: "Legendary",
     },
     epic: {
-        ring: "border-violet-400/60",
-        glow: "shadow-[0_0_24px_-4px_rgba(167,139,250,0.45)]",
-        icon: "text-violet-500",
-        label: "bg-violet-400/15 text-violet-600 dark:text-violet-400",
+        ring: "border-blue-400/60",
+        glow: "shadow-[0_0_24px_-4px_rgba(50,108,229,0.42)]",
+        icon: "text-blue-500",
+        label: "bg-blue-400/15 text-blue-600 dark:text-blue-400",
         text: "Epic",
     },
     rare: {

@@ -6,7 +6,7 @@
  * its collection name, Zod schema, and the permission it requires. This keeps
  * every CRUD endpoint consistent (pagination, validation, auth, audit) while
  * staying thin.
-    *
+ *
  * The factory returns `{ GET, POST }` for the collection root and
  * `{ GET, PATCH, DELETE }` for `[id]` routes. Duplicate + bulk actions are
  * handled by dedicated routes.
@@ -200,7 +200,7 @@ export function createDuplicateHandler<
 interface BulkBody {
     ids: string[];
     action:
-    "delete" | "archive" | "restore" | "publish" | "draft" | "duplicate";
+        "delete" | "archive" | "restore" | "publish" | "draft" | "duplicate";
     /** Optional patch for bulk update actions. */
     patch?: Record<string, unknown>;
 }

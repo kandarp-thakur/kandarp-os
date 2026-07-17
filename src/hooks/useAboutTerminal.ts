@@ -15,7 +15,7 @@ export interface AboutBlock {
 
 export interface UseAboutTerminal {
     /** Ref to attach to the scrollable terminal body (IntersectionObserver target). */
-    terminalRef: RefObject<HTMLDivElement>;
+    terminalRef: RefObject<HTMLDivElement | null>;
     /** Committed command blocks, in execution order. */
     blocks: AboutBlock[];
     /** Partial text of the command currently being typed ("" when idle). */

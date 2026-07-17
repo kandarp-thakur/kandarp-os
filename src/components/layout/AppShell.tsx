@@ -52,11 +52,10 @@ export async function AppShell({
     return (
         <div
             className={cn(
-                // No background: the body already carries `bg-canvas-base`, and
-                // an opaque bg here would paint over the fixed negative-z-index
-                // background layers (DevOps constellation + CloudInfinity 3D),
-                // hiding them entirely. Transparent so those layers show through.
-                "flex min-h-[100svh] flex-col",
+                // No background: the body already carries `bg-canvas-base`.
+                // Keep content above the fixed decorative background layers
+                // without pushing those layers behind the document canvas.
+                "relative z-10 flex min-h-[100svh] flex-col",
                 className,
             )}
         >

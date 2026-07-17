@@ -113,7 +113,9 @@ export default function AdminSeoPage() {
                             <label className={labelClass}>Meta Title</label>
                             <input
                                 value={seo.title ?? ""}
-                                onChange={(e) => patch({ title: e.target.value })}
+                                onChange={(e) =>
+                                    patch({ title: e.target.value })
+                                }
                                 placeholder="Kandarp OS — DevOps Engineer"
                                 className={inputClass}
                             />
@@ -146,9 +148,7 @@ export default function AdminSeoPage() {
                             />
                         </div>
                         <div>
-                            <label className={labelClass}>
-                                Canonical URL
-                            </label>
+                            <label className={labelClass}>Canonical URL</label>
                             <input
                                 value={seo.canonicalUrl ?? ""}
                                 onChange={(e) =>
@@ -165,8 +165,7 @@ export default function AdminSeoPage() {
                                 onChange={(e) =>
                                     patch({
                                         twitterCard: e.target.value as
-                                            | "summary"
-                                            | "summary_large_image",
+                                            "summary" | "summary_large_image",
                                     })
                                 }
                                 className={inputClass}
@@ -224,9 +223,7 @@ export default function AdminSeoPage() {
                             />
                         </div>
                         <div className="sm:col-span-2">
-                            <label className={labelClass}>
-                                OG Description
-                            </label>
+                            <label className={labelClass}>OG Description</label>
                             <textarea
                                 value={seo.ogDescription ?? ""}
                                 onChange={(e) =>

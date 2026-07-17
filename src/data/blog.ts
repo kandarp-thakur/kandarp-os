@@ -79,7 +79,7 @@ const rawUnits = [
         key: "life",
         label: "Life",
         unit: "life.service",
-        tint: "pink",
+        tint: "cloud",
         description: "Reflections, philosophy, off-topic",
     },
     {
@@ -124,7 +124,7 @@ export const UNIT_TINT_TEXT: Record<BlogUnitRegistry["tint"], string> = {
     info: "text-info",
     success: "text-success",
     warning: "text-warning",
-    pink: "text-[#EC4899] dark:text-[#F472B6]",
+    cloud: "text-[#38BDF8] dark:text-[#60C7FF]",
 };
 
 /**
@@ -135,7 +135,7 @@ export const UNIT_TINT_DOT: Record<BlogUnitRegistry["tint"], string> = {
     info: "bg-info",
     success: "bg-success",
     warning: "bg-warning",
-    pink: "bg-[#EC4899]",
+    cloud: "bg-[#38BDF8]",
 };
 
 /**

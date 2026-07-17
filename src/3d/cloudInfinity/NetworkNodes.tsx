@@ -18,7 +18,7 @@ import type { DeviceTier } from "../types";
  *
  * Implementation (three cheap draw calls, all tier-gated):
  *  - **Nodes**: a `Points` cloud with a crisp radial sprite, small size, blue/
- *    violet tint, additive blending for the soft glow. Static positions.
+ *    Docker Blue tint, additive blending for the soft glow. Static positions.
  *  - **Lines**: `LineSegments` connecting each node to its 2 nearest neighbors,
  *    thin, low-opacity, blue. Static.
  *  - **Data packets**: a small `Points` cloud whose positions are animated each
@@ -52,8 +52,8 @@ interface TierCounts {
 }
 
 const TIER_COUNTS: Record<DeviceTier, TierCounts> = {
-    high: { nodes: 11, packets: 6 },
-    medium: { nodes: 8, packets: 4 },
+    high: { nodes: 12, packets: 3 },
+    medium: { nodes: 8, packets: 2 },
     low: { nodes: 0, packets: 0 },
     off: { nodes: 0, packets: 0 },
 };
@@ -194,7 +194,7 @@ function NetworkNodesImpl({
             packetRoutes.push({
                 a,
                 b,
-                speed: 0.15 + rng() * 0.25,
+                speed: 0.08 + rng() * 0.14,
                 progress: rng(),
             });
         }
@@ -215,7 +215,7 @@ function NetworkNodesImpl({
         if (!geom) return;
         const attr = geom.getAttribute("position") as THREE.BufferAttribute;
         const arr = attr.array as Float32Array;
-        const dt = Math.min(delta, 0.05);
+        const dt = Math.min(delta, 0.033);
         const { packetRoutes, nodes } = network;
 
         for (let i = 0; i < packetCount; i++) {
@@ -249,12 +249,12 @@ function NetworkNodesImpl({
                 </bufferGeometry>
                 <pointsMaterial
                     map={texture ?? undefined}
-                    size={0.22}
+                    size={0.18}
                     sizeAttenuation
                     transparent
-                    opacity={0.9}
+                    opacity={0.88}
                     depthWrite={false}
-                    color="#7dd3fc"
+                    color="#38BDF8"
                     blending={THREE.AdditiveBlending}
                 />
             </points>
@@ -269,9 +269,9 @@ function NetworkNodesImpl({
                 </bufferGeometry>
                 <lineBasicMaterial
                     transparent
-                    opacity={0.18}
+                    opacity={0.14}
                     depthWrite={false}
-                    color="#6366f1"
+                    color="#326CE5"
                 />
             </lineSegments>
 
@@ -286,12 +286,12 @@ function NetworkNodesImpl({
                     </bufferGeometry>
                     <pointsMaterial
                         map={texture ?? undefined}
-                        size={0.16}
+                        size={0.13}
                         sizeAttenuation
                         transparent
                         opacity={1}
                         depthWrite={false}
-                        color="#a78bfa"
+                        color="#FF9900"
                         blending={THREE.AdditiveBlending}
                     />
                 </points>
