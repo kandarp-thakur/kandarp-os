@@ -3,6 +3,19 @@
  * Single source of truth for identity + routing metadata.
  */
 
+/**
+ * Public base URL of the deployed site.
+ *
+ * Resolved from the `NEXT_PUBLIC_SITE_URL` env var (set in `.env.local` /
+ * Vercel project settings) so the canonical URL, sitemap, robots.txt, OG tags,
+ * and JSON-LD all point at the real production domain without a code change.
+ * Falls back to the production domain when the env var is absent (e.g. a
+ * fresh clone running `next dev` before `.env.local` exists).
+ */
+const SITE_URL =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    "https://kandarp.online";
+
 export const SITE = {
     name: "Kandarp OS",
     owner: "Kandarp Kumar Thakur",
@@ -13,7 +26,7 @@ export const SITE = {
     userAtHost: "root@kandarp",
     description:
         "Kandarp OS — the operating system of a DevOps & Cloud Engineer specializing in networking, security, and Python automation. An immersive single-page engineering experience.",
-    url: "https://kandarp-os.dev",
+    url: SITE_URL,
     locale: "en_US.UTF-8",
     timezone: "Asia/Calcutta",
     /** Direct contact channels. */

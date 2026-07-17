@@ -195,7 +195,7 @@ function LoginForm() {
                 </div>
 
                 <p className="mt-6 text-center text-xs text-[var(--text-quaternary)]">
-                    Default: admin@kandarp-os.dev / ChangeMe!2026
+                    Default: admin@kandarp.online / ChangeMe!2026
                 </p>
             </div>
         </div>

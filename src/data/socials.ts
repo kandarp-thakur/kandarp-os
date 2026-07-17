@@ -11,8 +11,8 @@ const rawSocials = [
         id: "github",
         label: "GitHub",
         command: "github",
-        url: "https://github.com/kktha",
-        handle: "@kktha",
+        url: "https://github.com/kandarp-thakur",
+        handle: "@kandarp-thakur",
         description:
             "Open source projects, automation scripts, and experiments.",
     },

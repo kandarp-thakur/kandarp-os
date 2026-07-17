@@ -43,7 +43,7 @@ export const adminEnv = {
     },
     /** Default owner email — seeded on first boot if no users exist. */
     get ownerEmail(): string {
-        return process.env.ADMIN_OWNER_EMAIL ?? "admin@kandarp-os.dev";
+        return process.env.ADMIN_OWNER_EMAIL ?? "admin@kandarp.online";
     },
     /** Default owner password — seeded on first boot. CHANGE IMMEDIATELY. */
     get ownerPassword(): string {

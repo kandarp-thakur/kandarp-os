@@ -181,7 +181,7 @@ const rawNodes = [
         links: [
             {
                 label: "GitHub",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
                 variant: "primary" as const,
             },
             {

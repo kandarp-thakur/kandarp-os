@@ -43,7 +43,7 @@ const rawContainers = [
             {
                 port: "repo",
                 label: "GitHub",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
             },
         ],
         metrics: [
@@ -68,7 +68,7 @@ const rawContainers = [
             },
             {
                 label: "View Source",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
                 variant: "secondary",
             },
         ],
@@ -95,12 +95,12 @@ const rawContainers = [
             {
                 port: ":3000",
                 label: "Live demo",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
             },
             {
                 port: "repo",
                 label: "GitHub",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
             },
         ],
         metrics: [
@@ -118,7 +118,7 @@ const rawContainers = [
         links: [
             {
                 label: "View Source",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
                 variant: "secondary",
             },
         ],
@@ -139,7 +139,7 @@ const rawContainers = [
             {
                 port: "repo",
                 label: "GitHub",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
             },
         ],
         metrics: [
@@ -156,7 +156,7 @@ const rawContainers = [
         links: [
             {
                 label: "View Source",
-                url: "https://github.com/kktha",
+                url: "https://github.com/kandarp-thakur",
                 variant: "secondary",
             },
         ],
