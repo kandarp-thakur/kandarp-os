@@ -9,6 +9,7 @@ import { InfrastructureTopology } from "@/components/sections/InfrastructureTopo
 import { SkillsMesh } from "@/components/sections/SkillsMesh";
 import { AchievementsGrid } from "@/components/sections/AchievementsGrid";
 import { ContactTerminal } from "@/components/sections/ContactTerminal";
+import { ConnectLinks } from "@/components/sections/ConnectLinks";
 import { JournalStream } from "@/components/blog/JournalStream";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatPills } from "@/components/shared/StatPills";
@@ -425,6 +426,11 @@ export default async function HomePage() {
                         className="mb-10"
                     />
                     <ContactTerminal />
+
+                    {/* Visible, clickable connect channels — a single-click
+                        companion to the terminal for visitors who don't know
+                        to type `github`, `email`, etc. */}
+                    <ConnectLinks className="mt-8" />
                 </Container>
             </Section>
         ),

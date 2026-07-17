@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ContactTerminal } from "@/components/sections/ContactTerminal";
+import { ConnectLinks } from "@/components/sections/ConnectLinks";
 import { getSiteConfig } from "@/hooks/useSiteConfig";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,6 +38,11 @@ export default async function ContactPage() {
 
             {/* The interactive terminal */}
             <ContactTerminal />
+
+            {/* Visible, clickable connect channels — a single-click
+                companion to the terminal for visitors who don't know to
+                type `github`, `email`, etc. */}
+            <ConnectLinks className="mt-8" />
 
             {/* Quick command hints */}
             <p className="mt-6 max-w-3xl font-mono text-xs text-text-tertiary">
