@@ -34,6 +34,7 @@ import {
     getActiveSection,
     scrollToSection,
 } from "@/utils/navigation";
+import { SECTIONS } from "@/utils/constants";
 import { cn } from "@/utils/cn";
 
 /** A map of icon name → LucideIcon component, for resolving admin nav icons. */
@@ -141,7 +142,11 @@ export function Navbar({
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
-    const [activeSection, setActiveSection] = useState<string | null>(null);
+    // Default to the Hero/Home section so the indicator starts on the
+    // `∞ root@kandarp` logo on initial render, before any scroll fires.
+    const [activeSection, setActiveSection] = useState<string | null>(
+        SECTIONS.hero,
+    );
 
     // Resolve the nav items: CMS-driven (admin shape → public shape) if
     // provided, otherwise the hardcoded defaults.
@@ -184,11 +189,17 @@ export function Navbar({
     }, []);
 
     // Scroll-spy: track which section is in view to highlight the active link.
-    // Uses the flattened nav tree so every section (including dropdown
-    // children) is observed. Throttled via a timestamp gate to avoid running
-    // on every scroll event.
+    // The Hero/Home section is observed first (mapped to the `∞ root@kandarp`
+    // logo) so the indicator defaults to the logo at the top of the page and
+    // returns to it whenever the hero scrolls back into view. Uses the
+    // flattened nav tree so every section (including dropdown children) is
+    // observed. Throttled via a timestamp gate to avoid running on every
+    // scroll event.
     useEffect(() => {
-        const sectionIds = flatNav.map((item) => item.sectionId);
+        const sectionIds = [
+            SECTIONS.hero,
+            ...flatNav.map((item) => item.sectionId),
+        ];
         let last = 0;
 
         const onScroll = () => {
@@ -277,6 +288,7 @@ export function Navbar({
                 >
                     <Logo
                         scrolled={scrolled}
+                        active={activeSection === SECTIONS.hero}
                         siteName={siteName}
                         userAtHost={userAtHost}
                     />
