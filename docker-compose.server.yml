@@ -66,7 +66,11 @@ services:
       # validation (empty string != undefined). Only set them if non-empty.
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/" ]
+      # Use 127.0.0.1 (not `localhost`) — Alpine's /etc/hosts maps localhost to
+      # both 127.0.0.1 and ::1; busybox wget resolves to ::1 (IPv6) first, but the
+      # Next.js standalone server binds to 0.0.0.0 (IPv4 only), so `localhost`
+      # yields "Connection refused". 127.0.0.1 forces the IPv4 path.
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/" ]
       interval: 30s
       timeout: 5s
       retries: 3

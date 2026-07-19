@@ -22,6 +22,13 @@ import { SECTIONS, SITE } from "@utils/constants";
 import { hashPassword } from "@backend/auth/auth";
 import { adminEnv } from "@backend/config/env";
 import { list, create } from "@backend/repositories/repo";
+import { prisma } from "@backend/database/db";
+import {
+    ROLES,
+    ROLE_LABELS,
+    ROLE_DESCRIPTIONS,
+    ROLE_PERMISSIONS,
+} from "@backend/permissions/rbac";
 import type {
     ActivityLog,
     Award,
@@ -617,8 +624,98 @@ async function seedSiteCustomizationIfMissing(): Promise<void> {
     );
 }
 
+/**
+ * Seed the RBAC system data (roles, permissions, role↔permission links)
+ * directly via Prisma — bypassing the repository layer — if any system role
+ * is missing.
+ *
+ * This MUST run before `seedIfEmpty("users", …)` because the User model
+ * stores `roleId` (FK to Role), and the app-layer `seedUsers()` hands the
+ * repo a `role: "owner"` string that the repo resolves to a `roleId`. If the
+ * roles aren't in the DB yet, that resolution throws and the whole
+ * `ensureSeeded()` lazy seed fails — which was the second half of the login
+ * 500 (the first half being the enum case mismatch).
+ *
+ * Seeding RBAC through the repo would be circular (the repo's `create()`
+ * writes `createdById` audit fields that reference a User, and authorization
+ * consults the Role↔Permission matrix), so we hit Prisma directly, exactly
+ * like `prisma/seed.ts`'s `seedRbac()` does. Idempotent via upserts keyed on
+ * the unique `name` field.
+ *
+ * This makes the lazy `ensureSeeded()` path self-sufficient: even if
+ * `prisma/seed.ts` was never run on the server, the first admin request
+ * seeds everything it needs.
+ */
+async function seedRbacIfMissing(): Promise<void> {
+    // Quick check: if the "owner" role already exists, RBAC was seeded
+    // (by prisma/seed.ts or a previous boot) — skip the whole phase.
+    const ownerRole = await prisma.role.findUnique({
+        where: { name: "owner" },
+        select: { id: true },
+    });
+    if (ownerRole) return;
+
+    // 1. Upsert all permissions (the union of every role's permission set).
+    const allPermNames = new Set<string>();
+    for (const perms of Object.values(ROLE_PERMISSIONS)) {
+        for (const p of perms) allPermNames.add(p);
+    }
+    for (const name of allPermNames) {
+        await prisma.permission.upsert({
+            where: { name },
+            update: {},
+            create: { name, description: "" },
+        });
+    }
+
+    // 2. Upsert the four system roles.
+    for (const name of ROLES) {
+        await prisma.role.upsert({
+            where: { name },
+            update: {
+                label: ROLE_LABELS[name],
+                description: ROLE_DESCRIPTIONS[name],
+                isSystem: true,
+            },
+            create: {
+                name,
+                label: ROLE_LABELS[name],
+                description: ROLE_DESCRIPTIONS[name],
+                isSystem: true,
+            },
+        });
+    }
+
+    // 3. Link roles → permissions per the ROLE_PERMISSIONS matrix.
+    for (const [roleName, permNames] of Object.entries(ROLE_PERMISSIONS)) {
+        const role = await prisma.role.findUnique({
+            where: { name: roleName },
+            select: { id: true },
+        });
+        if (!role) continue;
+        const permissions = await prisma.permission.findMany({
+            where: { name: { in: permNames } },
+            select: { id: true },
+        });
+        await prisma.rolePermission.deleteMany({
+            where: { roleId: role.id },
+        });
+        await prisma.rolePermission.createMany({
+            data: permissions.map((p) => ({
+                roleId: role.id,
+                permissionId: p.id,
+            })),
+            skipDuplicates: true,
+        });
+    }
+}
+
 /** Seed every collection. Idempotent — safe to call on every boot. */
 export async function seedStore(): Promise<void> {
+    // RBAC system data must exist before users (User.roleId FK). Seeded
+    // directly via Prisma to avoid the circular dependency the repo layer
+    // would introduce.
+    await seedRbacIfMissing();
     await seedIfEmpty("projects", seedProjects);
     await seedIfEmpty("experience", seedExperience);
     await seedIfEmpty("skills", seedSkills);

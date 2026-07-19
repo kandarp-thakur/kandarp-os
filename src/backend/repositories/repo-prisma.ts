@@ -37,6 +37,11 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@backend/database/db";
 import { logger } from "@backend/logging/logger";
 import type { CollectionName, VersionEntry } from "@backend/schemas/types";
+import {
+    toPrismaEnum,
+    fromPrismaEnum,
+    ENUM_FIELDS,
+} from "@backend/repositories/enum-mapping";
 
 /** Type guard: is this a Prisma "record not found" error (P2025)? */
 function isNotFound(err: unknown): boolean {
@@ -132,6 +137,100 @@ const RELATIONAL: ReadonlySet<CollectionName> = new Set([
     "infraNodes",
 ]);
 
+/**
+ * Enum fields grouped by collection — the read-side companion to
+ * `enum-mapping.ts`. Built once at module load from `ENUM_FIELDS` so the
+ * `toEntity` hot path is a single `Map.get` + a short loop, not a scan of the
+ * full `ENUM_FIELDS` array for every row.
+ */
+const ENUM_FIELDS_BY_COLLECTION: ReadonlyMap<
+    CollectionName,
+    readonly string[]
+> = (() => {
+    const map = new Map<CollectionName, string[]>();
+    for (const { collection, field } of ENUM_FIELDS) {
+        const list = map.get(collection);
+        if (list) list.push(field);
+        else map.set(collection, [field]);
+    }
+    return map;
+})();
+
+/**
+ * Cache of `roleId` → role machine name. Populated lazily on first lookup
+ * (and refreshed if a miss is encountered, so a role created after the cache
+ * was filled is still resolved). The Role table is tiny (4 system rows + any
+ * custom roles), so a full re-fetch on a miss is cheap.
+ *
+ * This exists because the `users` collection's `toEntity` needs the role
+ * *name* even when the caller didn't `include: { role: true }` (the default
+ * `includeFor("users")` returns `{}`). Resolving via a lookup avoids forcing
+ * every user read to pay for a join.
+ */
+const roleNameCache = new Map<string, string>();
+
+/**
+ * Cache of role machine name → `roleId`. The write-side companion to
+ * `roleNameCache`: when the app layer hands us `role: "owner"` we must resolve
+ * it to a `roleId` before writing to Prisma (the User model stores `roleId`,
+ * not `role`). Kept in sync with `roleNameCache` so a single DB fetch warms
+ * both directions.
+ */
+const roleIdCache = new Map<string, string>();
+
+/** True while a cache refresh is in flight (de-dupe concurrent refreshes). */
+let roleCacheRefreshing: Promise<void> | null = null;
+
+/**
+ * Fire-and-forget refresh of both role caches from the DB. Safe to call from
+ * the synchronous `toEntity` hot path — it returns `void` and never blocks the
+ * caller. A miss usually means the cache is empty (cold start) or a new role
+ * was added since the last refresh. Concurrent calls are de-duped so a burst
+ * of cache misses triggers a single `findMany`.
+ */
+function refreshRoleCache(_roleId?: string): void {
+    if (roleCacheRefreshing) return;
+    roleCacheRefreshing = (async () => {
+        try {
+            const roles = await prisma.role.findMany({
+                select: { id: true, name: true },
+            });
+            for (const r of roles) {
+                roleNameCache.set(r.id, r.name);
+                roleIdCache.set(r.name, r.id);
+            }
+        } catch (err) {
+            logger.warn({ err }, "role_cache.refresh_failed");
+        } finally {
+            roleCacheRefreshing = null;
+        }
+    })();
+    void _roleId; // accepted for API symmetry; the refresh fetches all roles.
+}
+
+/**
+ * Resolve a role machine name ("owner" | "admin" | …) to its `roleId`.
+ * Used by the write side (`fromEntity`) to translate the app-layer `role`
+ * string into the `roleId` FK Prisma expects. Throws if the role can't be
+ * resolved — a missing role is a real error (the RBAC seed must run first),
+ * not something to silently default.
+ */
+async function resolveRoleId(roleName: string): Promise<string> {
+    const cached = roleIdCache.get(roleName);
+    if (cached) return cached;
+    // Cold cache — fetch all roles and warm both caches, then retry.
+    refreshRoleCache();
+    await roleCacheRefreshing;
+    const resolved = roleIdCache.get(roleName);
+    if (!resolved) {
+        throw new Error(
+            `Role "${roleName}" not found in the database. ` +
+                `Ensure the RBAC seed (prisma/seed.ts) has run before seeding users.`,
+        );
+    }
+    return resolved;
+}
+
 /* ── Field helpers ──────────────────────────────────────────────────────── */
 
 /** Resolve a (possibly nested) field path like `"seo.title"` from a row. */
@@ -224,6 +323,42 @@ function toEntity(name: CollectionName, row: Record<string, unknown>): Entity {
         delete entity.archivedById;
     }
 
+    // Users: resolve the `role` relation (Role.name) → the app-layer `role`
+    // string. The Prisma User model stores `roleId` (FK to Role) and exposes
+    // `role` as a relation object; the app layer expects `role` to be the
+    // lowercase machine name ("owner" | "admin" | "editor" | "viewer").
+    // `includeFor("users")` always includes `{ role: true }`, so the relation
+    // is normally present. The sync `roleNameCache` is a fallback for the rare
+    // case a caller reads a user row without the include (it is refreshed
+    // fire-and-forget on a miss by `refreshRoleCache`).
+    if (name === "users") {
+        const roleRel = entity.role as { name?: string } | undefined;
+        if (roleRel && typeof roleRel.name === "string") {
+            entity.role = roleRel.name;
+            // Keep the cache warm for the fallback path.
+            if (typeof entity.roleId === "string") {
+                roleNameCache.set(entity.roleId, roleRel.name);
+            }
+        } else if (typeof entity.roleId === "string") {
+            const cached = roleNameCache.get(entity.roleId);
+            if (cached) {
+                entity.role = cached;
+            } else {
+                // Cache miss — use a safe default and refresh in the
+                // background so the next read resolves correctly.
+                entity.role = "viewer";
+                void refreshRoleCache(entity.roleId);
+            }
+        } else {
+            entity.role = "viewer";
+        }
+        delete entity.roleId;
+    }
+
+    // Prisma enum (UPPER_SNAKE_CASE) → app-layer (lowercase) for every enum
+    // field on this collection. See `enum-mapping.ts` for the full table.
+    translateEnumsToApp(name, entity);
+
     // Relationship join tables → related*Ids arrays.
     if (RELATIONAL.has(name)) {
         mapRelationsToIds(name, entity);
@@ -240,6 +375,24 @@ function toEntity(name: CollectionName, row: Record<string, unknown>): Entity {
     stripPrismaRelations(name, entity);
 
     return entity as unknown as Entity;
+}
+
+/**
+ * In-place Prisma→app enum translation for every enum field on `collection`.
+ * Iterates only the known enum fields (from `enum-mapping.ts`) so non-enum
+ * rows pay no per-key cost. Unknown values pass through unchanged.
+ */
+function translateEnumsToApp(
+    name: CollectionName,
+    entity: Record<string, unknown>,
+): void {
+    const fields = ENUM_FIELDS_BY_COLLECTION.get(name);
+    if (!fields) return;
+    for (const field of fields) {
+        if (field in entity) {
+            entity[field] = fromPrismaEnum(name, field, entity[field]);
+        }
+    }
 }
 
 /** Map join-table relation arrays on a Prisma row to `related*Ids`. */
@@ -384,16 +537,31 @@ function stripPrismaRelations(
  * Convert an Entity (from the API) to a Prisma `create` / `update` payload.
  * - ISO strings → Date (Prisma handles DateTime).
  * - `createdBy` → `createdById`, etc.
- * - `related*Ids` → join-table `create` payloads.
+ * - `related*Ids` → join-table `create` payloads (handled by `syncRelationships`).
  * - `versionHistory` is ignored here (managed via the VersionHistory table).
+ * - App-layer enums (lowercase) → Prisma enums (UPPER_SNAKE_CASE).
+ * - `users.role` (string machine name) → `roleId` (FK to Role), resolved via
+ *   the role cache. `role` and `sessions` (relations) are stripped.
+ *
+ * This is the WRITE side of the anti-corruption layer — it is the function
+ * that actually prevents the `PrismaClientValidationError` that caused the
+ * login 500: every enum field is translated from the app's lowercase
+ * convention to Prisma's UPPER_SNAKE_CASE before the payload reaches the
+ * delegate.
+ *
+ * Async because `users.role` → `roleId` may require a DB lookup on a cold
+ * cache. All call sites (`create`, `update`, `bulkUpdate`, `restoreVersion`,
+ * `importCollection`) are async and `await` this function.
  */
-function fromEntity(
+async function fromEntity(
     name: CollectionName,
     entity: Record<string, unknown>,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
     const out: Record<string, unknown> = { ...entity };
 
-    // Audit field renames.
+    // Audit field renames. (Users have no createdById/updatedById columns —
+    // the `create` wrapper skips setting them for the `users` collection, and
+    // we strip any stray ones here so Prisma doesn't reject the payload.)
     if ("createdBy" in out) {
         out.createdById = out.createdBy ?? null;
         delete out.createdBy;
@@ -407,6 +575,28 @@ function fromEntity(
         delete out.archivedBy;
     }
 
+    // Users: translate the app-layer `role` string → `roleId` FK, and strip
+    // relation fields Prisma doesn't accept as scalars on create/update.
+    if (name === "users") {
+        if (typeof out.role === "string") {
+            out.roleId = await resolveRoleId(out.role);
+        }
+        // `role` is a relation object, `sessions`/`permissions`/`accounts`/
+        // `refreshTokens` are relations — none are writable as scalars.
+        delete out.role;
+        delete out.sessions;
+        delete out.permissions;
+        delete out.accounts;
+        delete out.refreshTokens;
+        // The User model has no createdById/updatedById columns (it is the
+        // root of the audit provenance graph), so strip them if present.
+        delete out.createdById;
+        delete out.updatedById;
+    }
+
+    // App-layer enums (lowercase) → Prisma enums (UPPER_SNAKE_CASE).
+    translateEnumsToPrisma(name, out);
+
     // Drop fields Prisma doesn't store on the row.
     delete out.versionHistory;
     delete out.relatedBlogIds;
@@ -419,8 +609,34 @@ function fromEntity(
     return out;
 }
 
+/**
+ * In-place app→Prisma enum translation for every enum field on `collection`.
+ * The write-side companion to `translateEnumsToApp`. Iterates only the known
+ * enum fields (from `enum-mapping.ts`) so non-enum rows pay no per-key cost.
+ * Unknown values pass through unchanged — Prisma will reject them with a
+ * clear validation error if they are genuinely invalid.
+ */
+function translateEnumsToPrisma(
+    name: CollectionName,
+    out: Record<string, unknown>,
+): void {
+    const fields = ENUM_FIELDS_BY_COLLECTION.get(name);
+    if (!fields) return;
+    for (const field of fields) {
+        if (field in out) {
+            out[field] = toPrismaEnum(name, field, out[field]);
+        }
+    }
+}
+
 /** Build the Prisma `include` for relations + version history. */
 function includeFor(name: CollectionName): Record<string, boolean> {
+    // Users: always include the `role` relation so `toEntity` can resolve the
+    // role machine name synchronously (the app layer reads `user.role` as a
+    // string, but Prisma stores it as a FK to the Role table).
+    if (name === "users") {
+        return { role: true };
+    }
     if (!RELATIONAL.has(name) && !ARCHIVABLE.has(name)) return {};
     const include: Record<string, boolean> = {};
     if (name === "projects") {
@@ -820,14 +1036,16 @@ export async function create<T extends Entity>(
     data: Omit<T, "id" | "createdAt" | "updatedAt">,
     actorId?: string,
 ): Promise<T> {
-    const payload = fromEntity(name, data as Record<string, unknown>);
+    const payload = await fromEntity(name, data as Record<string, unknown>);
     payload.createdAt = now();
     payload.updatedAt = now();
     if (ARCHIVABLE.has(name)) {
         payload.archivedAt = null;
         payload.archivedById = null;
     }
-    if (actorId) {
+    // The User model has no createdById/updatedById columns (it is the root
+    // of the audit provenance graph), so only set them for other collections.
+    if (actorId && name !== "users") {
         payload.createdById = actorId;
         payload.updatedById = actorId;
     }
@@ -857,9 +1075,9 @@ export async function update<T extends Entity>(
     ) {
         await pushVersion(name, prev, actorId, versionLabel);
     }
-    const payload = fromEntity(name, patch as Record<string, unknown>);
+    const payload = await fromEntity(name, patch as Record<string, unknown>);
     payload.updatedAt = now();
-    if (actorId) payload.updatedById = actorId;
+    if (actorId && name !== "users") payload.updatedById = actorId;
     try {
         const row = (await delegate(name).update({
             where: { id },
@@ -1061,9 +1279,9 @@ export async function bulkUpdate<T extends Entity>(
     patch: Partial<T>,
     actorId?: string,
 ): Promise<number> {
-    const payload = fromEntity(name, patch as Record<string, unknown>);
+    const payload = await fromEntity(name, patch as Record<string, unknown>);
     payload.updatedAt = now();
-    if (actorId) payload.updatedById = actorId;
+    if (actorId && name !== "users") payload.updatedById = actorId;
     const res = await delegate(name).updateMany({
         where: { id: { in: ids } },
         data: payload as Record<string, unknown>,
@@ -1111,9 +1329,9 @@ export async function restoreVersion<T extends Entity>(
     if (!current) return null;
     await pushVersion(name, current, actorId, `Restored v${version}`);
     const snapshot = entry.snapshot as Record<string, unknown>;
-    const payload = fromEntity(name, { ...snapshot });
+    const payload = await fromEntity(name, { ...snapshot });
     payload.updatedAt = now();
-    if (actorId) payload.updatedById = actorId;
+    if (actorId && name !== "users") payload.updatedById = actorId;
     delete payload.id;
     delete payload.createdAt;
     try {
@@ -1221,9 +1439,9 @@ export async function importCollection<T extends Entity>(
     // merge — upsert by id.
     let n = 0;
     for (const row of incoming) {
-        const payload = fromEntity(name, row as Record<string, unknown>);
+        const payload = await fromEntity(name, row as Record<string, unknown>);
         payload.updatedAt = now();
-        if (actorId) payload.updatedById = actorId;
+        if (actorId && name !== "users") payload.updatedById = actorId;
         try {
             await delegate(name).upsert({
                 where: { id: row.id },
