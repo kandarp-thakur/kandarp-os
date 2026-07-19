@@ -19,8 +19,8 @@ import {
     Trash2,
 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { FooterColumn, Settings } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { FooterColumn, Settings } from "@backend/schemas/types";
 
 function uid(prefix: string): string {
     return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;

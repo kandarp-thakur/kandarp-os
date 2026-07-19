@@ -3,7 +3,7 @@
  * POST /api/admin/experience/[id]/restore-version
  */
 
-import { createRestoreVersionHandler } from "@/lib/admin/crud";
-import { experienceConfig } from "@/lib/admin/configs";
+import { createRestoreVersionHandler } from "@backend/controllers/crud";
+import { experienceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreVersionHandler(experienceConfig);

@@ -7,9 +7,9 @@
 import {
     GenericEntityList,
     type CreateField,
-} from "@/components/admin/GenericEntityList";
-import type { AdminColumn } from "@/components/admin/AdminDataTable";
-import type { Service } from "@/lib/admin/types";
+} from "@features/admin/components/GenericEntityList";
+import type { AdminColumn } from "@features/admin/components/AdminDataTable";
+import type { Service } from "@backend/schemas/types";
 
 const columns: AdminColumn<Service>[] = [
     {

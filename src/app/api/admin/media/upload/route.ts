@@ -16,20 +16,23 @@
  * reference it as `/media/<uuid>.<ext>`.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
 import { randomUUID } from "crypto";
 
-import { audit, error, json, requirePermission } from "@/lib/admin/api";
-import { create, findById, update } from "@/lib/admin/repo";
-import { revalidateCollection } from "@/lib/admin/revalidate";
+import {
+    audit,
+    error,
+    json,
+    requirePermission,
+} from "@backend/middlewares/api";
+import { create, findById, update } from "@backend/repositories/repo";
+import { revalidateCollection } from "@backend/cache/revalidate";
+import { storage } from "@backend/storage/storage";
 import {
     optimizeImageAsset,
     isOptimizable,
-} from "@/lib/admin/image-optimization";
-import type { MediaAsset } from "@/lib/admin/types";
+} from "@backend/services/image-optimization";
+import type { MediaAsset } from "@backend/schemas/types";
 
-const MEDIA_DIR = join(process.cwd(), "public", "media");
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /** Allowed image MIME types for upload (per the task spec). */
@@ -86,19 +89,16 @@ export async function POST(req: Request) {
         );
     }
 
-    // Ensure the media directory exists.
-    if (!existsSync(MEDIA_DIR)) mkdirSync(MEDIA_DIR, { recursive: true });
-
     // Generate a unique filename. The extension is derived from the validated
     // MIME type (never the user-supplied name) to prevent path traversal and
     // executable upload bypasses (e.g. `../../evil.js`, `shell.exe`).
     const ext = MIME_TO_EXT[file.type] ?? DEFAULT_EXT;
     const filename = `${randomUUID()}.${ext}`;
-    const absPath = join(MEDIA_DIR, filename);
-    const relPath = `/media/${filename}`;
 
-    const bytes = await file.arrayBuffer();
-    writeFileSync(absPath, Buffer.from(bytes));
+    // Upload via the storage provider (local disk or Cloudinary). The provider
+    // returns the public URL to store in the asset's `path` field.
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const { url: publicUrl } = await storage.upload(filename, bytes, file.type);
 
     // Create the asset record first (so it has an id + name for variant files).
     const asset = await create<MediaAsset>(
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
             originalName: file.name,
             mimeType: file.type || "application/octet-stream",
             size: file.size,
-            path: relPath,
+            path: publicUrl,
             alt: "",
             folder: "/",
             tags: [],
@@ -165,7 +165,7 @@ export async function POST(req: Request) {
 
     // Re-read the created asset (the create() return may be stale if update
     // was attempted but returned null).
-    const fresh = findById<MediaAsset>("media", asset.id) ?? asset;
+    const fresh = (await findById<MediaAsset>("media", asset.id)) ?? asset;
     audit(session, "media.upload", "media", fresh.id, file.name);
     revalidateCollection("media");
     return json(fresh, 201);

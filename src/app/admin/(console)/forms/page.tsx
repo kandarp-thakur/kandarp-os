@@ -12,8 +12,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Inbox, Loader2, Mail, Trash2 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { AnalyticsEvent } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { AnalyticsEvent } from "@backend/schemas/types";
 
 interface SubmissionRow {
     id: string;

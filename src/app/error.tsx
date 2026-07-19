@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 
-import { PageContainer } from "@/components/layout/PageContainer";
-import { SITE } from "@/utils/constants";
-import { cn } from "@/utils/cn";
+import { PageContainer } from "@features/layout/components/PageContainer";
+import { SITE } from "@utils/constants";
+import { cn } from "@utils/cn";
 
 interface ErrorProps {
     /** The thrown error. */

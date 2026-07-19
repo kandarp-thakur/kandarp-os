@@ -1,10 +1,10 @@
-import { SITE } from "@/utils/constants";
+import { SITE } from "@utils/constants";
 import type {
     BlogPost,
     BlogPostMeta,
     BlogPriority,
     BlogUnit,
-} from "@/types/blog";
+} from "@packages/types/blog";
 
 /**
  * Blog summary helpers (blog-page-design §2, §5, §12).

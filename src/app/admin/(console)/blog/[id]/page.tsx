@@ -2,7 +2,7 @@
  * Edit blog post page — renders the BlogEditor with the post id.
  */
 
-import { BlogEditor } from "@/components/admin/BlogEditor";
+import { BlogEditor } from "@features/admin/components/BlogEditor";
 
 export default async function EditBlogPostPage({
     params,

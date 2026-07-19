@@ -7,10 +7,10 @@
  * to enumerate accounts). The owner resets passwords from the Users screen.
  */
 
-import { error, json } from "@/lib/admin/api";
-import { logActivity } from "@/lib/admin/session";
-import { findByField } from "@/lib/admin/repo";
-import type { User } from "@/lib/admin/types";
+import { error, json } from "@backend/middlewares/api";
+import { logActivity } from "@backend/auth/session";
+import { findByField } from "@backend/repositories/repo";
+import type { User } from "@backend/schemas/types";
 import { z } from "zod";
 
 const schema = z.object({ email: z.string().email() });
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const parsed = schema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) return error("Invalid email.", 400);
 
-    const user = findByField<User>(
+    const user = await findByField<User>(
         "users",
         "email",
         parsed.data.email.toLowerCase(),

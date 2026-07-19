@@ -3,7 +3,7 @@
  * from the dynamic route segment.
  */
 
-import { ProjectEditor } from "@/components/admin/ProjectEditor";
+import { ProjectEditor } from "@features/admin/components/ProjectEditor";
 
 export default async function EditProjectPage({
     params,

@@ -3,7 +3,7 @@
  * GET /api/admin/blog/export
  */
 
-import { createExportHandler } from "@/lib/admin/crud";
-import { blogConfig } from "@/lib/admin/configs";
+import { createExportHandler } from "@backend/controllers/crud";
+import { blogConfig } from "@backend/controllers/configs";
 
 export const { GET } = createExportHandler(blogConfig);

@@ -12,8 +12,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, Save } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { SeoMeta, Settings } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { SeoMeta, Settings } from "@backend/schemas/types";
 
 export default function AdminSeoPage() {
     const [seo, setSeo] = useState<SeoMeta | null>(null);

@@ -1,0 +1,25 @@
+allowBuilds:
+  '@prisma/client': set this to true or false
+  '@prisma/engines': set this to true or false
+  argon2: set this to true or false
+  esbuild: set this to true or false
+  prisma: set this to true or false
+  sharp: set this to true or false
+  unrs-resolver: set this to true or false
+# pnpm 11+ moved package-manager settings out of package.json into this file.
+# See https://pnpm.io/settings
+
+# Allow these native packages to run their install-time build scripts.
+# - @prisma/client, @prisma/engines, prisma: generate the query engine binary.
+# - argon2: compiles the native Argon2id binding (node-gyp).
+# - sharp: prebuilt image-processing binary.
+# - esbuild: bundler binary (used by tsx + pino-pretty transport).
+# - unrs-resolver: native resolver used by eslint-plugin-import.
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - prisma
+  - argon2
+  - sharp
+  - esbuild
+  - unrs-resolver

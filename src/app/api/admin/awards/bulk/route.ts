@@ -3,7 +3,7 @@
  * POST /api/admin/awards/bulk
  */
 
-import { createBulkHandler } from "@/lib/admin/crud";
-import { awardConfig } from "@/lib/admin/configs";
+import { createBulkHandler } from "@backend/controllers/crud";
+import { awardConfig } from "@backend/controllers/configs";
 
 export const { POST } = createBulkHandler(awardConfig);

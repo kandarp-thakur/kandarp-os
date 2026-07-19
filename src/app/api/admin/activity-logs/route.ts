@@ -5,9 +5,9 @@
  * via getQuery. Default sort is newest-first by timestamp.
  */
 
-import { getQuery, json, requirePermission } from "@/lib/admin/api";
-import { query } from "@/lib/admin/repo";
-import type { ActivityLog } from "@/lib/admin/types";
+import { getQuery, json, requirePermission } from "@backend/middlewares/api";
+import { query } from "@backend/repositories/repo";
+import type { ActivityLog } from "@backend/schemas/types";
 
 export async function GET(req: Request) {
     const session = await requirePermission("audit:read");

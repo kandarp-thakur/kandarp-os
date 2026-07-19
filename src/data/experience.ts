@@ -3,7 +3,7 @@ import {
     deploymentStatSchema,
     type Deployment,
     type DeploymentStat,
-} from "@/types/experience";
+} from "@packages/types/experience";
 
 /**
  * Experience deployment history (experience-page-design §7).

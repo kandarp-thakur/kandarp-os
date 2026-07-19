@@ -3,8 +3,11 @@
  * Per-entity: get + update + delete.
  */
 
-import { createCrudConfig, createEntityHandlers } from "@/lib/admin/crud";
-import { blogPostSchema, type BlogPost } from "@/lib/admin/types";
+import {
+    createCrudConfig,
+    createEntityHandlers,
+} from "@backend/controllers/crud";
+import { blogPostSchema, type BlogPost } from "@backend/schemas/types";
 
 const config = createCrudConfig({
     collection: "blogPosts",

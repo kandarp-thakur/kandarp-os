@@ -11,8 +11,24 @@ const config: Config = {
     // than `prefers-color-scheme`, so they always apply regardless of the
     // visitor's OS theme preference.
     darkMode: ["class", '[data-theme="dark"]'],
+    // IMPORTANT: every directory that contains components using Tailwind
+    // utility classes MUST be listed here. In development, Tailwind's JIT
+    // compiler watches the whole project and generates classes on demand,
+    // so a missing path is invisible. In production, the purge step ONLY
+    // scans the paths listed here — any class used in an unlisted directory
+    // is stripped from the final CSS, which is exactly what caused the
+    // production layout to break (hero compressed, buttons stretching,
+    // Three.js overlapping, navbar misaligned, etc.).
     content: [
         "./src/app/**/*.{ts,tsx}",
+        "./src/features/**/*.{ts,tsx}",
+        "./src/packages/**/*.{ts,tsx}",
+        "./src/infrastructure/**/*.{ts,tsx}",
+        "./src/backend/**/*.{ts,tsx}",
+        "./src/data/**/*.{ts,tsx}",
+        "./src/services/**/*.{ts,tsx}",
+        "./src/lib/**/*.{ts,tsx}",
+        // Legacy/compat paths (some imports still resolve here).
         "./src/components/**/*.{ts,tsx}",
         "./src/hooks/**/*.{ts,tsx}",
     ],

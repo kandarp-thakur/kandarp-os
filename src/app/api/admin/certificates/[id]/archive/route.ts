@@ -3,7 +3,7 @@
  * POST /api/admin/certificates/[id]/archive
  */
 
-import { createArchiveHandler } from "@/lib/admin/crud";
-import { certificateConfig } from "@/lib/admin/configs";
+import { createArchiveHandler } from "@backend/controllers/crud";
+import { certificateConfig } from "@backend/controllers/configs";
 
 export const { POST } = createArchiveHandler(certificateConfig);

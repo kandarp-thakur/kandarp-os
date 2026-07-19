@@ -1,5 +1,5 @@
 import { socials } from "@/data/socials";
-import { SITE } from "@/utils/constants";
+import { SITE } from "@utils/constants";
 
 /**
  * Derive a plain-text contact summary from the socials data.

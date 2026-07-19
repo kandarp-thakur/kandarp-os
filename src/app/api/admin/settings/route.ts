@@ -12,14 +12,14 @@ import {
     json,
     parseBody,
     requirePermission,
-} from "@/lib/admin/api";
-import { findById, list, update } from "@/lib/admin/repo";
-import { revalidateCollection } from "@/lib/admin/revalidate";
-import { settingsSchema, type Settings } from "@/lib/admin/types";
+} from "@backend/middlewares/api";
+import { findById, list, update } from "@backend/repositories/repo";
+import { revalidateCollection } from "@backend/cache/revalidate";
+import { settingsSchema, type Settings } from "@backend/schemas/types";
 
 /** Resolve the singleton settings row (the first row in the collection). */
-function getSettings(): Settings | null {
-    const rows = list<Settings>("settings");
+async function getSettings(): Promise<Settings | null> {
+    const rows = await list<Settings>("settings");
     if (rows.length > 0) return rows[0] ?? null;
     // Fallback: look up by the well-known id "singleton".
     return findById<Settings>("settings", "singleton");
@@ -28,7 +28,7 @@ function getSettings(): Settings | null {
 export async function GET() {
     const session = await requirePermission("settings:read");
     if (session instanceof Response) return session;
-    const settings = getSettings();
+    const settings = await getSettings();
     if (!settings) return error("Settings not initialized", 404, 404);
     return json(settings);
 }
@@ -36,7 +36,7 @@ export async function GET() {
 export async function PATCH(req: Request) {
     const session = await requirePermission("settings:write");
     if (session instanceof Response) return session;
-    const settings = getSettings();
+    const settings = await getSettings();
     if (!settings) return error("Settings not initialized", 404, 404);
 
     const body = await parseBody(req, settingsSchema.partial());

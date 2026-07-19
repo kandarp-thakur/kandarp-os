@@ -1,5 +1,5 @@
-import { aboutCommandSchema, type AboutCommand } from "@/types/about";
-import { SITE } from "@/utils/constants";
+import { aboutCommandSchema, type AboutCommand } from "@packages/types/about";
+import { SITE } from "@utils/constants";
 
 /**
  * About terminal content + motion config.

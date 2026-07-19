@@ -1,0 +1,115 @@
+# ──────────────────────────────────────────────────────────────────────
+# docker-compose.yml — Kandarp OS local + single-server orchestration.
+#
+# Two services:
+#   • db  — PostgreSQL 16 (use RDS in production instead)
+#   • app — Kandarp OS Next.js standalone server
+#
+# Usage:
+#   1. Copy .env.example → .env.local and fill in real values.
+#   2. docker compose up -d --build
+#   3. App → http://localhost:3000, Postgres → localhost:5432
+#   4. First-time only: run migrations + seed (see command below).
+#
+# For production on AWS, use RDS for the database and run the app container
+# on EC2 / ECS Fargate / App Runner. See docs/deployment-aws.md.
+# ──────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: kandarp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kandarp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.local}
+      POSTGRES_DB: ${POSTGRES_DB:-kandarp_os}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kandarp}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Persist data outside the container so it survives restarts.
+    # In production, use Amazon RDS instead of this container.
+
+    # ── Kandarp OS app ──────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kandarp-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # ── Runtime ─────────────────────────────────────────────────────
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      # ── Database ────────────────────────────────────────────────────
+      # Points at the `db` service on the same Docker network.
+      # In production, replace with your RDS endpoint.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kandarp}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-kandarp_os}?schema=public
+
+      # ── Auth / security ─────────────────────────────────────────────
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?Set ADMIN_JWT_SECRET in .env.local}
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env.local}
+      ADMIN_OWNER_EMAIL: ${ADMIN_OWNER_EMAIL:?Set ADMIN_OWNER_EMAIL in .env.local}
+      ADMIN_OWNER_PASSWORD: ${ADMIN_OWNER_PASSWORD:?Set ADMIN_OWNER_PASSWORD in .env.local}
+
+      # ── Public site ─────────────────────────────────────────────────
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+
+      # ── Cloudinary (media) ──────────────────────────────────────────
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+
+      # ── Contact email ──────────────────────────────────────────────
+      CONTACT_EMAIL_HOST: ${CONTACT_EMAIL_HOST:-}
+      CONTACT_EMAIL_PORT: ${CONTACT_EMAIL_PORT:-587}
+      CONTACT_EMAIL_USER: ${CONTACT_EMAIL_USER:-}
+      CONTACT_EMAIL_PASS: ${CONTACT_EMAIL_PASS:-}
+      CONTACT_EMAIL_TO: ${CONTACT_EMAIL_TO:-}
+
+      # ── Analytics (optional) ──────────────────────────────────────
+      NEXT_PUBLIC_ANALYTICS_ID: ${NEXT_PUBLIC_ANALYTICS_ID:-}
+
+      # ── Sentry (optional) ──────────────────────────────────────────
+      SENTRY_DSN: ${SENTRY_DSN:-}
+
+      # ── GitHub (optional, for repo stats) ──────────────────────────
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+  # ── nginx reverse proxy (optional — uncomment for TLS termination) ──
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: kandarp-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+  #   depends_on:
+  #     - app
+
+volumes:
+  pgdata:
+    driver: local

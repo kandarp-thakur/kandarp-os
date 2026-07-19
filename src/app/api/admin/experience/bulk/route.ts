@@ -3,7 +3,7 @@
  * POST /api/admin/experience/bulk
  */
 
-import { createBulkHandler } from "@/lib/admin/crud";
-import { experienceConfig } from "@/lib/admin/configs";
+import { createBulkHandler } from "@backend/controllers/crud";
+import { experienceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createBulkHandler(experienceConfig);

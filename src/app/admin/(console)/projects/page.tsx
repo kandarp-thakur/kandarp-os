@@ -10,13 +10,13 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 import {
     AdminDataTable,
     type AdminColumn,
-} from "@/components/admin/AdminDataTable";
-import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
-import type { Project } from "@/lib/admin/types";
+} from "@features/admin/components/AdminDataTable";
+import { AdminStatusBadge } from "@features/admin/components/AdminStatusBadge";
+import type { Project } from "@backend/schemas/types";
 
 const columns: AdminColumn<Project>[] = [
     {

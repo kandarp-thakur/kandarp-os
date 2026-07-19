@@ -5,7 +5,7 @@ import {
     type BlogStat,
     type BlogUnit,
     type BlogUnitRegistry,
-} from "@/types/blog";
+} from "@packages/types/blog";
 
 /**
  * Blog static data — the systemd-unit registry + journal stats

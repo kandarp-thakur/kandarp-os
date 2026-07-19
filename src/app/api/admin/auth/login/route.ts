@@ -11,12 +11,17 @@
  * 2FA, login is single-step.
  */
 
-import { verifyPassword } from "@/lib/admin/auth";
-import { error, json } from "@/lib/admin/api";
-import { setSessionCookie, logActivity } from "@/lib/admin/session";
-import { findByField, update } from "@/lib/admin/repo";
-import { ensureSeeded } from "@/lib/admin/seed";
-import type { User } from "@/lib/admin/types";
+import { verifyPassword, hashPassword, needsRehash } from "@backend/auth/auth";
+import { error, json } from "@backend/middlewares/api";
+import { setSessionCookie, logActivity } from "@backend/auth/session";
+import { createSession } from "@backend/auth/session-service";
+import { findByField, update } from "@backend/repositories/repo";
+import { ensureSeeded } from "@backend/services/seed";
+import {
+    withLogging,
+    type RouteContext,
+} from "@backend/middlewares/with-logging";
+import type { User } from "@backend/schemas/types";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -38,12 +43,13 @@ function rateLimited(ip: string): boolean {
     return hits.length > MAX_ATTEMPTS;
 }
 
-export async function POST(req: Request) {
+export const POST = withLogging(async (req, { log }: RouteContext) => {
     // Seed the store on first boot so the owner account exists.
     await ensureSeeded();
 
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
     if (rateLimited(ip)) {
+        log.warn({ ip }, "login.rate_limited");
         return error("Too many login attempts. Try again later.", 429, 429);
     }
 
@@ -55,22 +61,47 @@ export async function POST(req: Request) {
     }
 
     const { email, password } = body.data;
-    const user = findByField<User>("users", "email", email.toLowerCase());
+    const user = await findByField<User>("users", "email", email.toLowerCase());
     if (!user || user.status !== "active") {
+        // Log failed login — don't reveal whether the email exists (anti-enumeration).
+        log.warn(
+            { ip, email: email.toLowerCase() },
+            "login.failed.user_not_found",
+        );
         return error("Invalid email or password.", 401, 401);
     }
 
-    if (!verifyPassword(password, user.passwordHash)) {
+    const verified = await verifyPassword(password, user.passwordHash);
+    if (!verified) {
+        log.warn({ ip, userId: user.id }, "login.failed.bad_password");
         return error("Invalid email or password.", 401, 401);
+    }
+
+    // Transparent rehash: upgrade legacy scrypt hashes to Argon2id on next login.
+    if (needsRehash(user.passwordHash)) {
+        const newHash = await hashPassword(password);
+        await update<User>("users", user.id, { passwordHash: newHash });
+        log.info({ userId: user.id }, "login.password_rehashed");
     }
 
     // 2FA gate — if enrolled, require a second step.
     if (user.totpEnabled && user.totpSecret) {
+        log.info({ userId: user.id }, "login.totp_required");
         return json({ requiresTotp: true, userId: user.id });
     }
 
+    // Persist the session to the database for revocation + device tracking.
+    const userAgent = req.headers.get("user-agent") ?? "";
+    const sid = await createSession(
+        user.id,
+        ip,
+        userAgent,
+        body.data.remember ?? false,
+    );
+
     await setSessionCookie({
         sub: user.id,
+        sid,
         email: user.email,
         name: user.name,
         role: user.role,
@@ -87,6 +118,8 @@ export async function POST(req: Request) {
         ip,
     });
 
+    log.info({ userId: user.id, ip }, "login.success");
+
     return json({
         user: {
             id: user.id,
@@ -95,4 +128,4 @@ export async function POST(req: Request) {
             role: user.role,
         },
     });
-}
+});

@@ -3,7 +3,7 @@
  * POST /api/admin/awards/[id]/archive
  */
 
-import { createArchiveHandler } from "@/lib/admin/crud";
-import { awardConfig } from "@/lib/admin/configs";
+import { createArchiveHandler } from "@backend/controllers/crud";
+import { awardConfig } from "@backend/controllers/configs";
 
 export const { POST } = createArchiveHandler(awardConfig);

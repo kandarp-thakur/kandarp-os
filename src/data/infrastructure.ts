@@ -5,7 +5,7 @@ import {
     type InfraEdge,
     type InfraNode,
     type InfraStat,
-} from "@/types/infrastructure";
+} from "@packages/types/infrastructure";
 
 /**
  * Infrastructure topology data.

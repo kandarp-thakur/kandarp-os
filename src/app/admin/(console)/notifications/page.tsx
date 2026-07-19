@@ -14,8 +14,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Bell, Loader2, Mail, Plus, Save, Trash2 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { ActivityLog, Settings } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { ActivityLog, Settings } from "@backend/schemas/types";
 
 export default function AdminNotificationsPage() {
     const [emails, setEmails] = useState<string[]>([]);

@@ -3,7 +3,7 @@
  * POST /api/admin/experience/[id]/archive
  */
 
-import { createArchiveHandler } from "@/lib/admin/crud";
-import { experienceConfig } from "@/lib/admin/configs";
+import { createArchiveHandler } from "@backend/controllers/crud";
+import { experienceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createArchiveHandler(experienceConfig);

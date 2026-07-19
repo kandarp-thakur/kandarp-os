@@ -6,7 +6,7 @@
  * `(console)` route group layout, so the login page stays shell-free.
  */
 
-import "@/styles/admin-tokens.css";
+import "@styles/admin-tokens.css";
 
 export default function AdminLayout({
     children,

@@ -1,0 +1,77 @@
+# ──────────────────────────────────────────────────────────────────────
+# docker-compose.server.yml — production override for the Oracle Cloud
+# single-server deployment of Kandarp OS.
+#
+# Architecture on this host:
+#   • nginx (on the host) terminates TLS on 80/443 → proxies to 127.0.0.1:3000
+#   • app  (Docker) — Next.js standalone, bound to 127.0.0.1:3000 only
+#   • db   (Docker) — PostgreSQL 16, internal network only (no host port)
+#
+# Usage:
+#   docker compose -f docker-compose.server.yml up -d --build
+#   docker compose -f docker-compose.server.yml logs -f app
+#   docker compose -f docker-compose.server.yml exec app \
+#     sh -c "npx prisma migrate deploy && npx tsx prisma/seed.ts"
+# ──────────────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kandarp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kandarp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kandarp_os}
+    # No published port — the DB stays on the internal Docker network only.
+    # The `app` service reaches it via the service name `db:5432`.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kandarp}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kandarp-os:latest
+    container_name: kandarp-app
+    restart: unless-stopped
+    # Bind to the loopback interface only — nginx on the host proxies to it.
+    # This keeps the Next.js server off the public internet (TLS is handled by nginx).
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kandarp}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-kandarp_os}?schema=public
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?Set ADMIN_JWT_SECRET in .env}
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
+      ADMIN_OWNER_EMAIL: ${ADMIN_OWNER_EMAIL:?Set ADMIN_OWNER_EMAIL in .env}
+      ADMIN_OWNER_PASSWORD: ${ADMIN_OWNER_PASSWORD:?Set ADMIN_OWNER_PASSWORD in .env}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://kandarp.online}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      # NOTE: optional email vars are intentionally NOT mapped here. Mapping
+      # them with `${VAR:-}` injects an empty string, which fails Zod's .email()
+      # validation (empty string != undefined). Only set them if non-empty.
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  pgdata:
+    driver: local

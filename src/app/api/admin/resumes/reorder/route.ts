@@ -3,7 +3,7 @@
  * POST /api/admin/resumes/reorder
  */
 
-import { createReorderHandler } from "@/lib/admin/crud";
-import { resumeConfig } from "@/lib/admin/configs";
+import { createReorderHandler } from "@backend/controllers/crud";
+import { resumeConfig } from "@backend/controllers/configs";
 
 export const { POST } = createReorderHandler(resumeConfig);

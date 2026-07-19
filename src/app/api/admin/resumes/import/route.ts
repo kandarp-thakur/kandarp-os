@@ -3,7 +3,7 @@
  * POST /api/admin/resumes/import
  */
 
-import { createImportHandler } from "@/lib/admin/crud";
-import { resumeConfig } from "@/lib/admin/configs";
+import { createImportHandler } from "@backend/controllers/crud";
+import { resumeConfig } from "@backend/controllers/configs";
 
 export const { POST } = createImportHandler(resumeConfig);

@@ -7,7 +7,7 @@
  * section component stays a thin presentational layer.
  */
 
-import type { Achievement } from "@/types/achievements";
+import type { Achievement } from "@packages/types/achievements";
 
 export const ACHIEVEMENTS: Achievement[] = [
     {

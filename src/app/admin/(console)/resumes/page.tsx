@@ -11,12 +11,12 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { Loader2, Plus, Star, Trash2, X } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 import {
     AdminDataTable,
     type AdminColumn,
-} from "@/components/admin/AdminDataTable";
-import type { Resume } from "@/lib/admin/types";
+} from "@features/admin/components/AdminDataTable";
+import type { Resume } from "@backend/schemas/types";
 
 const columns: AdminColumn<Resume>[] = [
     {

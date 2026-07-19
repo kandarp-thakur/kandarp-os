@@ -3,7 +3,7 @@
  * POST /api/admin/experience/[id]/restore
  */
 
-import { createRestoreHandler } from "@/lib/admin/crud";
-import { experienceConfig } from "@/lib/admin/configs";
+import { createRestoreHandler } from "@backend/controllers/crud";
+import { experienceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreHandler(experienceConfig);

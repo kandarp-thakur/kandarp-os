@@ -3,7 +3,7 @@
  * POST /api/admin/infrastructure/[id]/restore
  */
 
-import { createRestoreHandler } from "@/lib/admin/crud";
-import { infraConfig } from "@/lib/admin/configs";
+import { createRestoreHandler } from "@backend/controllers/crud";
+import { infraConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreHandler(infraConfig);

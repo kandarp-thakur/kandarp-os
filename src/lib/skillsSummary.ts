@@ -1,5 +1,5 @@
-import { SITE } from "@/utils/constants";
-import type { SkillNode } from "@/types/skills";
+import { SITE } from "@utils/constants";
+import type { SkillNode } from "@packages/types/skills";
 
 /**
  * Skills summary helpers.

@@ -3,7 +3,7 @@
  * POST /api/admin/certificates/bulk
  */
 
-import { createBulkHandler } from "@/lib/admin/crud";
-import { certificateConfig } from "@/lib/admin/configs";
+import { createBulkHandler } from "@backend/controllers/crud";
+import { certificateConfig } from "@backend/controllers/configs";
 
 export const { POST } = createBulkHandler(certificateConfig);

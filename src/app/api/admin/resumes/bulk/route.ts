@@ -3,7 +3,7 @@
  * POST /api/admin/resumes/bulk
  */
 
-import { createBulkHandler } from "@/lib/admin/crud";
-import { resumeConfig } from "@/lib/admin/configs";
+import { createBulkHandler } from "@backend/controllers/crud";
+import { resumeConfig } from "@backend/controllers/configs";
 
 export const { POST } = createBulkHandler(resumeConfig);

@@ -1,4 +1,4 @@
-import { PageContainer } from "@/components/layout";
+import { PageContainer } from "@features/layout/components";
 
 /**
  * Root Loading Boundary (folder-structure §4.1).

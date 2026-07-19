@@ -1,5 +1,5 @@
-import { SITE } from "@/utils/constants";
-import type { Container } from "@/types/projects";
+import { SITE } from "@utils/constants";
+import type { Container } from "@packages/types/projects";
 
 /**
  * Projects summary helpers (projects-page-design §2, §6).

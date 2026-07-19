@@ -3,7 +3,7 @@
  * POST /api/admin/certificates/[id]/restore-version
  */
 
-import { createRestoreVersionHandler } from "@/lib/admin/crud";
-import { certificateConfig } from "@/lib/admin/configs";
+import { createRestoreVersionHandler } from "@backend/controllers/crud";
+import { certificateConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreVersionHandler(certificateConfig);

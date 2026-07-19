@@ -19,8 +19,8 @@ import {
     Trash2,
 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { MediaAsset } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { MediaAsset } from "@backend/schemas/types";
 
 function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;

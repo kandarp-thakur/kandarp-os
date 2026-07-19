@@ -3,7 +3,7 @@
  * POST /api/admin/awards/reorder
  */
 
-import { createReorderHandler } from "@/lib/admin/crud";
-import { awardConfig } from "@/lib/admin/configs";
+import { createReorderHandler } from "@backend/controllers/crud";
+import { awardConfig } from "@backend/controllers/configs";
 
 export const { POST } = createReorderHandler(awardConfig);

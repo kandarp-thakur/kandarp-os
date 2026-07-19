@@ -19,8 +19,8 @@ import {
     ShieldOff,
 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { SafeUser } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { SafeUser } from "@backend/schemas/types";
 
 export default function AdminSecurityPage() {
     const [user, setUser] = useState<SafeUser | null>(null);

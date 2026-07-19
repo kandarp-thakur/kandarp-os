@@ -7,12 +7,12 @@
  * timestamp, user, action, entity, and level.
  */
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 import {
     AdminDataTable,
     type AdminColumn,
-} from "@/components/admin/AdminDataTable";
-import type { ActivityLog } from "@/lib/admin/types";
+} from "@features/admin/components/AdminDataTable";
+import type { ActivityLog } from "@backend/schemas/types";
 
 const columns: AdminColumn<ActivityLog>[] = [
     {

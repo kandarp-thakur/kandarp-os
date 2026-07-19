@@ -10,8 +10,8 @@ import {
     useTransform,
 } from "framer-motion";
 
-import { SITE } from "@/config/site";
-import { cn } from "@/utils/cn";
+import { SITE } from "@config/site";
+import { cn } from "@utils/cn";
 
 /**
  * Intrinsic source dimensions of `/images/profile/portrait.webp`

@@ -1,4 +1,4 @@
-import { SITE } from "@/utils/constants";
+import { SITE } from "@utils/constants";
 
 /**
  * Experience summary helpers (experience-page-design §2).

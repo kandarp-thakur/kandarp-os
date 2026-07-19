@@ -18,14 +18,14 @@ import {
     Users,
 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { count, list } from "@/lib/admin/repo";
-import { recentActivity } from "@/lib/admin/session";
-import type { BlogPost, Project } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import { count, list } from "@backend/repositories/repo";
+import { recentActivity } from "@backend/auth/session";
+import type { BlogPost, Project } from "@backend/schemas/types";
 
-export default function DashboardPage() {
-    const projects = list<Project>("projects");
-    const blogPosts = list<BlogPost>("blogPosts");
+export default async function DashboardPage() {
+    const projects = await list<Project>("projects");
+    const blogPosts = await list<BlogPost>("blogPosts");
 
     const publishedProjects = projects.filter(
         (p) => p.status === "published",
@@ -44,7 +44,7 @@ export default function DashboardPage() {
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
         .slice(0, 5);
 
-    const activity = recentActivity(8);
+    const activity = await recentActivity(8);
 
     const stats: {
         label: string;
@@ -69,14 +69,14 @@ export default function DashboardPage() {
         },
         {
             label: "Users",
-            value: count("users"),
+            value: await count("users"),
             icon: Users,
             href: "/admin/users",
             tint: "text-[var(--warning)]",
         },
         {
             label: "Media Assets",
-            value: count("media"),
+            value: await count("media"),
             icon: HardDrive,
             href: "/admin/media",
             tint: "text-[var(--accent-solid)]",

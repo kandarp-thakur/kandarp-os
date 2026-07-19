@@ -13,18 +13,18 @@ import {
     json,
     parseBody,
     requirePermission,
-} from "@/lib/admin/api";
-import { findById, list, replaceAll, update } from "@/lib/admin/repo";
-import { revalidateCollection } from "@/lib/admin/revalidate";
+} from "@backend/middlewares/api";
+import { findById, list, replaceAll, update } from "@backend/repositories/repo";
+import { revalidateCollection } from "@backend/cache/revalidate";
 import {
     siteCustomizationSchema,
     type SiteCustomization,
-} from "@/lib/admin/types";
-import { ensureSeeded } from "@/lib/admin/seed";
+} from "@backend/schemas/types";
+import { ensureSeeded } from "@backend/services/seed";
 
 /** Resolve the singleton site-customization row. */
-function getCustomization(): SiteCustomization | null {
-    const rows = list<SiteCustomization>("siteCustomization");
+async function getCustomization(): Promise<SiteCustomization | null> {
+    const rows = await list<SiteCustomization>("siteCustomization");
     if (rows.length > 0) return rows[0] ?? null;
     return findById<SiteCustomization>("siteCustomization", "singleton");
 }
@@ -33,7 +33,7 @@ export async function GET() {
     await ensureSeeded();
     const session = await requirePermission("settings:read");
     if (session instanceof Response) return session;
-    const customization = getCustomization();
+    const customization = await getCustomization();
     if (!customization)
         return error("Site customization not initialized", 404, 404);
     return json(customization);
@@ -43,7 +43,7 @@ export async function PATCH(req: Request) {
     await ensureSeeded();
     const session = await requirePermission("settings:write");
     if (session instanceof Response) return session;
-    const customization = getCustomization();
+    const customization = await getCustomization();
     if (!customization)
         return error("Site customization not initialized", 404, 404);
 
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     await ensureSeeded();
     const session = await requirePermission("settings:write");
     if (session instanceof Response) return session;
-    const customization = getCustomization();
+    const customization = await getCustomization();
     if (!customization)
         return error("Site customization not initialized", 404, 404);
 

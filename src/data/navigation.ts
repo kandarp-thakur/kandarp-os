@@ -9,7 +9,7 @@ import {
     Wrench,
 } from "lucide-react";
 
-import { SECTIONS, sectionHref } from "@/utils/constants";
+import { SECTIONS, sectionHref } from "@utils/constants";
 
 /**
  * A leaf navigation entry — a single scrollable destination. Used both as a

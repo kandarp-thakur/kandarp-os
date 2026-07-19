@@ -12,16 +12,16 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { Check, Loader2, Minus, ShieldCheck } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 import {
     ROLES,
     ROLE_DESCRIPTIONS,
     ROLE_LABELS,
     ROLE_PERMISSIONS,
     type Permission,
-} from "@/lib/admin/rbac";
-import type { AdminRole } from "@/lib/admin/auth";
-import type { SafeUser } from "@/lib/admin/types";
+} from "@backend/permissions/rbac";
+import type { AdminRole } from "@backend/auth/auth";
+import type { SafeUser } from "@backend/schemas/types";
 
 /** All permissions in display order (derived from the matrix). */
 const ALL_PERMISSIONS: Permission[] = Array.from(

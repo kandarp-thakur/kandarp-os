@@ -3,7 +3,7 @@
  * GET /api/admin/services/export
  */
 
-import { createExportHandler } from "@/lib/admin/crud";
-import { serviceConfig } from "@/lib/admin/configs";
+import { createExportHandler } from "@backend/controllers/crud";
+import { serviceConfig } from "@backend/controllers/configs";
 
 export const { GET } = createExportHandler(serviceConfig);

@@ -10,11 +10,11 @@
 
 import { redirect } from "next/navigation";
 
-import { AdminShell } from "@/components/admin/AdminShell";
-import { getSession } from "@/lib/admin/session";
-import { findById } from "@/lib/admin/repo";
-import { ensureSeeded } from "@/lib/admin/seed";
-import type { SafeUser, User } from "@/lib/admin/types";
+import { AdminShell } from "@features/admin/components/AdminShell";
+import { getSession } from "@backend/auth/session";
+import { findById } from "@backend/repositories/repo";
+import { ensureSeeded } from "@backend/services/seed";
+import type { SafeUser, User } from "@backend/schemas/types";
 
 export default async function ConsoleLayout({
     children,
@@ -25,7 +25,7 @@ export default async function ConsoleLayout({
     const session = await getSession();
     if (!session) redirect("/admin/login");
 
-    const user = findById<User>("users", session.sub);
+    const user = await findById<User>("users", session.sub);
     if (!user || user.status !== "active") redirect("/admin/login");
 
     // Strip secrets before passing to the client.

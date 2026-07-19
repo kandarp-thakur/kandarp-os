@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { SITE } from "@/utils/constants";
+import { SITE } from "@utils/constants";
 
 /**
  * Site metadata consumed by the root layout + SEO.

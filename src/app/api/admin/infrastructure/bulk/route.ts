@@ -3,7 +3,7 @@
  * POST /api/admin/infrastructure/bulk
  */
 
-import { createBulkHandler } from "@/lib/admin/crud";
-import { infraConfig } from "@/lib/admin/configs";
+import { createBulkHandler } from "@backend/controllers/crud";
+import { infraConfig } from "@backend/controllers/configs";
 
 export const { POST } = createBulkHandler(infraConfig);

@@ -3,7 +3,7 @@
  * POST /api/admin/blog/[id]/archive
  */
 
-import { createArchiveHandler } from "@/lib/admin/crud";
-import { blogConfig } from "@/lib/admin/configs";
+import { createArchiveHandler } from "@backend/controllers/crud";
+import { blogConfig } from "@backend/controllers/configs";
 
 export const { POST } = createArchiveHandler(blogConfig);

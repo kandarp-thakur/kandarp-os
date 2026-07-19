@@ -1,0 +1,1082 @@
+// =============================================================================
+// Kandarp OS — Prisma Schema (PostgreSQL)
+// =============================================================================
+// A normalized relational schema for the Admin Console + public Portfolio.
+//
+// Design principles:
+//   • Every entity carries audit fields (createdAt, updatedAt, createdById,
+//     updatedById) — foreign-keyed to User for a complete provenance trail.
+//   • Soft delete via `archivedAt` (NULL = active). Never hard-delete content
+//     from the application layer; `remove()` sets archivedAt, and a separate
+//     purge job can reap old archived rows.
+//   • RBAC is fully normalized: Role ↔ Permission (many-to-many) + per-user
+//     permission overrides. The session JWT caches the effective permission
+//     set so the edge middleware + route handlers can authorize without a DB
+//     round-trip on every request.
+//   • Relationships are explicit join tables with foreign keys + cascade
+//     deletes — no dangling id arrays.
+//   • Version history is a polymorphic append-only table (entityType +
+//     entityId) indexed for fast per-entity lookup.
+//   • Complex nested objects (SEO, metrics, specs, theme tokens, section
+//     configs) are stored as `Json` — they are read/written as whole units and
+//     never queried by their inner keys, so Json is the correct trade-off.
+//   • String arrays (tags, stack, features) use native `String[]` so they are
+//     queryable and indexable.
+//   • Slugs are `@unique` and indexed for O(1) public-page lookups.
+//   • Singletons (Settings, SiteCustomization, Profile) use a fixed id.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// RBAC — Roles, Permissions, and the join between them.
+// =============================================================================
+
+/// A role (Super Admin, Admin, Editor, Viewer). System roles are seeded and
+/// cannot be deleted; custom roles can be created from the admin UI.
+model Role {
+  id          String           @id @default(cuid())
+  /// Machine name — used in the session JWT and matched by the rbac matrix.
+  name        String           @unique
+  /// Human label for the UI ("Super Admin").
+  label       String
+  description String           @default("")
+  /// Built-in roles are protected from deletion.
+  isSystem    Boolean          @default(false)
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@map("roles")
+}
+
+/// A granular capability ("content:read", "users:write", …).
+model Permission {
+  id             String           @id @default(cuid())
+  /// Machine name — the string checked by `requirePermission`.
+  name           String           @unique
+  description    String           @default("")
+  roles          RolePermission[]
+  UserPermission UserPermission[]
+
+  @@index([name])
+  @@map("permissions")
+}
+
+/// Many-to-many between Role and Permission.
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+/// Per-user permission overrides — grant or deny a capability beyond the role.
+/// `granted = true` adds the permission; `granted = false` explicitly revokes
+/// it even if the role grants it. Evaluated at session-creation time.
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String     @map("user_id")
+  permissionId String     @map("permission_id")
+  granted      Boolean    @default(true)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@index([permissionId])
+  @@map("user_permissions")
+}
+
+// =============================================================================
+// Users + Authentication
+// =============================================================================
+
+model User {
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  /// Argon2id hash — never the plaintext. Prefixed `argon2id$…`.
+  passwordHash   String     @map("password_hash")
+  roleId         String     @map("role_id")
+  role           Role       @relation(fields: [roleId], references: [id])
+  avatar         String?
+  bio            String     @default("")
+  /// 2FA — base32 TOTP secret. Null until enrolled.
+  totpSecret     String?    @map("totp_secret")
+  totpEnabled    Boolean    @default(false) @map("totp_enabled")
+  status         UserStatus @default(ACTIVE)
+  /// Email verification token + verified flag.
+  emailVerified  DateTime?  @map("email_verified")
+  verifyToken    String?    @map("verify_token")
+  verifyTokenExp DateTime?  @map("verify_token_exp")
+  /// Password reset token + expiry.
+  resetToken     String?    @map("reset_token")
+  resetTokenExp  DateTime?  @map("reset_token_exp")
+  lastLoginAt    DateTime?  @map("last_login_at")
+  /// Failed login attempts (for lockout). Resets on successful login.
+  failedLogins   Int        @default(0) @map("failed_logins")
+  lockedUntil    DateTime?  @map("locked_until")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  permissions   UserPermission[]
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+  accounts      Account[]
+
+  /// Audit provenance — entities created/updated by this user.
+  createdProjects   Project[]        @relation("ProjectCreatedBy")
+  updatedProjects   Project[]        @relation("ProjectUpdatedBy")
+  createdBlogPosts  BlogPost[]       @relation("BlogCreatedBy")
+  updatedBlogPosts  BlogPost[]       @relation("BlogUpdatedBy")
+  createdExperience Experience[]     @relation("ExpCreatedBy")
+  updatedExperience Experience[]     @relation("ExpUpdatedBy")
+  createdSkills     Skill[]          @relation("SkillCreatedBy")
+  updatedSkills     Skill[]          @relation("SkillUpdatedBy")
+  createdInfra      InfraNode[]      @relation("InfraCreatedBy")
+  updatedInfra      InfraNode[]      @relation("InfraUpdatedBy")
+  createdAwards     Award[]          @relation("AwardCreatedBy")
+  updatedAwards     Award[]          @relation("AwardUpdatedBy")
+  createdEducation  Education[]      @relation("EduCreatedBy")
+  updatedEducation  Education[]      @relation("EduUpdatedBy")
+  createdCerts      Certificate[]    @relation("CertCreatedBy")
+  updatedCerts      Certificate[]    @relation("CertUpdatedBy")
+  createdServices   Service[]        @relation("SvcCreatedBy")
+  updatedServices   Service[]        @relation("SvcUpdatedBy")
+  createdResumes    Resume[]         @relation("ResumeCreatedBy")
+  updatedResumes    Resume[]         @relation("ResumeUpdatedBy")
+  createdMedia      MediaAsset[]     @relation("MediaCreatedBy")
+  updatedMedia      MediaAsset[]     @relation("MediaUpdatedBy")
+  createdCategories Category[]       @relation("CatCreatedBy")
+  updatedCategories Category[]       @relation("CatUpdatedBy")
+  createdTags       Tag[]            @relation("TagCreatedBy")
+  updatedTags       Tag[]            @relation("TagUpdatedBy")
+  createdInfraEdges InfraEdge[]      @relation("InfraEdgeCreatedBy")
+  updatedInfraEdges InfraEdge[]      @relation("InfraEdgeUpdatedBy")
+  activityLogs      ActivityLog[]
+  analyticsEvents   AnalyticsEvent[]
+  versionSnapshots  VersionHistory[]
+
+  @@index([email])
+  @@index([roleId])
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  INVITED
+}
+
+/// A single device session. Multiple sessions per user are supported (one per
+/// device/browser). Deleting a session = secure logout for that device.
+model Session {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Random session id embedded in the JWT `sid` claim.
+  token      String    @unique
+  ip         String    @default("")
+  userAgent  String    @default("") @map("user_agent")
+  /// "Remember me" sessions live longer.
+  rememberMe Boolean   @default(false) @map("remember_me")
+  expiresAt  DateTime  @map("expires_at")
+  lastUsedAt DateTime  @default(now()) @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Refresh tokens for token rotation. Issued alongside the access JWT; rotated
+/// on each use to detect token theft (reuse → revoke the whole family).
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Hashed token — the raw value is only known to the client.
+  tokenHash String    @unique @map("token_hash")
+  /// Family id — all tokens from one login chain share a family. Reuse of a
+  /// rotated token revokes the entire family (theft detection).
+  familyId  String    @map("family_id")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+/// OAuth/credential accounts (NextAuth adapter compatibility).
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refreshToken      String? @map("refresh_token")
+  accessToken       String? @map("access_token")
+  expiresAt         Int?    @map("expires_at")
+  tokenType         String? @map("token_type")
+  scope             String?
+  idToken           String? @map("id_token")
+  sessionState      String? @map("session_state")
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+/// Email verification + password reset tokens (NextAuth-compatible shape).
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([identifier, token])
+  @@index([expires])
+  @@map("verification_tokens")
+}
+
+// =============================================================================
+// Content entities
+// =============================================================================
+
+/// A portfolio project (rendered as a "container" in the OS metaphor).
+model Project {
+  id                  String          @id @default(cuid())
+  title               String
+  slug                String          @unique
+  description         String
+  longDescription     String          @map("long_description")
+  category            String          @default("General")
+  categories          String[]        @default([])
+  stack               String[]        @default([])
+  tags                String[]        @default([])
+  thumbnail           String?
+  gallery             String[]        @default([])
+  coverImage          String?         @map("cover_image")
+  githubUrl           String?         @map("github_url")
+  liveUrl             String?         @map("live_url")
+  demoUrl             String?         @map("demo_url")
+  architectureDiagram String?         @map("architecture_diagram")
+  features            String[]        @default([])
+  challenges          String[]        @default([])
+  solutions           String[]        @default([])
+  status              PublishStatus   @default(DRAFT)
+  featured            Boolean         @default(false)
+  displayOrder        Int             @default(0) @map("display_order")
+  publishedDate       String?         @map("published_date")
+  /// Container-fleet metadata (OS metaphor).
+  containerStatus     ContainerStatus @default(CREATED) @map("container_status")
+  statusDetail        String          @default("Created") @map("status_detail")
+  image               String          @default("")
+  created             String?
+  ports               Json            @default("[]")
+  metrics             Json            @default("[]")
+  changelog           Json            @default("[]")
+  links               Json            @default("[]")
+  seo                 Json            @default("{}")
+  /// Audit + soft delete.
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+  createdById         String?         @map("created_by_id")
+  updatedById         String?         @map("updated_by_id")
+  createdBy           User?           @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  updatedBy           User?           @relation("ProjectUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt          DateTime?       @map("archived_at")
+  archivedById        String?         @map("archived_by_id")
+
+  /// Relationships (bidirectional, FK-enforced).
+  relatedBlogs      ProjectBlog[]
+  relatedSkills     ProjectSkill[]
+  relatedExperience ProjectExperience[]
+  relatedInfra      ProjectInfra[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([featured])
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@index([category])
+  @@index([createdAt])
+  @@map("projects")
+}
+
+/// A blog post (MDX body stored in `content`).
+model BlogPost {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  excerpt       String
+  content       String        @default("")
+  richText      String        @default("") @map("rich_text")
+  codeBlocks    Json          @default("[]") @map("code_blocks")
+  mermaid       String[]      @default([])
+  category      String        @default("General")
+  categories    String[]      @default([])
+  tags          String[]      @default([])
+  featuredImage String?       @map("featured_image")
+  coverImage    String?       @map("cover_image")
+  status        PublishStatus @default(DRAFT)
+  featured      Boolean       @default(false)
+  publishedDate String?       @map("published_date")
+  scheduledDate String?       @map("scheduled_date")
+  readingTime   Int           @default(0) @map("reading_time")
+  canonicalUrl  String?       @map("canonical_url")
+  authorId      String?       @map("author_id")
+  seo           Json          @default("{}")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  createdById   String?       @map("created_by_id")
+  updatedById   String?       @map("updated_by_id")
+  createdBy     User?         @relation("BlogCreatedBy", fields: [createdById], references: [id])
+  updatedBy     User?         @relation("BlogUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt    DateTime?     @map("archived_at")
+  archivedById  String?       @map("archived_by_id")
+
+  relatedProjects ProjectBlog[]
+  relatedSkills   BlogSkill[]
+  relatedInfra    BlogInfra[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([featured])
+  @@index([archivedAt])
+  @@index([category])
+  @@index([createdAt])
+  @@map("blog_posts")
+}
+
+/// A work experience entry (rendered as a "deployment" in the OS metaphor).
+model Experience {
+  id               String           @id @default(cuid())
+  role             String
+  company          String
+  companyUrl       String?          @map("company_url")
+  companyLogo      String?          @map("company_logo")
+  employmentType   EmploymentType   @default(FULL_TIME) @map("employment_type")
+  location         String           @default("")
+  startDate        String           @map("start_date")
+  endDate          String?          @map("end_date")
+  currentCompany   Boolean          @default(false) @map("current_company")
+  status           ExperienceStatus @default(COMPLETED)
+  summary          String
+  description      String           @default("")
+  responsibilities String[]         @default([])
+  achievements     String[]         @default([])
+  technologies     String[]         @default([])
+  version          String           @default("v1.0")
+  image            String           @default("")
+  replicas         String           @default("1/1")
+  uptime           String           @default("")
+  links            Json             @default("[]")
+  displayOrder     Int              @default(0) @map("display_order")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  createdById      String?          @map("created_by_id")
+  updatedById      String?          @map("updated_by_id")
+  createdBy        User?            @relation("ExpCreatedBy", fields: [createdById], references: [id])
+  updatedBy        User?            @relation("ExpUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt       DateTime?        @map("archived_at")
+  archivedById     String?          @map("archived_by_id")
+
+  relatedProjects ProjectExperience[]
+
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@index([createdAt])
+  @@index([status])
+  @@map("experience")
+}
+
+/// A skill (rendered as a "mesh node" in the skills graph).
+model Skill {
+  id                 String      @id @default(cuid())
+  name               String
+  abbr               String      @default("")
+  slug               String      @unique
+  domain             SkillDomain @default(DEVOPS)
+  category           String      @default("General")
+  color              String      @default("#2496ED")
+  description        String      @default("")
+  status             SkillStatus @default(ACTIVE)
+  tagline            String      @default("")
+  icon               String?
+  level              Int         @default(80)
+  years              Float       @default(1)
+  featured           Boolean     @default(false)
+  priority           Int         @default(0)
+  projectsUsingSkill String[]    @default([]) @map("projects_using_skill")
+  /// Grid position 0–100.
+  x                  Float       @default(50)
+  y                  Float       @default(50)
+  /// Symmetric connection ids (edges derived in the UI).
+  connections        String[]    @default([])
+  displayOrder       Int         @default(0) @map("display_order")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  createdById        String?     @map("created_by_id")
+  updatedById        String?     @map("updated_by_id")
+  createdBy          User?       @relation("SkillCreatedBy", fields: [createdById], references: [id])
+  updatedBy          User?       @relation("SkillUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt         DateTime?   @map("archived_at")
+  archivedById       String?     @map("archived_by_id")
+
+  relatedProjects ProjectSkill[]
+  relatedBlogs    BlogSkill[]
+  relatedInfra    SkillInfra[]
+
+  @@index([slug])
+  @@index([domain])
+  @@index([status])
+  @@index([featured])
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@map("skills")
+}
+
+/// An infrastructure node (rendered in the infra topology graph).
+model InfraNode {
+  id           String      @id @default(cuid())
+  name         String
+  slug         String      @unique
+  icon         String      @default("server")
+  color        String      @default("#22d3ee")
+  role         String
+  status       InfraStatus @default(ACTIVE)
+  statusDetail String      @default("Up") @map("status_detail")
+  x            Float       @default(50)
+  y            Float       @default(50)
+  description  String
+  stack        String[]    @default([])
+  specs        Json        @default("[]")
+  metrics      Json        @default("[]")
+  notes        String[]    @default([])
+  links        Json        @default("[]")
+  connections  String[]    @default([])
+  displayOrder Int         @default(0) @map("display_order")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  createdById  String?     @map("created_by_id")
+  updatedById  String?     @map("updated_by_id")
+  createdBy    User?       @relation("InfraCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?       @relation("InfraUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt   DateTime?   @map("archived_at")
+  archivedById String?     @map("archived_by_id")
+
+  relatedProjects ProjectInfra[]
+  relatedBlogs    BlogInfra[]
+  relatedSkills   SkillInfra[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@map("infra_nodes")
+}
+
+/// An explicit labelled edge between two infrastructure nodes.
+model InfraEdge {
+  id          String   @id @default(cuid())
+  fromId      String   @map("from_id")
+  toId        String   @map("to_id")
+  label       String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
+  createdBy   User?    @relation("InfraEdgeCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?    @relation("InfraEdgeUpdatedBy", fields: [updatedById], references: [id])
+
+  @@unique([fromId, toId])
+  @@index([fromId])
+  @@index([toId])
+  @@map("infra_edges")
+}
+
+/// An award / achievement.
+model Award {
+  id           String    @id @default(cuid())
+  title        String
+  organization String    @default("")
+  description  String
+  tier         AwardTier @default(COMMON)
+  date         String
+  icon         String    @default("Award")
+  category     String    @default("General")
+  image        String?
+  certificate  String?
+  link         String?
+  featured     Boolean   @default(false)
+  displayOrder Int       @default(0) @map("display_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdById  String?   @map("created_by_id")
+  updatedById  String?   @map("updated_by_id")
+  createdBy    User?     @relation("AwardCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?     @relation("AwardUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt   DateTime? @map("archived_at")
+  archivedById String?   @map("archived_by_id")
+
+  @@index([tier])
+  @@index([featured])
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@map("awards")
+}
+
+/// An education entry.
+model Education {
+  id           String          @id @default(cuid())
+  institution  String
+  degree       String
+  field        String          @default("")
+  stream       String          @default("")
+  startDate    String          @map("start_date")
+  endDate      String?         @map("end_date")
+  status       EducationStatus @default(COMPLETED)
+  grade        String          @default("")
+  description  String          @default("")
+  logo         String?
+  certificates String[]        @default([])
+  displayOrder Int             @default(0) @map("display_order")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  createdById  String?         @map("created_by_id")
+  updatedById  String?         @map("updated_by_id")
+  createdBy    User?           @relation("EduCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?           @relation("EduUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt   DateTime?       @map("archived_at")
+  archivedById String?         @map("archived_by_id")
+
+  @@index([status])
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@map("education")
+}
+
+/// A professional certificate.
+model Certificate {
+  id              String    @id @default(cuid())
+  title           String
+  issuer          String
+  provider        String    @default("")
+  issueDate       String    @map("issue_date")
+  expiryDate      String?   @map("expiry_date")
+  credentialId    String    @default("") @map("credential_id")
+  credentialUrl   String?   @map("credential_url")
+  verificationUrl String?   @map("verification_url")
+  image           String?
+  skills          String[]  @default([])
+  description     String    @default("")
+  displayOrder    Int       @default(0) @map("display_order")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdById     String?   @map("created_by_id")
+  updatedById     String?   @map("updated_by_id")
+  createdBy       User?     @relation("CertCreatedBy", fields: [createdById], references: [id])
+  updatedBy       User?     @relation("CertUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt      DateTime? @map("archived_at")
+  archivedById    String?   @map("archived_by_id")
+
+  @@index([issuer])
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@map("certificates")
+}
+
+/// A service offered.
+model Service {
+  id           String    @id @default(cuid())
+  title        String
+  name         String    @default("")
+  slug         String    @unique
+  description  String
+  icon         String    @default("Wrench")
+  features     String[]  @default([])
+  technologies String[]  @default([])
+  cta          Json      @default("{}")
+  price        String    @default("")
+  featured     Boolean   @default(false)
+  displayOrder Int       @default(0) @map("display_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdById  String?   @map("created_by_id")
+  updatedById  String?   @map("updated_by_id")
+  createdBy    User?     @relation("SvcCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?     @relation("SvcUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt   DateTime? @map("archived_at")
+  archivedById String?   @map("archived_by_id")
+
+  @@index([slug])
+  @@index([featured])
+  @@index([archivedAt])
+  @@index([displayOrder])
+  @@map("services")
+}
+
+/// A resume file version.
+model Resume {
+  id           String    @id @default(cuid())
+  version      String
+  label        String    @default("Resume")
+  fileUrl      String    @map("file_url")
+  fileSize     Int       @default(0) @map("file_size")
+  mimeType     String    @default("application/pdf") @map("mime_type")
+  isPrimary    Boolean   @default(false) @map("is_primary")
+  notes        String    @default("")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdById  String?   @map("created_by_id")
+  updatedById  String?   @map("updated_by_id")
+  createdBy    User?     @relation("ResumeCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?     @relation("ResumeUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt   DateTime? @map("archived_at")
+  archivedById String?   @map("archived_by_id")
+
+  @@index([isPrimary])
+  @@index([archivedAt])
+  @@map("resumes")
+}
+
+// =============================================================================
+// Relationship join tables (bidirectional, FK-enforced, cascade on delete).
+// =============================================================================
+
+model ProjectBlog {
+  projectId String   @map("project_id")
+  blogId    String   @map("blog_id")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  blog      BlogPost @relation(fields: [blogId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, blogId])
+  @@index([blogId])
+  @@map("project_blogs")
+}
+
+model ProjectSkill {
+  projectId String  @map("project_id")
+  skillId   String  @map("skill_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, skillId])
+  @@index([skillId])
+  @@map("project_skills")
+}
+
+model ProjectExperience {
+  projectId    String     @map("project_id")
+  experienceId String     @map("experience_id")
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, experienceId])
+  @@index([experienceId])
+  @@map("project_experience")
+}
+
+model ProjectInfra {
+  projectId String    @map("project_id")
+  infraId   String    @map("infra_id")
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  infra     InfraNode @relation(fields: [infraId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, infraId])
+  @@index([infraId])
+  @@map("project_infra")
+}
+
+model BlogSkill {
+  blogId  String   @map("blog_id")
+  skillId String   @map("skill_id")
+  blog    BlogPost @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  skill   Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([blogId, skillId])
+  @@index([skillId])
+  @@map("blog_skills")
+}
+
+model BlogInfra {
+  blogId  String    @map("blog_id")
+  infraId String    @map("infra_id")
+  blog    BlogPost  @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  infra   InfraNode @relation(fields: [infraId], references: [id], onDelete: Cascade)
+
+  @@id([blogId, infraId])
+  @@index([infraId])
+  @@map("blog_infra")
+}
+
+model SkillInfra {
+  skillId String    @map("skill_id")
+  infraId String    @map("infra_id")
+  skill   Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  infra   InfraNode @relation(fields: [infraId], references: [id], onDelete: Cascade)
+
+  @@id([skillId, infraId])
+  @@index([infraId])
+  @@map("skill_infra")
+}
+
+// =============================================================================
+// Version history (polymorphic, append-only)
+// =============================================================================
+
+/// A snapshot of an entity at a point in time. Polymorphic by entityType +
+/// entityId (no FK — the parent may be deleted before its history is reaped).
+model VersionHistory {
+  id         String   @id @default(cuid())
+  /// "project" | "blog" | "experience" | "skill" | "infra" | …
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  version    Int
+  /// Deep snapshot of the entity at save time (minus versionHistory).
+  snapshot   Json
+  label      String?
+  savedAt    DateTime @default(now()) @map("saved_at")
+  savedById  String?  @map("saved_by_id")
+  savedBy    User?    @relation(fields: [savedById], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([savedAt])
+  @@map("version_history")
+}
+
+// =============================================================================
+// Media library
+// =============================================================================
+
+/// A media asset (image, document, resume, certificate, …). Responsive image
+/// variants are stored as a Json array. The storage backend (Cloudinary in
+/// production, local filesystem in dev) is abstracted behind the storage
+/// adapter — the DB only stores the public path/URL + metadata.
+model MediaAsset {
+  id           String    @id @default(cuid())
+  name         String
+  originalName String    @map("original_name")
+  mimeType     String    @map("mime_type")
+  size         Int
+  /// Relative path under the media root (served statically) OR the
+  /// Cloudinary public id / secure URL in production.
+  path         String
+  thumbnail    String?
+  alt          String    @default("")
+  folder       String    @default("/")
+  width        Int?
+  height       Int?
+  tags         String[]  @default([])
+  /// EXIF / source / etc.
+  metadata     Json      @default("{}")
+  usageCount   Int       @default(0) @map("usage_count")
+  optimized    Boolean   @default(false)
+  /// Responsive variants (thumbnail/medium/large) — Json array.
+  variants     Json      @default("[]")
+  /// Inline blur placeholder (base64 data URI).
+  blurDataUrl  String    @default("") @map("blur_data_url")
+  /// Normalized focal point { x, y } in 0–1.
+  focalPoint   Json?
+  /// Storage backend that owns this asset ("local" | "cloudinary").
+  storage      String    @default("local")
+  /// Cloudinary public id (when storage = "cloudinary").
+  publicId     String?   @map("public_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdById  String?   @map("created_by_id")
+  updatedById  String?   @map("updated_by_id")
+  createdBy    User?     @relation("MediaCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User?     @relation("MediaUpdatedBy", fields: [updatedById], references: [id])
+  archivedAt   DateTime? @map("archived_at")
+  archivedById String?   @map("archived_by_id")
+
+  @@index([mimeType])
+  @@index([folder])
+  @@index([archivedAt])
+  @@index([createdAt])
+  @@map("media_assets")
+}
+
+// =============================================================================
+// Taxonomy
+// =============================================================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String   @default("")
+  color       String   @default("#2496ED")
+  entityTypes String[] @default([]) @map("entity_types")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
+  createdBy   User?    @relation("CatCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?    @relation("CatUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([slug])
+  @@map("categories")
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  color       String   @default("#64748b")
+  usageCount  Int      @default(0) @map("usage_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
+  createdBy   User?    @relation("TagCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?    @relation("TagUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([slug])
+  @@index([usageCount])
+  @@map("tags")
+}
+
+// =============================================================================
+// Singletons — Settings, SiteCustomization, Profile
+// =============================================================================
+
+/// Global site settings (singleton — id is always "singleton").
+model Settings {
+  id                   String   @id @default(cuid())
+  siteName             String   @default("Kandarp OS") @map("site_name")
+  ownerName            String   @default("Kandarp Kumar Thakur") @map("owner_name")
+  logo                 String?
+  favicon              String?
+  heroPortrait         String?  @map("hero_portrait")
+  /// Ready Player Me avatar config (Json).
+  heroAvatar           Json     @default("{}") @map("hero_avatar")
+  email                String
+  phone                String   @default("")
+  /// Contact block { email, phone, address, location }.
+  contact              Json     @default("{}")
+  socials              Json     @default("[]")
+  /// Brand { primaryColor, accentColor, tagline, description }.
+  brand                Json     @default("{}")
+  theme                String   @default("dark")
+  /// Typography { headingFont, bodyFont, monoFont, baseSize, scale }.
+  typography           Json     @default("{}")
+  /// Color palette tokens.
+  colors               Json     @default("{}")
+  /// Public navigation items.
+  navigation           Json     @default("[]")
+  /// Footer { columns, copyright, showSocials }.
+  footer               Json     @default("{}")
+  animationsEnabled    Boolean  @default(true) @map("animations_enabled")
+  performanceMode      String   @default("auto") @map("performance_mode")
+  maintenanceMode      Boolean  @default(false) @map("maintenance_mode")
+  maintenanceMessage   String   @default("") @map("maintenance_message")
+  globalSeo            Json     @default("{}") @map("global_seo")
+  apiKeys              Json     @default("[]") @map("api_keys")
+  environmentVariables Json     @default("[]") @map("environment_variables")
+  /// Cache { enabled, ttlSeconds, strategy }.
+  cache                Json     @default("{}")
+  integrations         Json     @default("[]")
+  customScripts        String   @default("") @map("custom_scripts")
+  customCss            String   @default("") @map("custom_css")
+  customJavaScript     String   @default("") @map("custom_javascript")
+  notificationEmails   String[] @default([]) @map("notification_emails")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+/// Website builder section configuration (singleton).
+model SiteCustomization {
+  id        String   @id @default(cuid())
+  /// Ordered list of configurable sections (Json array).
+  sections  Json     @default("[]")
+  /// Page-level settings { maxWidth, sectionSpacing, containerPadding }.
+  page      Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_customization")
+}
+
+/// The public profile (singleton — powers hero, about, contact).
+model Profile {
+  id             String   @id @default(cuid())
+  name           String
+  designation    String   @default("")
+  bio            String   @default("")
+  /// Media Library asset id (resolved to MediaAsset at render time).
+  profileImageId String?  @map("profile_image_id")
+  email          String   @default("")
+  phone          String   @default("")
+  github         String?
+  linkedin       String?
+  resume         String   @default("")
+  /// Additional social links (Json array).
+  socialLinks    Json     @default("[]") @map("social_links")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("profiles")
+}
+
+// =============================================================================
+// Analytics + Activity logs
+// =============================================================================
+
+/// A single analytics event (pageview, click, download, …).
+model AnalyticsEvent {
+  id        String          @id @default(cuid())
+  timestamp DateTime        @default(now())
+  type      AnalyticsType
+  path      String          @default("")
+  referrer  String          @default("")
+  country   String          @default("")
+  device    AnalyticsDevice @default(DESKTOP)
+  browser   String          @default("")
+  duration  Int             @default(0)
+  meta      Json            @default("{}")
+  userId    String?         @map("user_id")
+  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([timestamp])
+  @@index([path])
+  @@index([country])
+  @@index([device])
+  @@index([browser])
+  @@map("analytics_events")
+}
+
+/// An audit-log entry — who did what, when, from where.
+model ActivityLog {
+  id        String        @id @default(cuid())
+  timestamp DateTime      @default(now())
+  userId    String        @map("user_id")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName  String        @map("user_name")
+  action    String
+  entity    String        @default("")
+  entityId  String        @default("") @map("entity_id")
+  details   String        @default("")
+  level     ActivityLevel @default(INFO)
+  ip        String        @default("")
+  userAgent String        @default("") @map("user_agent")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([timestamp])
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([level])
+  @@map("activity_logs")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum ContainerStatus {
+  RUNNING
+  EXITED
+  CREATED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum ExperienceStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum SkillDomain {
+  FRONTEND
+  BACKEND
+  DEVOPS
+  DATA
+  DESIGN
+}
+
+enum SkillStatus {
+  ACTIVE
+  IDLE
+  LEARNING
+}
+
+enum InfraStatus {
+  ACTIVE
+  STANDBY
+  MAINTENANCE
+}
+
+enum AwardTier {
+  LEGENDARY
+  EPIC
+  RARE
+  COMMON
+}
+
+enum EducationStatus {
+  ONGOING
+  COMPLETED
+}
+
+enum AnalyticsType {
+  PAGEVIEW
+  PROJECT_CLICK
+  GITHUB_CLICK
+  RESUME_DOWNLOAD
+  BLOG_READ
+  CONTACT_SUBMIT
+  SEARCH
+}
+
+enum AnalyticsDevice {
+  DESKTOP
+  MOBILE
+  TABLET
+}
+
+enum ActivityLevel {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+}

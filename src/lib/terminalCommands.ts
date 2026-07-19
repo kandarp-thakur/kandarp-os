@@ -1,7 +1,7 @@
 import { commandByName, commands } from "@/data/contactCommands";
 import { socialByCommand, socials } from "@/data/socials";
-import { SECTIONS, SITE } from "@/utils/constants";
-import type { TerminalLine } from "@/types/contact";
+import { SECTIONS, SITE } from "@utils/constants";
+import type { TerminalLine } from "@packages/types/contact";
 import { err, link, out } from "@/lib/terminalLines";
 
 /**

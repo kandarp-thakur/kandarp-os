@@ -3,7 +3,7 @@
  * GET /api/admin/infrastructure/export
  */
 
-import { createExportHandler } from "@/lib/admin/crud";
-import { infraConfig } from "@/lib/admin/configs";
+import { createExportHandler } from "@backend/controllers/crud";
+import { infraConfig } from "@backend/controllers/configs";
 
 export const { GET } = createExportHandler(infraConfig);

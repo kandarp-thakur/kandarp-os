@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { PageContainer } from "@/components/layout";
-import { ROUTES, SITE } from "@/utils/constants";
-import { cn } from "@/utils/cn";
+import { PageContainer } from "@features/layout/components";
+import { ROUTES, SITE } from "@utils/constants";
+import { cn } from "@utils/cn";
 
 /**
  * 404 Layout — the not-found page (folder-structure §4.1).

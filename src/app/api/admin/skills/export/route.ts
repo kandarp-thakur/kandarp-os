@@ -3,7 +3,7 @@
  * GET /api/admin/skills/export
  */
 
-import { createExportHandler } from "@/lib/admin/crud";
-import { skillConfig } from "@/lib/admin/configs";
+import { createExportHandler } from "@backend/controllers/crud";
+import { skillConfig } from "@backend/controllers/configs";
 
 export const { GET } = createExportHandler(skillConfig);

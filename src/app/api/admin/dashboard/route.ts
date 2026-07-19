@@ -5,11 +5,11 @@
  * single payload so the dashboard page makes one round-trip.
  */
 
-import { json, requirePermission } from "@/lib/admin/api";
-import { count, list } from "@/lib/admin/repo";
-import { recentActivity } from "@/lib/admin/session";
-import { ensureSeeded } from "@/lib/admin/seed";
-import type { BlogPost, Project } from "@/lib/admin/types";
+import { json, requirePermission } from "@backend/middlewares/api";
+import { count, list } from "@backend/repositories/repo";
+import { recentActivity } from "@backend/auth/session";
+import { ensureSeeded } from "@backend/services/seed";
+import type { BlogPost, Project } from "@backend/schemas/types";
 
 export async function GET() {
     // Seed the store on first boot (idempotent — no-op after the first run).
@@ -18,8 +18,8 @@ export async function GET() {
     const session = await requirePermission("content:read");
     if (session instanceof Response) return session;
 
-    const projects = list<Project>("projects");
-    const blogPosts = list<BlogPost>("blogPosts");
+    const projects = await list<Project>("projects");
+    const blogPosts = await list<BlogPost>("blogPosts");
 
     const publishedProjects = projects.filter(
         (p) => p.status === "published",
@@ -54,17 +54,17 @@ export async function GET() {
         counts: {
             projects: projects.length,
             blogPosts: blogPosts.length,
-            experience: count("experience"),
-            skills: count("skills"),
-            infraNodes: count("infraNodes"),
-            awards: count("awards"),
-            education: count("education"),
-            certificates: count("certificates"),
-            services: count("services"),
-            media: count("media"),
-            users: count("users"),
-            categories: count("categories"),
-            tags: count("tags"),
+            experience: await count("experience"),
+            skills: await count("skills"),
+            infraNodes: await count("infraNodes"),
+            awards: await count("awards"),
+            education: await count("education"),
+            certificates: await count("certificates"),
+            services: await count("services"),
+            media: await count("media"),
+            users: await count("users"),
+            categories: await count("categories"),
+            tags: await count("tags"),
         },
         content: {
             publishedProjects,
@@ -74,7 +74,7 @@ export async function GET() {
         },
         latestProjects,
         latestPosts,
-        recentActivity: recentActivity(8),
+        recentActivity: await recentActivity(8),
         system: {
             nodeEnv: process.env.NODE_ENV ?? "development",
             uptime: process.uptime(),

@@ -3,8 +3,11 @@
  * Collection root: list + create.
  */
 
-import { createCollectionHandlers, createCrudConfig } from "@/lib/admin/crud";
-import { serviceSchema, type Service } from "@/lib/admin/types";
+import {
+    createCollectionHandlers,
+    createCrudConfig,
+} from "@backend/controllers/crud";
+import { serviceSchema, type Service } from "@backend/schemas/types";
 
 const config = createCrudConfig({
     collection: "services",

@@ -15,10 +15,10 @@ import {
     json,
     parseBody,
     requirePermission,
-} from "@/lib/admin/api";
-import { findById, update } from "@/lib/admin/repo";
-import { focalPointSchema } from "@/lib/admin/types";
-import type { MediaAsset } from "@/lib/admin/types";
+} from "@backend/middlewares/api";
+import { findById, update } from "@backend/repositories/repo";
+import { focalPointSchema } from "@backend/schemas/types";
+import type { MediaAsset } from "@backend/schemas/types";
 
 const bodySchema = z.object({
     focalPoint: focalPointSchema.nullable(),

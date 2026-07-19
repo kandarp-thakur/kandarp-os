@@ -1,20 +1,20 @@
 import { Fragment } from "react";
 
-import { BootScreen } from "@/components/sections/BootScreen";
-import { HeroSection } from "@/components/sections/HeroSection";
-import { AboutTerminal } from "@/components/sections/AboutTerminal";
-import { ExperienceTimeline } from "@/components/sections/ExperienceTimeline";
-import { ContainerFleet } from "@/components/sections/ContainerFleet";
-import { InfrastructureTopology } from "@/components/sections/InfrastructureTopology";
-import { SkillsMesh } from "@/components/sections/SkillsMesh";
-import { AchievementsGrid } from "@/components/sections/AchievementsGrid";
-import { ContactTerminal } from "@/components/sections/ContactTerminal";
-import { ConnectLinks } from "@/components/sections/ConnectLinks";
-import { JournalStream } from "@/components/blog/JournalStream";
-import { PageHeader } from "@/components/shared/PageHeader";
-import { StatPills } from "@/components/shared/StatPills";
-import { Section } from "@/components/layout/Section";
-import { Container } from "@/components/layout/Container";
+import { BootScreen } from "@features/hero/components/BootScreen";
+import { HeroSection } from "@features/hero/components/HeroSection";
+import { AboutTerminal } from "@features/about/components/AboutTerminal";
+import { ExperienceTimeline } from "@features/experience/components/ExperienceTimeline";
+import { ContainerFleet } from "@features/projects/components/ContainerFleet";
+import { InfrastructureTopology } from "@features/infrastructure/components/InfrastructureTopology";
+import { SkillsMesh } from "@features/skills/components/SkillsMesh";
+import { AchievementsGrid } from "@features/about/components/AchievementsGrid";
+import { ContactTerminal } from "@features/contact/components/ContactTerminal";
+import { ConnectLinks } from "@features/contact/components/ConnectLinks";
+import { JournalStream } from "@features/blog/components/JournalStream";
+import { PageHeader } from "@features/shared/components/PageHeader";
+import { StatPills } from "@features/shared/components/StatPills";
+import { Section } from "@features/layout/components/Section";
+import { Container } from "@features/layout/components/Container";
 import { deriveEdges } from "@/data/skills";
 import {
     getPublicAchievementStats,
@@ -34,12 +34,12 @@ import {
     getPublicSiteCustomization,
     getPublicSkillStats,
     getPublicSkills,
-} from "@/lib/admin/public-data";
-import { getSiteConfig } from "@/hooks/useSiteConfig";
+} from "@backend/services/public-data";
+import { getSiteConfig } from "@hooks/useSiteConfig";
 import { formatWordCount } from "@/data/blog";
-import { SECTIONS } from "@/utils/constants";
-import type { BlogUnit } from "@/types/blog";
-import type { SectionConfig } from "@/lib/admin/types";
+import { SECTIONS } from "@utils/constants";
+import type { BlogUnit } from "@packages/types/blog";
+import type { SectionConfig } from "@backend/schemas/types";
 
 /** Value color per fleet-stat key. */
 const FLEET_STAT_COLOR: Record<string, string> = {

@@ -13,8 +13,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, Plug, Save, Trash2 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { Integration, Settings } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { Integration, Settings } from "@backend/schemas/types";
 
 function uid(): string {
     return `int_${Math.random().toString(36).slice(2, 10)}`;

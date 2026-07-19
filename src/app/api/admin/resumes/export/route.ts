@@ -3,7 +3,7 @@
  * GET /api/admin/resumes/export
  */
 
-import { createExportHandler } from "@/lib/admin/crud";
-import { resumeConfig } from "@/lib/admin/configs";
+import { createExportHandler } from "@backend/controllers/crud";
+import { resumeConfig } from "@backend/controllers/configs";
 
 export const { GET } = createExportHandler(resumeConfig);

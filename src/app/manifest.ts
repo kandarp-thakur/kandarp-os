@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { getSiteConfig } from "@/hooks/useSiteConfig";
+import { getSiteConfig } from "@hooks/useSiteConfig";
 
 /**
  * Web App Manifest (Next.js Metadata API).

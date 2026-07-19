@@ -11,8 +11,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { Settings } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { Settings } from "@backend/schemas/types";
 
 export default function AdminSettingsPage() {
     const [form, setForm] = useState<Settings | null>(null);

@@ -3,7 +3,7 @@
  * POST /api/admin/education/[id]/restore
  */
 
-import { createRestoreHandler } from "@/lib/admin/crud";
-import { educationConfig } from "@/lib/admin/configs";
+import { createRestoreHandler } from "@backend/controllers/crud";
+import { educationConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreHandler(educationConfig);

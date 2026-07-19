@@ -10,14 +10,14 @@
 import { useState, type FormEvent } from "react";
 import { Loader2, Plus, Trash2, X } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 import {
     AdminDataTable,
     type AdminColumn,
-} from "@/components/admin/AdminDataTable";
-import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
-import { ROLE_LABELS } from "@/lib/admin/rbac";
-import type { SafeUser } from "@/lib/admin/types";
+} from "@features/admin/components/AdminDataTable";
+import { AdminStatusBadge } from "@features/admin/components/AdminStatusBadge";
+import { ROLE_LABELS } from "@backend/permissions/rbac";
+import type { SafeUser } from "@backend/schemas/types";
 
 const columns: AdminColumn<SafeUser>[] = [
     {

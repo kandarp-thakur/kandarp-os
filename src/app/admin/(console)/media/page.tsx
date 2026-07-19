@@ -10,8 +10,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image as ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { MediaAsset } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { MediaAsset } from "@backend/schemas/types";
 
 function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;

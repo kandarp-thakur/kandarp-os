@@ -1,7 +1,12 @@
 # Folder Structure — Kandarp OS
 
 > **Status:** ✅ Active
-> **Last Updated:** 2026-07-06
+> **Last Updated:** 2026-07-18
+> **Scope:** Post-refactor enterprise architecture
+
+> **See also:** [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full layered
+> architecture, and [`REFACTORING-REPORT.md`](./REFACTORING-REPORT.md) for the
+> migration summary.
 
 ---
 
@@ -16,17 +21,23 @@ This document is the **authoritative map** of the Kandarp OS directory layout. I
 ```
 Portfolio/
 ├── config/              # Build/tool configuration files
+├── content/             # MDX blog posts (file-based CMS source)
 ├── docs/                # All project documentation
+├── prisma/              # Prisma schema + migrations + seed
 ├── public/              # Static assets served as-is
+├── scripts/
+│   └── refactor/        # Phase 1-5 migration scripts (PowerShell)
 ├── src/                 # All application source code
-├── .env.example         # Environment variable template
+├── .env                 # Environment variables (gitignored)
+├── .env.local           # Local environment overrides (gitignored)
 ├── .eslintrc.json       # ESLint config
 ├── .gitignore
 ├── .prettierrc          # Prettier config
 ├── next.config.mjs      # Next.js configuration
 ├── package.json
 ├── tailwind.config.ts   # Tailwind / design token config
-├── tsconfig.json        # TypeScript config
+├── tsconfig.json        # TypeScript config (path aliases)
+├── vercel.json          # Vercel deployment config (headers, caching)
 └── README.md            # Project entry (links to /docs)
 ```
 
@@ -34,23 +45,20 @@ Portfolio/
 
 ## 3. The `src/` Directory
 
-All application code lives under `src/`. Nothing executable lives at the project root except config.
+All application code lives under `src/`. Nothing executable lives at the project root except config. The `src/` tree is partitioned into **layers** and **feature modules**, wired together by TypeScript path aliases (see [`ARCHITECTURE.md` §4](./ARCHITECTURE.md#4-typescript-path-aliases)).
 
 ```
 src/
-├── 3d/
-├── app/
-├── assets/
-├── components/
-├── context/
-├── data/
-├── hooks/
-├── lib/
-├── providers/
-├── services/
-├── styles/
-├── types/
-└── utils/
+├── app/                 # Next.js App Router (routing layer only)
+├── backend/              # Layered server-side domain logic
+├── features/             # Feature-based UI component modules
+├── infrastructure/       # Cross-cutting infra: 3D engine, providers, styles
+├── packages/             # Shared, barrel-exported internal packages
+├── data/                 # Static content data (typed)
+├── lib/                  # Feature-adjacent pure utilities (summaries)
+├── services/             # App-level service integrations
+├── assets/               # Fonts, images bundled by Next.js
+└── middleware.ts         # Edge middleware (rate limit, CSRF, auth gate)
 ```
 
 ---
@@ -69,124 +77,151 @@ src/app/
 ├── not-found.tsx           # 404 page
 ├── error.tsx               # Root error boundary
 ├── loading.tsx             # Root loading UI
-├── (home)/                 # Route group: home-specific layout
-├── (auth)/                 # Route group: auth pages (future)
-├── (dashboard)/            # Route group: dashboard (future)
-├── about/
-│   └── page.tsx
-├── projects/
-│   ├── page.tsx            # Projects listing
-│   └── [slug]/
-│       └── page.tsx        # Project detail
-├── experience/
-│   └── page.tsx
-├── skills/
-│   └── page.tsx
-├── contact/
-│   └── page.tsx
-├── blog/
-│   ├── page.tsx
-│   └── [slug]/
-│       └── page.tsx
-└── api/                    # API routes (Route Handlers)
-    ├── auth/
-    ├── contact/
-    └── projects/
+├── manifest.ts             # PWA manifest
+├── robots.ts               # robots.txt
+├── sitemap.ts              # sitemap.xml
+├── icon.svg                # Favicon
+├── (public)/               # Route group: public portfolio (no URL impact)
+│   ├── about/
+│   ├── background-preview/
+│   ├── blog/               # page.tsx, [slug]/page.tsx, tags/...
+│   ├── cloud-infinity-preview/
+│   ├── contact/
+│   ├── experience/
+│   ├── infrastructure/
+│   ├── projects/
+│   └── skills/
+├── admin/                  # Admin console (auth-gated)
+│   ├── layout.tsx
+│   └── (console)/          # ~30 management pages
+└── api/                    # REST API (Route Handlers)
+    └── admin/              # ~150 handlers (CRUD, auth, media, etc.)
 ```
 
 **Rules:**
 - Each route folder contains a `page.tsx`. Optionally: `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`.
 - Route groups `(name)` are for **organization without URL impact**.
-- Pages are **thin** — they compose sections, they don't contain logic.
-- API routes contain **only** request handling; logic lives in `src/services/`.
+- Pages are **thin** — they compose feature components, they don't contain logic.
+- API routes contain **only** request handling; logic lives in `@backend/*`.
 
 ---
 
-### 4.2 `src/components/` — React Components
+### 4.2 `src/backend/` — Layered Server-Side Domain Logic
 
-Organized by role. See [`component-rules.md`](./component-rules.md) for the full contract.
+The server-side domain logic, organized in strict layers. Dependencies flow
+**downward only**. See [`ARCHITECTURE.md` §5](./ARCHITECTURE.md#5-backend-layering)
+for the full layering diagram and request flow.
 
 ```
-src/components/
-├── ui/            # Primitives: Button, Input, Badge, Card, Container
-├── layout/        # Structural: Section, Grid, Stack
-├── sections/      # Page sections: HeroSection, ProjectsSection
-├── cards/         # Content cards: ProjectCard, ExperienceCard
-├── forms/         # Forms: ContactForm, FormField
-├── navigation/    # Nav: Navbar, MobileMenu, Breadcrumbs
-├── header/        # Header region: Header, Logo
-├── footer/        # Footer region: Footer, SocialLinks
-├── shared/        # Cross-cutting: ThemeToggle, ScrollProgress
-└── providers/     # Client providers: ThemeProvider, MotionProvider
+src/backend/
+├── database/              # Prisma client + connection management
+├── logging/               # Pino structured logger
+├── config/                # Env schema (Zod) + env accessors
+├── auth/                  # Argon2 password hashing, session, JWT
+├── permissions/           # RBAC (roles + permissions matrix)
+├── repositories/          # Data access (repo interface + Prisma impl)
+├── controllers/           # CRUD factory + config controllers
+├── schemas/               # Zod validation schemas + DTO types
+├── middlewares/           # API helpers, request context, logging wrapper
+├── cache/                 # Revalidation / cache invalidation
+├── storage/               # Cloudinary media storage adapter
+└── services/              # Domain services (image opt, seed, public-data, store)
+```
+
+**Rules:**
+- A lower layer **never** imports from a higher one.
+- Controllers depend on the repository **interface**, not the Prisma implementation.
+- Every state-changing operation is audit-logged at the repository layer.
+- Env access goes through `@backend/config/env` (Zod-validated at startup).
+
+---
+
+### 4.3 `src/features/` — Feature-Based UI Components
+
+UI components organized by **feature**, not by type. Each feature owns its
+components in `<feature>/components/`. See [`ARCHITECTURE.md` §6](./ARCHITECTURE.md#6-feature-based-frontend)
+for the feature inventory.
+
+```
+src/features/
+├── hero/                  # Hero section (terminal, portrait, scroll indicator)
+├── about/                 # About page (achievements grid, terminal)
+├── projects/              # Projects page (container fleet, inspect)
+├── experience/            # Experience timeline, deployment cards
+├── skills/                # Skills mesh
+├── infrastructure/        # Infrastructure topology, node inspect
+├── blog/                  # Blog components (journal, TOC, MDX, pager)
+├── contact/               # Contact form
+├── navigation/            # Navbar, mobile menu, breadcrumbs
+├── footer/                # Footer, social links
+├── background/            # Cloud-infinity 3D background, page background
+├── layout/                # App shell, container, section, page container
+├── shared/                # Cross-feature (page header, responsive image)
+└── admin/                 # Admin console UI components
+    └── components/        # Each feature: <feature>/components/*.tsx
 ```
 
 **Rules:**
 - One component per file, `PascalCase.tsx`.
-- Co-located tests: `Component.test.tsx`.
+- Import via `@features/<feature>/components/<Component>`.
+- Cross-feature imports go through `@features/shared/` or `@packages/ui/`.
 - No business logic in components — only presentation + local UI state.
 
 ---
 
-### 4.3 `src/3d/` — 3D / WebGL Layer
-
-Isolated to keep the 3D subsystem modular and replaceable.
+### 4.4 `src/infrastructure/` — Cross-Cutting Infrastructure
 
 ```
-src/3d/
-├── models/        # 3D model loaders & asset wrappers
-├── scenes/        # Composed scenes: HeroScene, ProjectOrbScene
-├── shaders/       # GLSL shaders (vertex/fragment)
-├── materials/     # Reusable Three.js materials
-├── animations/    # Animation rigs, timelines, clip configs
-└── hooks/         # R3F-specific hooks: useFrame wrappers, useGLTF
+src/infrastructure/
+├── three/                 # 3D / WebGL engine (R3F) — alias: @3d/*
+│   ├── Avatar/            #   3D coder avatar
+│   ├── cloudInfinity/     #   DevOps infinity loop background
+│   ├── coderModel/         #   Legacy coder scene
+│   ├── scenes/            #   Scene3D, SceneFallback
+│   ├── hooks/             #   useCamera, useMouse, useReducedMotion, etc.
+│   ├── Canvas3D.tsx        #   Reusable R3F canvas
+│   └── ...                #   CameraRig, LightingRig, PostProcessing, etc.
+├── providers/             # Client providers — alias: @providers / @providers/*
+│   ├── index.tsx          #   Composed <Providers> tree
+│   ├── AnimationProvider.tsx
+│   └── ThreeProvider.tsx
+└── styles/                # Global CSS — alias: @styles/*
+    ├── tokens.css         #   Design tokens (dark-only palette)
+    ├── admin-tokens.css   #   Admin console token overrides
+    └── devops-background.css
 ```
 
 **Rules:**
 - All 3D components are **Client Components** (`"use client"`).
 - 3D scenes are **always** dynamically imported with `{ ssr: false }`.
 - Every scene has a 2D fallback.
-- Heavy assets (models, textures) live in `public/` or `src/assets/`, not inline.
+- Heavy assets (models, textures) live in `public/`, not inline.
 
 ---
 
-### 4.4 `src/hooks/` — Custom React Hooks
+### 4.5 `src/packages/` — Shared Internal Packages
+
+Cross-cutting shared code, barrel-exported. Each package has an `index.ts`
+re-exporting its public API. See [`ARCHITECTURE.md` §7](./ARCHITECTURE.md#7-shared-packages).
 
 ```
-src/hooks/
-├── useTheme.ts
-├── useMediaQuery.ts
-├── useScrollPosition.ts
-└── useMounted.ts
+src/packages/
+├── types/                 # Shared TypeScript types — alias: @packages/types/*
+├── utils/                 # Pure utilities (cn, constants, navigation) — @utils/*
+├── config/                # Site config (identity, nav, presentation) — @config/*
+├── hooks/                 # Shared React hooks — @hooks/*
+└── ui/                    # UI primitives (Button, Card, Modal, etc.) — @packages/ui/*
 ```
 
 **Rules:**
-- One hook per file, `camelCase.ts`, prefixed with `use`.
-- Hooks are **framework-agnostic** (no Next.js-specific imports unless necessary).
-- 3D-specific hooks live in `src/3d/hooks/`, not here.
-- Every hook has a co-located test.
+- **Pure functions only** in `utils/` — no side effects, no React, no DOM.
+- One hook per file in `hooks/`, `camelCase.ts`, prefixed with `use`.
+- 3D-specific hooks live in `@3d/hooks/`, not here.
+- UI primitives are presentational only — no business logic.
 
 ---
 
-### 4.5 `src/utils/` — Pure Utility Functions
-
-```
-src/utils/
-├── cn.ts              # className merge utility
-├── formatDate.ts
-├── slugify.ts
-├── debounce.ts
-└── constants.ts       # App-wide constants
-```
-
-**Rules:**
-- **Pure functions only.** No side effects, no React, no DOM access.
-- One concern per file.
-- Every function has a co-located test.
-- If a function needs React, it's a hook, not a util.
-
----
-
-### 4.6 `src/services/` — Data Access Layer
+### 4.6 `src/data/`, `src/lib/`, `src/services/`, `src/assets/`
 
 The **only** place that fetches external data.
 

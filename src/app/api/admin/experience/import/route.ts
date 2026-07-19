@@ -3,7 +3,7 @@
  * POST /api/admin/experience/import
  */
 
-import { createImportHandler } from "@/lib/admin/crud";
-import { experienceConfig } from "@/lib/admin/configs";
+import { createImportHandler } from "@backend/controllers/crud";
+import { experienceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createImportHandler(experienceConfig);

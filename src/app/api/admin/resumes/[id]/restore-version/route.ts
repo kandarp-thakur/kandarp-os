@@ -3,7 +3,7 @@
  * POST /api/admin/resumes/[id]/restore-version
  */
 
-import { createRestoreVersionHandler } from "@/lib/admin/crud";
-import { resumeConfig } from "@/lib/admin/configs";
+import { createRestoreVersionHandler } from "@backend/controllers/crud";
+import { resumeConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreVersionHandler(resumeConfig);

@@ -7,12 +7,12 @@
  * type, path, referrer, device, and timestamp.
  */
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 import {
     AdminDataTable,
     type AdminColumn,
-} from "@/components/admin/AdminDataTable";
-import type { AnalyticsEvent } from "@/lib/admin/types";
+} from "@features/admin/components/AdminDataTable";
+import type { AnalyticsEvent } from "@backend/schemas/types";
 
 const columns: AdminColumn<AnalyticsEvent>[] = [
     {

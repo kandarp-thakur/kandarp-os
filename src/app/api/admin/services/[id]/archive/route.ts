@@ -3,7 +3,7 @@
  * POST /api/admin/services/[id]/archive
  */
 
-import { createArchiveHandler } from "@/lib/admin/crud";
-import { serviceConfig } from "@/lib/admin/configs";
+import { createArchiveHandler } from "@backend/controllers/crud";
+import { serviceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createArchiveHandler(serviceConfig);

@@ -18,10 +18,11 @@ import {
     json,
     parseBody,
     requirePermission,
-} from "@/lib/admin/api";
-import { findById, remove, update } from "@/lib/admin/repo";
-import { hashPassword, type AdminRole } from "@/lib/admin/auth";
-import type { SafeUser, User } from "@/lib/admin/types";
+} from "@backend/middlewares/api";
+import { findById, remove, update } from "@backend/repositories/repo";
+import { hashPassword, type AdminRole } from "@backend/auth/auth";
+import { revokeAllSessions } from "@backend/auth/session-service";
+import type { SafeUser, User } from "@backend/schemas/types";
 
 function toSafe(user: User): SafeUser {
     const { passwordHash: _p, totpSecret: _t, ...safe } = user;
@@ -46,7 +47,7 @@ export async function GET(
     const session = await requirePermission("users:read");
     if (session instanceof Response) return session;
     const { id } = await params;
-    const user = findById<User>("users", id);
+    const user = await findById<User>("users", id);
     if (!user) return error("User not found", 404, 404);
     return json(toSafe(user));
 }
@@ -58,7 +59,7 @@ export async function PATCH(
     const session = await requirePermission("users:write");
     if (session instanceof Response) return session;
     const { id } = await params;
-    const user = findById<User>("users", id);
+    const user = await findById<User>("users", id);
     if (!user) return error("User not found", 404, 404);
 
     const body = await parseBody(req, updateUserSchema);
@@ -82,9 +83,17 @@ export async function PATCH(
     if (body.avatar !== undefined) patch.avatar = body.avatar;
     if (body.status !== undefined) patch.status = body.status;
     if (body.totpEnabled !== undefined) patch.totpEnabled = body.totpEnabled;
-    if (body.password) patch.passwordHash = hashPassword(body.password);
+    if (body.password) patch.passwordHash = await hashPassword(body.password);
 
     const updated = await update<User>("users", id, patch, session.sub);
+
+    // Security: a password change invalidates all existing sessions so the
+    // user must re-authenticate on every device. A role change or suspension
+    // also revokes sessions so the new role/permissions take effect immediately.
+    if (body.password || body.role || body.status === "suspended") {
+        await revokeAllSessions(id);
+    }
+
     audit(
         session,
         "user.update",
@@ -103,7 +112,7 @@ export async function DELETE(
     const session = await requirePermission("users:delete");
     if (session instanceof Response) return session;
     const { id } = await params;
-    const user = findById<User>("users", id);
+    const user = await findById<User>("users", id);
     if (!user) return error("User not found", 404, 404);
 
     // The owner cannot be deleted.

@@ -19,15 +19,15 @@ import {
     json,
     parseBody,
     requirePermission,
-} from "@/lib/admin/api";
-import { findById, update } from "@/lib/admin/repo";
+} from "@backend/middlewares/api";
+import { findById, update } from "@backend/repositories/repo";
 import {
     cropSourceImage,
     deleteVariantFiles,
     isOptimizable,
     optimizeImageAsset,
-} from "@/lib/admin/image-optimization";
-import type { MediaAsset } from "@/lib/admin/types";
+} from "@backend/services/image-optimization";
+import type { MediaAsset } from "@backend/schemas/types";
 
 const cropBodySchema = z.object({
     x: z.number().min(0).max(1),
@@ -50,7 +50,7 @@ export async function POST(
     if (session instanceof Response) return session;
     const { id } = await params;
 
-    const asset = findById<MediaAsset>("media", id);
+    const asset = await findById<MediaAsset>("media", id);
     if (!asset) return error("Media asset not found", 404, 404);
     if (!isOptimizable(asset.mimeType)) {
         return error("Asset is not an optimizable image", 400);
@@ -59,8 +59,8 @@ export async function POST(
     const body = await parseBody(req, cropBodySchema);
     if (body instanceof Response) return body;
 
-    // Clear stale variants on disk before cropping (they'll be regenerated).
-    deleteVariantFiles(asset);
+    // Clear stale variants in storage before cropping (they'll be regenerated).
+    await deleteVariantFiles(asset);
 
     // Crop the source file in place.
     const dims = await cropSourceImage(asset, {

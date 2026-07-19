@@ -3,7 +3,7 @@
  * GET /api/admin/experience/export
  */
 
-import { createExportHandler } from "@/lib/admin/crud";
-import { experienceConfig } from "@/lib/admin/configs";
+import { createExportHandler } from "@backend/controllers/crud";
+import { experienceConfig } from "@backend/controllers/configs";
 
 export const { GET } = createExportHandler(experienceConfig);

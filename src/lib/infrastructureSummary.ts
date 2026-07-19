@@ -1,5 +1,5 @@
-import { SITE } from "@/utils/constants";
-import type { InfraNode } from "@/types/infrastructure";
+import { SITE } from "@utils/constants";
+import type { InfraNode } from "@packages/types/infrastructure";
 
 /**
  * Infrastructure summary helpers.

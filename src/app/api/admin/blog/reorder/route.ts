@@ -3,7 +3,7 @@
  * POST /api/admin/blog/reorder
  */
 
-import { createReorderHandler } from "@/lib/admin/crud";
-import { blogConfig } from "@/lib/admin/configs";
+import { createReorderHandler } from "@backend/controllers/crud";
+import { blogConfig } from "@backend/controllers/configs";
 
 export const { POST } = createReorderHandler(blogConfig);

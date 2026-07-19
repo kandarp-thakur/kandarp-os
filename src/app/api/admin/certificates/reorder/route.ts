@@ -3,7 +3,7 @@
  * POST /api/admin/certificates/reorder
  */
 
-import { createReorderHandler } from "@/lib/admin/crud";
-import { certificateConfig } from "@/lib/admin/configs";
+import { createReorderHandler } from "@backend/controllers/crud";
+import { certificateConfig } from "@backend/controllers/configs";
 
 export const { POST } = createReorderHandler(certificateConfig);

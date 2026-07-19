@@ -9,11 +9,15 @@
 
 import { z } from "zod";
 
-import { audit, json, parseBody, requirePermission } from "@/lib/admin/api";
-import { list, replaceAll } from "@/lib/admin/repo";
-import { revalidateAll } from "@/lib/admin/revalidate";
-import { invalidateAll } from "@/lib/admin/store";
-import type { CollectionName } from "@/lib/admin/types";
+import {
+    audit,
+    json,
+    parseBody,
+    requirePermission,
+} from "@backend/middlewares/api";
+import { list, replaceAll } from "@backend/repositories/repo";
+import { revalidateAll } from "@backend/cache/revalidate";
+import type { CollectionName } from "@backend/schemas/types";
 
 /** Every collection that gets included in a backup. */
 const ALL_COLLECTIONS: CollectionName[] = [
@@ -43,7 +47,7 @@ export async function GET() {
 
     const collections: Record<string, unknown[]> = {};
     for (const name of ALL_COLLECTIONS) {
-        collections[name] = list(name);
+        collections[name] = await list(name);
     }
 
     return json({
@@ -73,10 +77,8 @@ export async function POST(req: Request) {
         }
     }
 
-    // Drop the cache so the next read picks up the restored data.
-    invalidateAll();
-
     // A restore touches every collection, so purge the entire public cache.
+    // (Prisma reads are always live — no in-memory cache to invalidate.)
     revalidateAll();
 
     audit(

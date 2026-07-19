@@ -3,7 +3,7 @@
  * POST /api/admin/services/import
  */
 
-import { createImportHandler } from "@/lib/admin/crud";
-import { serviceConfig } from "@/lib/admin/configs";
+import { createImportHandler } from "@backend/controllers/crud";
+import { serviceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createImportHandler(serviceConfig);

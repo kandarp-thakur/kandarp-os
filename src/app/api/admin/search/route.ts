@@ -7,9 +7,9 @@
  * fields — a lightweight substring match, not a full-text engine.
  */
 
-import { json, requirePermission } from "@/lib/admin/api";
-import { list } from "@/lib/admin/repo";
-import type { CollectionName } from "@/lib/admin/types";
+import { json, requirePermission } from "@backend/middlewares/api";
+import { list } from "@backend/repositories/repo";
+import type { CollectionName } from "@backend/schemas/types";
 
 interface SearchHit {
     id: string;
@@ -59,14 +59,14 @@ function toHit(
 }
 
 /** Scan a collection and collect matching hits. */
-function scan(
+async function scan(
     collection: CollectionName,
     type: string,
     titleField: string,
     subtitleField: string | undefined,
     needle: string,
-): SearchHit[] {
-    const rows = list<
+): Promise<SearchHit[]> {
+    const rows = await list<
         Record<string, unknown> & {
             id: string;
             createdAt: string;
@@ -96,17 +96,19 @@ export async function GET(req: Request) {
 
     if (!q) return json({ results: [] as SearchHit[], total: 0 });
 
-    const hits: SearchHit[] = [
-        ...scan("projects", "projects", "title", "category", q),
-        ...scan("blogPosts", "blog", "title", "category", q),
-        ...scan("experience", "experience", "role", "company", q),
-        ...scan("skills", "skills", "name", "domain", q),
-        ...scan("infraNodes", "infrastructure", "name", "role", q),
-        ...scan("awards", "awards", "title", "tier", q),
-        ...scan("education", "education", "institution", "degree", q),
-        ...scan("certificates", "certificates", "title", "issuer", q),
-        ...scan("services", "services", "title", undefined, q),
-    ];
+    const hits: SearchHit[] = (
+        await Promise.all([
+            scan("projects", "projects", "title", "category", q),
+            scan("blogPosts", "blog", "title", "category", q),
+            scan("experience", "experience", "role", "company", q),
+            scan("skills", "skills", "name", "domain", q),
+            scan("infraNodes", "infrastructure", "name", "role", q),
+            scan("awards", "awards", "title", "tier", q),
+            scan("education", "education", "institution", "degree", q),
+            scan("certificates", "certificates", "title", "issuer", q),
+            scan("services", "services", "title", undefined, q),
+        ])
+    ).flat();
 
     return json({
         results: hits.slice(0, limit),

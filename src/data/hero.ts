@@ -7,7 +7,7 @@
  * tokens. Kept in the data layer so section components stay thin.
  */
 
-import { ROLES } from "@/utils/constants";
+import { ROLES } from "@utils/constants";
 
 /** Professional identities cycled by the `whoami` output — the OS boot reveal. */
 export const HERO_ROLES = ROLES;

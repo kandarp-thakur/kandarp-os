@@ -2,14 +2,14 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 
 import { fontVariables } from "@/assets/fonts";
-import { Providers } from "@/providers";
-import { AppShell } from "@/components/layout";
-import { PageBackground } from "@/components/background/PageBackground";
-import { CloudInfinityBackground } from "@/components/background/CloudInfinityBackground";
-import { ThemeTokens } from "@/components/shared/ThemeTokens";
-import { AnalyticsBeacon } from "@/components/shared/AnalyticsBeacon";
-import { getSiteConfig } from "@/hooks/useSiteConfig";
-import { getPublicMetadata } from "@/lib/admin/public-data";
+import { Providers } from "@providers";
+import { AppShell } from "@features/layout/components";
+import { PageBackground } from "@features/background/components/PageBackground";
+import { CloudInfinityBackground } from "@features/background/components/CloudInfinityBackground";
+import { ThemeTokens } from "@features/shared/components/ThemeTokens";
+import { AnalyticsBeacon } from "@features/shared/components/AnalyticsBeacon";
+import { getSiteConfig } from "@hooks/useSiteConfig";
+import { getPublicMetadata } from "@backend/services/public-data";
 import "./globals.css";
 
 /**

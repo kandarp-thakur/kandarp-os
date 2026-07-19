@@ -23,7 +23,7 @@ import {
     ArrowRight,
 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 
 interface SearchHit {
     id: string;

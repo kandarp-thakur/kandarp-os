@@ -3,7 +3,7 @@ import {
     fleetStatSchema,
     type Container,
     type FleetStat,
-} from "@/types/projects";
+} from "@packages/types/projects";
 
 /**
  * Projects container fleet (projects-page-design §8).

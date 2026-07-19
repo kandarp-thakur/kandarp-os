@@ -16,10 +16,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Loader2, Save } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { ProfileImageField } from "@/components/admin/ProfileImageField";
-import { ROLE_LABELS } from "@/lib/admin/rbac";
-import type { MediaAsset, Profile, SafeUser } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import { ProfileImageField } from "@features/admin/components/ProfileImageField";
+import { ROLE_LABELS } from "@backend/permissions/rbac";
+import type { MediaAsset, Profile, SafeUser } from "@backend/schemas/types";
 
 export default function AdminProfilePage() {
     /* ── Account state ──────────────────────────────────────────────────── */

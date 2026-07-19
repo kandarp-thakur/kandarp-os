@@ -5,7 +5,7 @@ import {
     type SkillEdge,
     type SkillNode,
     type SkillStat,
-} from "@/types/skills";
+} from "@packages/types/skills";
 
 /**
  * Skills topology data — the service mesh.

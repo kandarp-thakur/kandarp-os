@@ -3,8 +3,11 @@
  * Per-entity: get + update + delete.
  */
 
-import { createCrudConfig, createEntityHandlers } from "@/lib/admin/crud";
-import { awardSchema, type Award } from "@/lib/admin/types";
+import {
+    createCrudConfig,
+    createEntityHandlers,
+} from "@backend/controllers/crud";
+import { awardSchema, type Award } from "@backend/schemas/types";
 
 const config = createCrudConfig({
     collection: "awards",

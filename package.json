@@ -5,19 +5,31 @@
     "description": "Kandarp OS — a portfolio platform built as an operating system.",
     "scripts": {
         "dev": "next dev",
-        "build": "next build",
+        "build": "prisma generate && next build",
         "start": "next start",
         "lint": "next lint",
         "lint:fix": "next lint --fix",
         "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{js,mjs,ts,json}\"",
         "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{js,mjs,ts,json}\"",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "verify": "npm run typecheck && npm run lint",
+        "db:generate": "prisma generate",
+        "db:migrate": "prisma migrate dev",
+        "db:migrate:deploy": "prisma migrate deploy",
+        "db:push": "prisma db push",
+        "db:studio": "prisma studio",
+        "db:seed": "tsx prisma/seed.ts",
+        "db:reset": "prisma migrate reset --force"
     },
     "dependencies": {
+        "@auth/prisma-adapter": "^2.11.2",
+        "@prisma/client": "^6.7.0",
         "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.6.1",
         "@react-three/postprocessing": "^3.0.4",
+        "argon2": "^0.44.0",
         "class-variance-authority": "^0.7.1",
+        "cloudinary": "^2.10.0",
         "clsx": "^2.1.1",
         "framer-motion": "^11.3.8",
         "github-slugger": "^2.0.0",
@@ -25,9 +37,14 @@
         "gsap": "^3.15.0",
         "lenis": "^1.3.25",
         "lucide-react": "^0.408.0",
+        "nanoid": "^6.0.0",
         "next": "^15.5.20",
+        "next-auth": "^4.24.14",
         "next-mdx-remote": "^6.0.0",
+        "pino": "^10.3.1",
+        "pino-http": "^11.0.0",
         "postprocessing": "^6.35.0",
+        "prisma": "^6.7.0",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "react-icons": "^5.7.0",
@@ -50,9 +67,14 @@
         "eslint-config-next": "^15.5.20",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.6",
+        "pino-pretty": "^13.1.3",
         "postcss": "^8.4.39",
         "prettier": "^3.9.4",
         "tailwindcss": "^3.4.6",
+        "tsx": "^4.23.1",
         "typescript": "^5.5.3"
+    },
+    "prisma": {
+        "schema": "prisma/schema.prisma"
     }
 }

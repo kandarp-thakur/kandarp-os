@@ -21,8 +21,8 @@ import {
     Trash2,
 } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { NavItem, Settings } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { NavItem, Settings } from "@backend/schemas/types";
 
 function uid(): string {
     return `nav_${Math.random().toString(36).slice(2, 10)}`;

@@ -4,9 +4,9 @@ import { getAllPosts, getAllTags } from "@/lib/blog";
 import {
     getPublicBlogPostMetas,
     getPublicBlogTags,
-} from "@/lib/admin/public-data";
-import { getSiteConfig } from "@/hooks/useSiteConfig";
-import { ROUTES } from "@/utils/constants";
+} from "@backend/services/public-data";
+import { getSiteConfig } from "@hooks/useSiteConfig";
+import { ROUTES } from "@utils/constants";
 
 /**
  * Dynamic sitemap (Next.js Metadata API).

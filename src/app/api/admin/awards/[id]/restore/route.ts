@@ -3,7 +3,7 @@
  * POST /api/admin/awards/[id]/restore
  */
 
-import { createRestoreHandler } from "@/lib/admin/crud";
-import { awardConfig } from "@/lib/admin/configs";
+import { createRestoreHandler } from "@backend/controllers/crud";
+import { awardConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreHandler(awardConfig);

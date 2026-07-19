@@ -1,5 +1,5 @@
-@import "../styles/tokens.css";
-@import "../styles/devops-background.css";
+@import "../infrastructure/styles/tokens.css";
+@import "../infrastructure/styles/devops-background.css";
 
 @tailwind base;
 @tailwind components;

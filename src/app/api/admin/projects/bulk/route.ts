@@ -3,7 +3,7 @@
  * POST /api/admin/projects/bulk
  */
 
-import { createBulkHandler } from "@/lib/admin/crud";
-import { projectConfig } from "@/lib/admin/configs";
+import { createBulkHandler } from "@backend/controllers/crud";
+import { projectConfig } from "@backend/controllers/configs";
 
 export const { POST } = createBulkHandler(projectConfig);

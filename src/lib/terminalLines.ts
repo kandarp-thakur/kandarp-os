@@ -1,5 +1,5 @@
-import { SITE } from "@/utils/constants";
-import type { TerminalLine } from "@/types/contact";
+import { SITE } from "@utils/constants";
+import type { TerminalLine } from "@packages/types/contact";
 
 /**
  * Terminal line factories.

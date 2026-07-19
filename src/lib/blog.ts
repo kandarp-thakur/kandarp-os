@@ -9,7 +9,7 @@ import {
     type BlogHeading,
     type BlogPost,
     type BlogPostMeta,
-} from "@/types/blog";
+} from "@packages/types/blog";
 
 /**
  * Blog content loader — the static MDX pipeline (blog-page-design §17).

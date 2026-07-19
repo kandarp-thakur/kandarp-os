@@ -1,5 +1,5 @@
-import { socialLinkSchema, type SocialLink } from "@/types/contact";
-import { SITE } from "@/utils/constants";
+import { socialLinkSchema, type SocialLink } from "@packages/types/contact";
+import { SITE } from "@utils/constants";
 
 /**
  * Social + contact links for Kandarp.

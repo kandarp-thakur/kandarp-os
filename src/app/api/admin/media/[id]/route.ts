@@ -12,16 +12,24 @@
  *      image automatically restores the placeholder, never breaking layout.
  */
 
-import { audit, error, json, requirePermission } from "@/lib/admin/api";
-import { createCrudConfig, createEntityHandlers } from "@/lib/admin/crud";
-import { findById, list, remove, update } from "@/lib/admin/repo";
-import { revalidateCollection } from "@/lib/admin/revalidate";
-import { deleteAssetFiles } from "@/lib/admin/image-optimization";
+import {
+    audit,
+    error,
+    json,
+    requirePermission,
+} from "@backend/middlewares/api";
+import {
+    createCrudConfig,
+    createEntityHandlers,
+} from "@backend/controllers/crud";
+import { findById, list, remove, update } from "@backend/repositories/repo";
+import { revalidateCollection } from "@backend/cache/revalidate";
+import { deleteAssetFiles } from "@backend/services/image-optimization";
 import {
     mediaAssetSchema,
     type MediaAsset,
     type Profile,
-} from "@/lib/admin/types";
+} from "@backend/schemas/types";
 
 const config = createCrudConfig({
     collection: "media",
@@ -49,7 +57,7 @@ async function DELETE(
     if (session instanceof Response) return session;
     const { id } = await params;
 
-    const asset = findById<MediaAsset>("media", id);
+    const asset = await findById<MediaAsset>("media", id);
     if (!asset) return error(`${config.label} not found`, 404, 404);
 
     // 1. Null out references before removing the row so a concurrent read
@@ -60,8 +68,8 @@ async function DELETE(
     const ok = await remove("media", id);
     if (!ok) return error(`${config.label} not found`, 404, 404);
 
-    // 3. Delete the files on disk (best-effort).
-    deleteAssetFiles(asset);
+    // 3. Delete the files in storage (best-effort).
+    await deleteAssetFiles(asset);
 
     audit(session, `${config.label}.delete`, "media", id);
     revalidateCollection("media");
@@ -76,7 +84,7 @@ async function DELETE(
  */
 async function nullOutMediaReferences(mediaId: string): Promise<void> {
     // Profile singleton.
-    const profiles = list<Profile>("profiles");
+    const profiles = await list<Profile>("profiles");
     for (const p of profiles) {
         if (p.profileImageId === mediaId) {
             await update<Profile>(

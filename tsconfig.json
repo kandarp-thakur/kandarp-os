@@ -1,7 +1,11 @@
 {
     "compilerOptions": {
         "target": "ES2022",
-        "lib": ["dom", "dom.iterable", "esnext"],
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "esnext"
+        ],
         "allowJs": true,
         "skipLibCheck": true,
         "strict": true,
@@ -24,21 +28,60 @@
         ],
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"],
-            "@components/*": ["./src/components/*"],
-            "@hooks/*": ["./src/hooks/*"],
-            "@utils/*": ["./src/utils/*"],
-            "@services/*": ["./src/services/*"],
-            "@data/*": ["./src/data/*"],
-            "@types/*": ["./src/types/*"],
-            "@styles/*": ["./src/styles/*"],
-            "@assets/*": ["./src/assets/*"],
-            "@providers/*": ["./src/providers/*"],
-            "@context/*": ["./src/context/*"],
-            "@3d/*": ["./src/3d/*"],
-            "@lib/*": ["./src/lib/*"]
+            "@/*": [
+                "./src/*"
+            ],
+            "@backend/*": [
+                "./src/backend/*"
+            ],
+            "@packages/*": [
+                "./src/packages/*"
+            ],
+            "@features/*": [
+                "./src/features/*"
+            ],
+            "@config/*": [
+                "./src/packages/config/*"
+            ],
+            "@hooks/*": [
+                "./src/packages/hooks/*"
+            ],
+            "@utils/*": [
+                "./src/packages/utils/*"
+            ],
+            "@services/*": [
+                "./src/services/*"
+            ],
+            "@data/*": [
+                "./src/data/*"
+            ],
+            "@styles/*": [
+                "./src/infrastructure/styles/*"
+            ],
+            "@assets/*": [
+                "./src/assets/*"
+            ],
+            "@providers": [
+                "./src/infrastructure/providers/index.tsx"
+            ],
+            "@providers/*": [
+                "./src/infrastructure/providers/*"
+            ],
+            "@3d/*": [
+                "./src/infrastructure/three/*"
+            ],
+            "@lib/*": [
+                "./src/lib/*"
+            ]
         }
     },
-    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-    "exclude": ["node_modules"]
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
 }

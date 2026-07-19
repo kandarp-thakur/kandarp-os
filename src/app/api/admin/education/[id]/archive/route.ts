@@ -3,7 +3,7 @@
  * POST /api/admin/education/[id]/archive
  */
 
-import { createArchiveHandler } from "@/lib/admin/crud";
-import { educationConfig } from "@/lib/admin/configs";
+import { createArchiveHandler } from "@backend/controllers/crud";
+import { educationConfig } from "@backend/controllers/configs";
 
 export const { POST } = createArchiveHandler(educationConfig);

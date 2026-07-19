@@ -3,7 +3,7 @@
  * POST /api/admin/services/[id]/restore-version
  */
 
-import { createRestoreVersionHandler } from "@/lib/admin/crud";
-import { serviceConfig } from "@/lib/admin/configs";
+import { createRestoreVersionHandler } from "@backend/controllers/crud";
+import { serviceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createRestoreVersionHandler(serviceConfig);

@@ -3,7 +3,7 @@
  * POST /api/admin/experience/reorder
  */
 
-import { createReorderHandler } from "@/lib/admin/crud";
-import { experienceConfig } from "@/lib/admin/configs";
+import { createReorderHandler } from "@backend/controllers/crud";
+import { experienceConfig } from "@backend/controllers/configs";
 
 export const { POST } = createReorderHandler(experienceConfig);

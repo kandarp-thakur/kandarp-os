@@ -3,8 +3,11 @@
  * POST /api/admin/projects/[id]/duplicate
  */
 
-import { createCrudConfig, createDuplicateHandler } from "@/lib/admin/crud";
-import { projectSchema, type Project } from "@/lib/admin/types";
+import {
+    createCrudConfig,
+    createDuplicateHandler,
+} from "@backend/controllers/crud";
+import { projectSchema, type Project } from "@backend/schemas/types";
 
 const config = createCrudConfig({
     collection: "projects",

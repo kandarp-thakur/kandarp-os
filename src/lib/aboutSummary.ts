@@ -1,6 +1,6 @@
 import { ABOUT_COMMANDS } from "@/data/about";
-import { SITE } from "@/utils/constants";
-import type { AboutCommand, AboutOutput } from "@/types/about";
+import { SITE } from "@utils/constants";
+import type { AboutCommand, AboutOutput } from "@packages/types/about";
 
 /**
  * Plain-text rendering of the About terminal session.

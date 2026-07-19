@@ -9,9 +9,17 @@
  * The GET endpoint is for the admin dashboard's analytics screen.
  */
 
-import { getQuery, json, parseBody, requirePermission } from "@/lib/admin/api";
-import { create, query } from "@/lib/admin/repo";
-import { analyticsEventSchema, type AnalyticsEvent } from "@/lib/admin/types";
+import {
+    getQuery,
+    json,
+    parseBody,
+    requirePermission,
+} from "@backend/middlewares/api";
+import { create, query } from "@backend/repositories/repo";
+import {
+    analyticsEventSchema,
+    type AnalyticsEvent,
+} from "@backend/schemas/types";
 
 const ingestSchema = analyticsEventSchema.omit({
     id: true,

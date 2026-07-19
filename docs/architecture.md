@@ -1,286 +1,429 @@
 # Architecture — Kandarp OS
 
 > **Status:** ✅ Active
-> **Last Updated:** 2026-07-16
-
-> **Reality note (2026-07-16):** This document originally described an intended design. It has been synced to the code. Notable divergences from the original plan, now reflected below: the data layer lives in **`src/lib/admin/`** (a JSON-backed store), not the planned `src/services/` (which is empty); there is a full **Admin CMS** with HMAC-JWT auth and ~120 API routes under `/api/admin/` (no public `/api/contact` or `/api/projects`); the contact experience is a **terminal UI**, not a form; the theme is **dark-only** (no toggle/context); and there are **no GLSL shaders** (standard Three.js materials only). Sections below marked _(planned)_ describe intent that is not yet built.
+> **Last Updated:** 2026-07-18
+> **Scope:** Post-refactor enterprise architecture (pragmatic in-app monorepo)
 
 ---
 
 ## 1. Overview
 
-Kandarp OS is a **single-tenant, client-heavy, server-augmented** Next.js application built on the **App Router**. The architecture prioritizes a rich, 3D-driven client experience while leveraging the server for SEO, data fetching, and API routes.
+Kandarp OS is a **single Next.js 15 application** that serves three surfaces from one
+codebase, one build, and one deployment:
+
+| Surface | Route prefix | Description |
+|---------|-------------|-------------|
+| **Public portfolio** | `/`, `/about`, `/projects`, `/experience`, `/skills`, `/infrastructure`, `/blog`, `/contact` | The marketing site + journal. SSR/SSG, public read-only. |
+| **Admin console** | `/admin/*` | ~30 management modules (projects, blog, media, users, roles, settings, SEO, theme, etc.). Auth-gated, session-based. |
+| **REST API** | `/api/admin/*` | ~150 Route Handlers backing the admin console. CRUD factory + RBAC + audit log. Auth-gated, rate-limited, CSRF-protected. |
+
+The codebase is organized as a **pragmatic in-app monorepo**: a single Next.js app
+whose `src/` is partitioned into clearly-bounded layers and feature modules, connected
+by TypeScript path aliases. There is one `package.json`, one `tsconfig.json`, one build,
+and one deployment — but the internal structure enforces the same separation a
+multi-package monorepo would.
+
+---
+
+## 2. High-Level Directory Map
+
+```
+Portfolio/
+├── config/                 # Build/tool configuration
+├── content/                # MDX blog posts (file-based CMS source)
+├── docs/                    # All project documentation
+├── prisma/                  # Prisma schema + migrations + seed
+├── public/                  # Static assets served as-is
+├── scripts/
+│   └── refactor/            # Phase 1-5 migration scripts (PowerShell)
+├── src/                     # All application source code
+│   ├── app/                 # Next.js App Router (routing layer only)
+│   ├── backend/             # Layered server-side domain logic
+│   ├── features/            # Feature-based UI component modules
+│   ├── infrastructure/      # Cross-cutting infra: 3D engine, providers, styles
+│   ├── packages/            # Shared, barrel-exported internal packages
+│   ├── data/                # Static content data (typed)
+│   ├── lib/                 # Feature-adjacent pure utilities (summaries)
+│   ├── services/            # App-level service integrations
+│   ├── assets/              # Fonts, images bundled by Next.js
+│   └── middleware.ts        # Edge middleware (rate limit, CSRF, auth gate)
+├── next.config.mjs
+├── tsconfig.json
+├── tailwind.config.ts
+└── package.json
+```
+
+---
+
+## 3. The `src/` Layer Model
+
+```
+src/
+├── app/                     # ── Routing layer (thin) ──────────────────
+│   ├── layout.tsx           #   Root layout (providers, fonts, metadata)
+│   ├── page.tsx             #   Home route (/)
+│   ├── globals.css          #   Global styles + token CSS variables
+│   ├── error.tsx             #   Root error boundary
+│   ├── loading.tsx          #   Root loading UI
+│   ├── not-found.tsx        #   404 page
+│   ├── manifest.ts          #   PWA manifest
+│   ├── robots.ts            #   robots.txt
+│   ├── sitemap.ts           #   sitemap.xml
+│   ├── icon.svg             #   Favicon
+│   ├── (public)/            #   Public portfolio route group
+│   │   ├── about/
+│   │   ├── background-preview/
+│   │   ├── blog/             #   page.tsx, [slug]/page.tsx, tags/...
+│   │   ├── cloud-infinity-preview/
+│   │   ├── contact/
+│   │   ├── experience/
+│   │   ├── infrastructure/
+│   │   ├── projects/
+│   │   └── skills/
+│   ├── admin/               #   Admin console (auth-gated)
+│   │   ├── layout.tsx
+│   │   └── (console)/       #     ~30 management pages
+│   └── api/                 #   REST API (Route Handlers)
+│       └── admin/           #     ~150 handlers (CRUD, auth, media, etc.)
+│
+├── backend/                 # ── Layered server-side domain logic ─────
+│   ├── database/             #   Prisma client + connection management
+│   ├── logging/              #   Pino structured logger
+│   ├── config/               #   Env schema (Zod) + env accessors
+│   ├── auth/                 #   Argon2 password hashing, session, JWT
+│   ├── permissions/          #   RBAC (roles + permissions matrix)
+│   ├── repositories/         #   Data access (repo + Prisma implementation)
+│   ├── controllers/          #   CRUD factory + config controllers
+│   ├── schemas/              #   Zod validation schemas + DTO types
+│   ├── middlewares/          #   API helpers, request context, logging wrapper
+│   ├── cache/                #   Revalidation / cache invalidation
+│   ├── storage/              #   Cloudinary media storage adapter
+│   └── services/             #   Domain services (image opt, seed, public-data, store)
+│
+├── features/                # ── Feature-based UI modules ──────────────
+│   ├── hero/                 #   Hero section (terminal, portrait, scroll indicator)
+│   ├── about/                #   About page (achievements grid, terminal)
+│   ├── projects/             #   Projects page (container fleet, inspect)
+│   ├── experience/           #   Experience timeline, deployment cards
+│   ├── skills/               #   Skills mesh
+│   ├── infrastructure/       #   Infrastructure topology, node inspect
+│   ├── blog/                 #   Blog components (journal, TOC, MDX, pager)
+│   ├── contact/              #   Contact form
+│   ├── navigation/          #   Navbar, mobile menu, breadcrumbs
+│   ├── footer/               #   Footer, social links
+│   ├── background/           #   Cloud-infinity 3D background, page background
+│   ├── layout/               #   App shell, container, section, page container
+│   ├── shared/               #   Cross-feature shared (page header, responsive image)
+│   └── admin/                #   Admin console UI components
+│       └── components/      #     Each feature: <feature>/components/*.tsx
+│
+├── infrastructure/          # ── Cross-cutting infrastructure ──────────
+│   ├── three/                #   3D / WebGL engine (R3F scenes, hooks, materials)
+│   │   ├── Avatar/           #     3D coder avatar
+│   │   ├── cloudInfinity/    #     DevOps infinity loop background
+│   │   ├── coderModel/        #     Coder scene (legacy 3D figure)
+│   │   ├── scenes/            #     Scene3D, SceneFallback
+│   │   ├── hooks/             #     useCamera, useMouse, useReducedMotion, etc.
+│   │   ├── Canvas3D.tsx       #     Reusable R3F canvas
+│   │   └── ...                #     CameraRig, LightingRig, PostProcessing, etc.
+│   ├── providers/            #   Client providers (Animation, Three)
+│   │   └── index.tsx         #     Composed <Providers> tree
+│   └── styles/               #   Global CSS (tokens, admin tokens, devops background)
+│
+├── packages/                # ── Shared internal packages (barrel-exported) ─
+│   ├── types/                #   Shared TypeScript types (about, blog, projects, etc.)
+│   ├── utils/                #   Pure utilities (cn, constants, navigation)
+│   ├── config/               #   Site config (identity, navigation, presentation)
+│   ├── hooks/                #   Shared React hooks (useTerminal, useSiteConfig, etc.)
+│   └── ui/                   #   UI primitives (Button, Card, Modal, Input, etc.)
+│
+├── data/                     # ── Static content data (typed) ───────────
+│   ├── about.ts, projects.ts, experience.ts, skills.ts, ...
+│
+├── lib/                      # ── Feature-adjacent pure utilities ──────
+│   ├── blog.ts, blogSummary.ts, projectsSummary.ts, ...
+│
+├── services/                 # ── App-level service integrations ──────
+│
+├── assets/                   # ── Fonts, images bundled by Next.js ────
+│   └── fonts.ts
+│
+└── middleware.ts             # ── Edge middleware ─────────────────────
+```
+
+---
+
+## 4. TypeScript Path Aliases
+
+The layers are wired together by path aliases defined in [`tsconfig.json`](../tsconfig.json).
+These are the **canonical import paths** — always prefer the dedicated alias over `@/*`.
+
+| Alias | Resolves to | Used for |
+|------|-------------|----------|
+| `@backend/*` | `./src/backend/*` | Server-side domain logic (auth, repos, controllers, services) |
+| `@features/*` | `./src/features/*` | Feature UI components |
+| `@packages/*` | `./src/packages/*` | Shared packages (barrel imports) |
+| `@config/*` | `./src/packages/config/*` | Site config |
+| `@hooks/*` | `./src/packages/hooks/*` | Shared React hooks |
+| `@utils/*` | `./src/packages/utils/*` | Pure utilities |
+| `@3d/*` | `./src/infrastructure/three/*` | 3D engine (scenes, hooks, materials) |
+| `@providers` | `./src/infrastructure/providers/index.tsx` | Composed provider tree (barrel) |
+| `@providers/*` | `./src/infrastructure/providers/*` | Individual providers |
+| `@styles/*` | `./src/infrastructure/styles/*` | Global CSS |
+| `@services/*` | `./src/services/*` | App-level service integrations |
+| `@data/*` | `./src/data/*` | Static content data |
+| `@assets/*` | `./src/assets/*` | Bundled assets (fonts) |
+| `@lib/*` | `./src/lib/*` | Feature-adjacent utilities |
+| `@/*` | `./src/*` | Catch-all (avoid for aliased paths) |
+
+> **⚠️ Alias gotchas (learned during refactor):**
+> 1. **Longest-prefix matching:** `@/*` shadows `@<pkg>/*` for imports written as
+>    `@/<pkg>/...`. Always use the canonical alias (e.g. `@utils/cn`, not `@/utils/cn`).
+> 2. **`@types/*` is reserved:** TypeScript reserves `@types/<name>` for ambient
+>    declaration packages (TS6137). Never use `@types/*` as a path alias — use
+>    `@packages/types/*` instead.
+> 3. **Bare barrel imports:** `@providers/*` only matches `@providers/<segment>`.
+>    A bare `@providers` (no segment) needs a separate alias entry pointing to the
+>    index file.
+
+---
+
+## 5. Backend Layering
+
+The server-side domain logic in `src/backend/` follows a strict layered architecture.
+Dependencies flow **downward only** — a lower layer never imports from a higher one.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      USER (Browser)                     │
-│  ┌───────────┐  ┌───────────┐  ┌────────────────────┐   │
-│  │  React UI │  │ 3D Engine │  │  Client State/Cache │   │
-│  │ (RSC + CSR)│  │ (R3F/3js) │  │  (Context + Hooks)  │   │
-│  └─────┬─────┘  └─────┬─────┘  └─────────┬──────────┘   │
-└────────┼──────────────┼───────────────────┼──────────────┘
-         │              │                   │
-         ▼              ▼                   ▼
-┌─────────────────────────────────────────────────────────┐
-│                   NEXT.JS SERVER (Edge/Node)            │
-│  ┌──────────┐  ┌────────────┐  ┌────────────────────┐   │
-│  │ RSC Render│  │ API Routes │  │  Server Actions     │   │
-│  │ (SSR/ISR) │  │ (/api/*)   │  │  (mutations)        │   │
-│  └─────┬─────┘  └─────┬──────┘  └─────────┬──────────┘   │
-└────────┼──────────────┼───────────────────┼──────────────┘
-         │              │                   │
-         ▼              ▼                   ▼
-┌─────────────────┐  ┌─────────────┐  ┌──────────────────┐
-│  Data Sources   │  │  Services   │  │  External APIs   │
-│  (JSON/MDX)     │  │  (Email,    │  │  (GitHub, etc.)  │
-│                 │  │   Analytics)│  │                  │
-└─────────────────┘  └─────────────┘  └──────────────────┘
+│  Route Handlers (src/app/api/admin/*)                   │  ← thin: parse, authorize, respond
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  Middlewares (backend/middlewares/)                │  │  ← request context, logging, API helpers
+│  │  ┌─────────────────────────────────────────────┐  │  │
+│  │  │  Controllers (backend/controllers/)           │  │  │  ← CRUD factory, config handlers
+│  │  │  ┌───────────────────────────────────────┐   │  │  │
+│  │  │  │  Services (backend/services/)          │   │  │  │  ← image opt, seed, public-data, store
+│  │  │  │  ┌─────────────────────────────────┐  │   │  │  │
+│  │  │  │  │  Repositories (backend/repositories/)│  │   │  │  │  ← data access abstraction
+│  │  │  │  │  ┌───────────────────────────┐  │  │   │  │  │
+│  │  │  │  │  │  Database (backend/database/)│  │  │   │  │  │  ← Prisma client
+│  │  │  │  │  └───────────────────────────┘  │  │   │  │  │
+│  │  │  │  └───────────────────────────────┘   │  │  │
+│  │  │  └───────────────────────────────────────┘   │  │
+│  │  └─────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                          │
+│  Cross-cutting:                                          │
+│    auth/  permissions/  schemas/  config/  logging/      │
+│    cache/  storage/                                      │
+└─────────────────────────────────────────────────────────┘
 ```
 
----
+### 5.1 Request flow (example: `PUT /api/admin/projects/[id]`)
 
-## 2. Architectural Pillars
+1. **Route handler** (`src/app/api/admin/projects/[id]/route.ts`) — parses the
+   request body, calls [`withLogging`](../src/backend/middlewares/with-logging.ts)
+   + [`api()`](../src/backend/middlewares/api.ts) wrapper.
+2. **`api()` middleware** — authenticates the session, checks RBAC permission
+   (`projects:update`), injects the request context.
+3. **Controller** — [`createCrudHandlers`](../src/backend/controllers/crud.ts)
+   validates the body against a Zod schema, delegates to the repository.
+4. **Repository** — [`repo-prisma.ts`](../src/backend/repositories/repo-prisma.ts)
+   translates the domain operation into a Prisma call (with soft-delete, audit log).
+5. **Database** — [`db.ts`](../src/backend/database/db.ts) holds the singleton
+   `PrismaClient`.
+6. **Response** — the controller returns a typed DTO; the middleware serializes
+   and logs.
 
-### 2.1 Server-First Rendering
-- **React Server Components (RSC)** are the default. Every component is a server component unless it explicitly needs interactivity.
-- Client components are marked with the `"use client"` directive and are isolated to the leaves of the tree.
-- Static pages use **Static Site Generation (SSG)** with **Incremental Static Regeneration (ISR)** where data changes.
+### 5.2 CRUD factory
 
-### 2.2 3D as a First-Class Citizen
-- The 3D layer is powered by **React Three Fiber (R3F)** and **Three.js**.
-- 3D scenes are **lazy-loaded** and **code-split** to protect initial page weight.
-- A **progressive enhancement** strategy: 3D enhances the experience but the site is fully usable without it (accessibility fallback).
-
-### 2.3 Type-Safe Boundaries
-- All data crossing a system boundary (server → client, API → consumer, file → module) is validated with **Zod** schemas.
-- TypeScript types are derived from Zod schemas — **single source of truth**.
-- No `any`. No `as` casts without a justification comment.
-
-### 2.4 Composition Over Configuration
-- The app is assembled from small, focused, composable units.
-- No god-components. No 500-line files.
-- Each component has **one responsibility** and a clear contract.
-
----
-
-## 3. Rendering Strategy
-
-| Route | Strategy | Rationale |
-|-------|----------|-----------|
-| `/` (home) | Server component + ISR (CMS-revalidated) | Single-page composition, SEO-critical |
-| `/about` | Server component | CMS content with seed fallback |
-| `/projects` | Server component | Reads CMS/seed data |
-| `/experience`, `/skills`, `/infrastructure` | Server component | CMS/seed data |
-| `/contact` | Server component | Terminal UI (commands), not a form |
-| `/blog`, `/blog/tags`, `/blog/tags/[tag]` | SSG | MDX + CMS content |
-| `/blog/[slug]` | SSG + `generateStaticParams` | Per-post SEO, static export |
-| `/admin/*` | Dynamic (auth-gated) | HMAC-JWT session via middleware |
-| `/api/admin/*` | Node runtime (auth-gated) | ~120 CMS route handlers |
-
-> **Note:** There is no `/projects/[slug]`, `/api/contact`, or `/api/projects`. Projects render on the `/projects` listing and the home composition; the only API surface is `/api/admin/*` (plus a public `POST /api/admin/analytics`).
+Most admin resources share the same shape (list, get, create, update, archive,
+restore, restore-version, reorder, bulk, export, import). The
+[`createCrudHandlers`](../src/backend/controllers/crud.ts) factory wires a
+resource to its repository + Zod schema + RBAC permission + audit log in one
+call, so each route handler is 3-5 lines.
 
 ---
 
-## 4. Data Flow
+## 6. Feature-Based Frontend
+
+UI components are organized by **feature**, not by type. Each feature owns its
+components in `src/features/<feature>/components/`.
+
+| Feature | Owns | Key components |
+|---------|------|----------------|
+| `hero` | Hero section | HeroSection, HeroTerminal, HeroPortrait, HeroBackground, HeroScrollIndicator, BootScreen |
+| `about` | About page | AchievementsGrid, AboutTerminal |
+| `projects` | Projects page | ContainerFleet, ContainerRow, ContainerInspect |
+| `experience` | Experience page | ExperienceTimeline, DeploymentCard |
+| `skills` | Skills page | SkillsMesh |
+| `infrastructure` | Infrastructure page | InfrastructureTopology, NodeInspect |
+| `blog` | Blog | JournalEntry, JournalStream, TableOfContents, ReadingProgress, MdxContent, PostPager |
+| `contact` | Contact page | ContactForm |
+| `navigation` | Site nav | Navbar, MobileMenu, Breadcrumbs |
+| `footer` | Footer | Footer, SocialLinks, FooterBottom |
+| `background` | Global background | CloudInfinityBackground, PageBackground |
+| `layout` | Layout primitives | AppShell, Container, Section, PageContainer, NavigationLayout |
+| `shared` | Cross-feature | PageHeader, ResponsiveImage, StatPills, ThemeTokens, AnalyticsBeacon |
+| `admin` | Admin console | Admin-specific UI components |
+
+**Rules:**
+- One component per file, `PascalCase.tsx`.
+- Components import from `@features/<feature>/components/<Component>` or via barrel.
+- Cross-feature imports go through `@features/shared/` or `@packages/ui/`.
+- No business logic in components — only presentation + local UI state.
+
+---
+
+## 7. Shared Packages
+
+Cross-cutting shared code lives in `src/packages/*` as barrel-exported internal
+packages. Each has an `index.ts` that re-exports its public API.
+
+| Package | Barrel | Contents |
+|---------|--------|----------|
+| `types` | `@packages/types` | Shared TypeScript interfaces (about, blog, projects, experience, skills, infrastructure, contact, achievements) |
+| `utils` | `@utils/*` | `cn` (className merge), `constants` (SITE, SECTIONS), `navigation` (scrollToSection) |
+| `config` | `@config/*` | `site` (site identity, navigation, presentation config) |
+| `hooks` | `@hooks/*` | `useTerminal`, `useHeroTerminal`, `useAboutTerminal`, `useSiteConfig`, `useAnalyticsBeacon`, `useTimerQueue` |
+| `ui` | `@packages/ui/*` | Primitives: Button, Card, GlassCard, Badge, Heading, Input, Textarea, Modal, Popover, Tooltip, Avatar |
+
+---
+
+## 8. Infrastructure
+
+### 8.1 3D Engine (`src/infrastructure/three/`)
+
+The 3D subsystem is isolated under `@3d/*` so it can be evolved or replaced
+without touching the rest of the app.
+
+- **`Canvas3D`** — reusable R3F `<Canvas>` wrapper (camera, lighting, post-processing).
+- **Scenes** — `Avatar/` (3D coder figure), `cloudInfinity/` (DevOps infinity loop),
+  `coderModel/` (legacy coder scene), `scenes/Scene3D` + `SceneFallback`.
+- **Hooks** — `useCamera`, `useMouse`, `useReducedMotion`, `useDeviceTier`,
+  `useIsDesktop`, `useRaycaster`.
+- **Rigs** — `CameraRig`, `LightingRig`, `Environment3D`, `PostProcessing`,
+  `PerformanceMonitor`.
+
+**Rules:**
+- All 3D components are **Client Components** (`"use client"`).
+- 3D scenes are **always** dynamically imported with `{ ssr: false }`.
+- Every scene has a 2D fallback (`SceneFallback` / `CoderFallback`).
+- Heavy assets (models, textures) live in `public/`, not inline.
+
+### 8.2 Providers (`src/infrastructure/providers/`)
+
+The composed `<Providers>` tree is mounted once in the root layout. Order matters:
+1. **AnimationProvider** — Lenis + GSAP scroll-linked motion.
+2. **ThreeProvider** — 3D progressive enhancement (depends on animation ready).
+
+### 8.3 Styles (`src/infrastructure/styles/`)
+
+- `tokens.css` — design tokens (CSS custom properties, dark-only palette).
+- `admin-tokens.css` — admin console token overrides.
+- `devops-background.css` — DevOps infinity loop background styles.
+
+Imported by `src/app/globals.css` (`@import "../infrastructure/styles/tokens.css"`)
+and `src/app/admin/layout.tsx` (`@styles/admin-tokens.css`).
+
+---
+
+## 9. Routing
+
+### 9.1 Public routes — `src/app/(public)/`
+
+The `(public)` route group groups all public portfolio routes. Route groups
+(parenthesized) do **not** affect the URL — `/about` stays `/about`.
 
 ```
-┌──────────────┐    Zod parse    ┌────────────────────┐   props   ┌──────────────┐
-│  CMS store /  │ ─────────────▶ │  src/lib/admin/     │ ────────▶ │  Server       │
-│  seed / MDX   │                │  public-data.ts     │           │  Component    │
-└──────────────┘                 └────────────────────┘           └──────────────┘
-     (.admin-data JSON, src/data seeds, content/blog MDX)
+src/app/(public)/
+├── about/page.tsx
+├── background-preview/page.tsx
+├── blog/
+│   ├── page.tsx
+│   ├── [slug]/page.tsx
+│   └── tags/
+│       ├── page.tsx
+│       └── [tag]/page.tsx
+├── cloud-infinity-preview/page.tsx
+├── contact/page.tsx
+├── experience/page.tsx
+├── infrastructure/page.tsx
+├── projects/page.tsx
+└── skills/page.tsx
 ```
 
-### 4.1 Data Sources
-- **Structured seed data** lives in `src/data/` (12 typed modules) as the fallback source of truth.
-- **CMS data** is the primary source: a JSON-backed store under `src/lib/admin/` (`store.ts`, `repo.ts`, `public-data.ts`) persisted to `.admin-data/`. Public pages read from it via `public-data.ts` and fall back to `src/data/` seeds.
-- **Blog content** lives as MDX in `content/blog/`, read by `src/lib/blog.ts`.
-- **External data** (GitHub repos, etc.) is _(planned)_ — `src/services/` exists but is empty; no external API integration is built yet.
+### 9.2 Admin console — `src/app/admin/`
 
-### 4.2 Data Access Layer
-- The data access layer is **`src/lib/admin/`**, not the originally planned `src/services/`.
-- `public-data.ts` returns **validated, typed** data (Zod-parsed against `src/types/` schemas) to public server components.
-- `crud.ts`, `repo.ts`, and `store.ts` back the admin CMS; `revalidate.ts` triggers ISR on content change.
-- Public components receive data as props from server components; they never fetch directly.
+Auth-gated. The `admin/layout.tsx` enforces the session; `(console)/` holds the
+~30 management pages.
 
-### 4.3 Client State
-- The app uses **no global client state library and no `src/context/`** (the directory is empty). Providers compose in `src/providers/` (`AnimationProvider` → `ThreeProvider`).
-- Local component state uses `useState` / `useReducer` and small custom hooks (`src/hooks/`).
-- Server state uses RSC data fetching from `src/lib/admin/public-data.ts` — **no external data-fetching library**.
-- Theme is **dark-only**, set statically via `data-theme="dark"` on `<html>` — no theme context or toggle.
+### 9.3 REST API — `src/app/api/`
+
+~150 Route Handlers under `api/admin/`. Each is thin: parse → authorize →
+delegate to controller → respond. See [`docs/backend/api-reference.md`](backend/api-reference.md).
+
+### 9.4 Root files
+
+`layout.tsx`, `page.tsx` (home), `error.tsx`, `loading.tsx`, `not-found.tsx`,
+`globals.css`, `manifest.ts`, `robots.ts`, `sitemap.ts`, `icon.svg` — all stay
+at `src/app/` root (shared by all route groups).
 
 ---
 
-## 5. The 3D Subsystem
+## 10. Security Architecture
 
-The 3D layer is isolated in `src/3d/` to keep it modular and replaceable.
+- **Edge middleware** (`src/middleware.ts`) — rate limiting, CSRF, body-size
+  limits, auth gate for `/admin` and `/api/admin`.
+- **Auth** (`@backend/auth/`) — Argon2 password hashing, session JWT, session
+  service.
+- **RBAC** (`@backend/permissions/rbac`) — roles + permissions matrix; every
+  API handler checks a permission before acting.
+- **Audit log** — every state-changing operation is logged via the repository
+  layer.
+- **CSP + security headers** — configured in [`next.config.mjs`](../next.config.mjs)
+  and [`vercel.json`](../vercel.json).
 
-```
-src/3d/
-├── Canvas3D.tsx      # Canvas wrapper (dynamically imported, ssr: false)
-├── Environment3D.tsx # Environment / IBL setup
-├── CameraRig.tsx     # Camera rig
-├── LightingRig.tsx   # Lighting setup
-├── PostProcessing.tsx# Bloom → DOF → Vignette → CA → Noise → SMAA (tier-gated)
-├── PerformanceMonitor.tsx
-├── presets.ts        # Tier presets
-├── scenes/           # Scene3D + SceneFallback (2D fallback)
-├── cloudInfinity/    # Signature object: geometry, material, particles, nodes
-├── coderModel/       # Coder model + hologram
-└── hooks/            # useDeviceTier, useReducedMotion, useCamera, useMouse, ...
-```
-
-> **Note:** There is no `shaders/` directory and no custom GLSL. Signature visuals use standard Three.js materials (`MeshPhysicalMaterial` transmission on high tier, `MeshStandardMaterial` fallback) with animation — code comments explicitly note effects are achieved "without a custom shader." Custom GLSL remains a Phase 3 aspiration.
-
-### 5.1 Performance Contract
-
-> _(Planned items below)_ Draco/KTX2 asset compression is not yet applied — signature 3D objects are procedural geometry, not loaded GLTF assets. The canvas is tier-gated by `useDeviceTier` and postprocessing is tier-gated (low/off render no effects).
-
-- Device-tier detection (`useDeviceTier.ts`) scales scene complexity and gates postprocessing (low/off tiers render no post effects).
-- The 3D canvas is dynamically imported with `{ ssr: false }` and mounts client-side only.
-- A `prefers-reduced-motion` check (`useReducedMotion.ts`) disables animated effects.
-- 3D asset compression (Draco/KTX2) is **not yet applied** — a Phase 3 item.
-
-### 5.2 Fallback Strategy
-- Every 3D scene has a **2D fallback** (image or CSS animation).
-- Feature detection (`WebGL` support) determines which renders.
-- No visitor is blocked from content by a missing GPU.
+See [`docs/backend/security.md`](backend/security.md) for the full security model.
 
 ---
 
-## 6. API Layer
+## 11. Data Layer
 
-API routes live in `src/app/api/` and follow RESTful conventions. In practice **all routes are under `src/app/api/admin/`** (~120 `route.ts` files) — there is no public `/api/contact` or `/api/projects`. The public site is rendered from server components reading `src/lib/admin/public-data.ts`, not from public API calls.
+- **Prisma** (`prisma/schema.prisma`) — PostgreSQL, RBAC tables, soft-delete
+  pattern, audit log.
+- **Repository pattern** (`@backend/repositories/`) — `repo.ts` defines the
+  interface; `repo-prisma.ts` is the Prisma implementation. Controllers depend
+  on the interface, not the implementation.
+- **Static data** (`@data/*`) — typed static content (about, projects, experience,
+  skills, navigation, socials, hero, infrastructure, achievements, blog).
+- **File-based CMS** (`content/`) — MDX blog posts; `@lib/blog.ts` reads them.
 
-| Endpoint group | Method | Purpose | Runtime |
-|----------------|--------|---------|---------|
-| `/api/admin/auth/{login,logout,me,forgot}` | POST/GET | Admin session auth (HMAC-JWT cookie) | Node |
-| `/api/admin/<entity>` | GET/POST | CRUD per entity (projects, blog, skills, …) | Node |
-| `/api/admin/<entity>/[id]` | GET/PATCH/DELETE | Single-record ops (+ archive/restore/versions) | Node |
-| `/api/admin/<entity>/{bulk,export,import,reorder}` | POST | Batch operations | Node |
-| `/api/admin/media/upload` + `/media/[id]/{crop,focal-point,optimize}` | POST | Media pipeline (`sharp`) | Node |
-| `/api/admin/analytics` | POST | Event capture (public POST) | Node |
-
-Auth is enforced by `src/middleware.ts`, which edge-verifies the `kos_admin_session` HMAC-JWT cookie for `/admin` and `/api/admin`, and sets `x-is-admin` to strip public chrome. RBAC lives in `src/lib/admin/rbac.ts`.
-
-> **Not built:** contact form endpoint + email service (contact is a terminal UI), GitHub API integration.
-
-### 6.1 API Contracts
-- Every API route has a **Zod schema** for input validation.
-- Responses follow a **consistent envelope**:
-  ```ts
-  { success: boolean; data?: T; error?: { code: string; message: string } }
-  ```
-- Errors use **HTTP status codes** correctly (400, 401, 403, 404, 500).
+See [`docs/backend/README.md`](backend/README.md) for the data model.
 
 ---
 
-## 7. State Management
+## 12. Build & Deployment
 
-Kandarp OS intentionally avoids heavy state libraries. The state model is simple:
+- **One build, one deployment** — the entire app (public + admin + API) builds
+  and deploys as a single Next.js app.
+- **Vercel** — configured via [`vercel.json`](../vercel.json) (security headers,
+  caching).
+- **Environment** — `.env` + `.env.local`; validated at startup by
+  [`@backend/config/env-schema`](../src/backend/config/env-schema.ts) (Zod).
 
-| State Type | Tool | Location |
-|------------|------|----------|
-| Server data | RSC + `cache()` | `src/services/` |
-| Global UI state | React Context | `src/context/` |
-| 3D scene state | R3F + Context | `src/3d/hooks/` |
-| Form state | React Hook Form + Zod | Component-local |
-| URL state | `useSearchParams` / `useRouter` | Route-level |
-
-**No Redux. No Zustand. No Recoil.** Unless a documented need arises.
+See [`docs/deployment-vercel.md`](deployment-vercel.md) for deployment details.
 
 ---
 
-## 8. Styling Architecture
+## 13. Migration Notes
 
-- **Tailwind CSS** is the primary styling system — utility-first, token-driven.
-- **CSS Modules** are used for complex, component-scoped styles (e.g., 3D canvas wrappers).
-- All design tokens (colors, spacing, typography) are defined in `tailwind.config.ts` and `src/styles/`.
-- **No inline styles** except for dynamic, runtime-computed values (e.g., 3D transforms).
+This architecture is the result of a phased refactor from a flat `src/` layout
+to the layered, feature-based structure documented above. The migration:
 
-See [`design-system.md`](./design-system.md) for the full token specification.
+- **Preserved Git history** — all moves used `git mv`.
+- **Preserved all functionality** — no features removed, no UI redesigned.
+- **Kept typecheck at 0 errors** throughout every phase.
+- **Used scripted, auditable phases** — see `scripts/refactor/phase{1-5}*.ps1`.
 
----
-
-## 9. Performance Architecture
-
-### 9.1 Budgets
-| Asset | Budget | Enforcement |
-|------|--------|-------------|
-| Initial JS | < 150 KB gzip | Bundle analyzer in CI |
-| Initial CSS | < 30 KB gzip | PurgeCSS via Tailwind |
-| LCP image | < 200 KB | Next/Image + AVIF/WebP |
-| 3D scene | Lazy-loaded, < 2 MB total | Suspense + dynamic import |
-| Fonts | < 100 KB | `next/font` + subset |
-
-### 9.2 Techniques
-- **Code splitting** via `next/dynamic` for 3D and below-the-fold sections.
-- **Image optimization** via `next/image` with `AVIF`/`WebP`.
-- **Font optimization** via `next/font` (no layout shift).
-- **Prefetching** of likely-next routes via Next.js Link.
-- **Edge caching** for static assets.
-
----
-
-## 10. Security
-
-| Concern | Mitigation |
-|---------|-----------|
-| XSS | React auto-escaping; no `dangerouslySetInnerHTML` without sanitization |
-| CSRF | Same-site cookies + token for form POSTs |
-| Input validation | Zod on every API route and form |
-| Secrets | Server-only env vars; never prefixed `NEXT_PUBLIC_` unless needed client-side |
-| Dependencies | `npm audit` in CI; Dependabot enabled |
-| Rate limiting | Edge middleware on `/api/*` (future) |
-
----
-
-## 11. Observability
-
-- **Error tracking:** Sentry (planned) — captures client + server errors.
-- **Analytics:** Privacy-respecting analytics (Plausible/Umami) — no cookies, no PII.
-- **Performance:** Lighthouse CI runs on every PR.
-- **Logging:** Structured logging in API routes (`pino`-style JSON).
-
----
-
-## 12. Deployment
-
-- **Platform:** Vercel (primary) — optimized for Next.js.
-- **Environments:** `development`, `preview` (per-PR), `production`.
-- **CI/CD:** GitHub → Vercel auto-deploy on `main`.
-- **Rollback:** Vercel instant rollback to any prior deployment.
-
----
-
-## 13. Architectural Decision Records (ADRs)
-
-Significant decisions are recorded as ADRs in `docs/architecture/`. Each ADR follows:
-
-```
-# ADR-XXX: Title
-- Status: Proposed | Accepted | Deprecated | Superseded
-- Date: YYYY-MM-DD
-- Context: ...
-- Decision: ...
-- Consequences: ...
-```
-
----
-
-## 14. Technology Decisions Summary
-
-| Decision | Choice | Why |
-|----------|--------|-----|
-| Framework | Next.js App Router | RSC, file-based routing, edge runtime |
-| Language | TypeScript | Type safety, DX, refactor confidence |
-| Styling | Tailwind CSS | Utility-first, token-driven, small CSS |
-| 3D | React Three Fiber | Declarative Three.js, React-native |
-| Animation | Framer Motion | Spring physics, layout animations |
-| Forms | React Hook Form + Zod | Performant, type-safe validation |
-| Icons | Lucide React | Tree-shakeable, consistent |
-| Deployment | Vercel | Next.js-native, edge, preview deploys |
-
----
-
-_This architecture is a living document. When a decision changes, update this file and record the reasoning in an ADR._
+See [`docs/REFACTORING-REPORT.md`](REFACTORING-REPORT.md) for the full migration
+report (what moved where, import changes, breaking changes, performance notes).

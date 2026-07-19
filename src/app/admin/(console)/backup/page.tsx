@@ -11,7 +11,7 @@
 import { useState } from "react";
 import { Download, Loader2, Upload, AlertTriangle } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
 
 export default function AdminBackupPage() {
     const [exporting, setExporting] = useState(false);

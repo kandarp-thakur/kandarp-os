@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { getSiteConfig } from "@/hooks/useSiteConfig";
+import { getSiteConfig } from "@hooks/useSiteConfig";
 
 /**
  * Dynamic robots.txt (Next.js Metadata API).

@@ -11,8 +11,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, RotateCcw, Save } from "lucide-react";
 
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import type { Settings } from "@/lib/admin/types";
+import { AdminPageHeader } from "@features/admin/components/AdminPageHeader";
+import type { Settings } from "@backend/schemas/types";
 
 const COLOR_TOKENS = [
     ["background", "Background"],

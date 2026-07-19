@@ -15,10 +15,10 @@ import {
     json,
     parseBody,
     requirePermission,
-} from "@/lib/admin/api";
-import { create, query } from "@/lib/admin/repo";
-import { hashPassword, type AdminRole } from "@/lib/admin/auth";
-import type { SafeUser, User } from "@/lib/admin/types";
+} from "@backend/middlewares/api";
+import { create, query } from "@backend/repositories/repo";
+import { hashPassword, type AdminRole } from "@backend/auth/auth";
+import type { SafeUser, User } from "@backend/schemas/types";
 
 /** Strip secrets from a user row before sending it to the client. */
 function toSafe(user: User): SafeUser {
@@ -38,7 +38,7 @@ const createUserSchema = z.object({
 export async function GET(req: Request) {
     const session = await requirePermission("users:read");
     if (session instanceof Response) return session;
-    const result = query<User>("users", getQuery(req));
+    const result = await query<User>("users", getQuery(req));
     return json({
         ...result,
         rows: result.rows.map(toSafe),
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         {
             name: body.name,
             email: body.email.toLowerCase(),
-            passwordHash: hashPassword(body.password),
+            passwordHash: await hashPassword(body.password),
             role: role as AdminRole,
             avatar: body.avatar,
             bio: "",

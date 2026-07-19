@@ -5,8 +5,11 @@
  * Per-entity routes live in `[id]/route.ts`.
  */
 
-import { createCollectionHandlers, createCrudConfig } from "@/lib/admin/crud";
-import { projectSchema, type Project } from "@/lib/admin/types";
+import {
+    createCollectionHandlers,
+    createCrudConfig,
+} from "@backend/controllers/crud";
+import { projectSchema, type Project } from "@backend/schemas/types";
 
 const config = createCrudConfig({
     collection: "projects",

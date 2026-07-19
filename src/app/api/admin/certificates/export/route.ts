@@ -3,7 +3,7 @@
  * GET /api/admin/certificates/export
  */
 
-import { createExportHandler } from "@/lib/admin/crud";
-import { certificateConfig } from "@/lib/admin/configs";
+import { createExportHandler } from "@backend/controllers/crud";
+import { certificateConfig } from "@backend/controllers/configs";
 
 export const { GET } = createExportHandler(certificateConfig);

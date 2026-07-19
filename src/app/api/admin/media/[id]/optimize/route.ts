@@ -9,14 +9,19 @@
  * Non-image assets return 400.
  */
 
-import { audit, error, json, requirePermission } from "@/lib/admin/api";
-import { findById, update } from "@/lib/admin/repo";
+import {
+    audit,
+    error,
+    json,
+    requirePermission,
+} from "@backend/middlewares/api";
+import { findById, update } from "@backend/repositories/repo";
 import {
     deleteVariantFiles,
     isOptimizable,
     optimizeImageAsset,
-} from "@/lib/admin/image-optimization";
-import type { MediaAsset } from "@/lib/admin/types";
+} from "@backend/services/image-optimization";
+import type { MediaAsset } from "@backend/schemas/types";
 
 export async function POST(
     _req: Request,
@@ -26,14 +31,14 @@ export async function POST(
     if (session instanceof Response) return session;
     const { id } = await params;
 
-    const asset = findById<MediaAsset>("media", id);
+    const asset = await findById<MediaAsset>("media", id);
     if (!asset) return error("Media asset not found", 404, 404);
     if (!isOptimizable(asset.mimeType)) {
         return error("Asset is not an optimizable image", 400);
     }
 
-    // Clear stale variants on disk before regenerating.
-    deleteVariantFiles(asset);
+    // Clear stale variants in storage before regenerating.
+    await deleteVariantFiles(asset);
 
     const result = await optimizeImageAsset({
         path: asset.path,
