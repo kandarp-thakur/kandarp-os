@@ -26,8 +26,8 @@ import { cn } from "@utils/cn";
 const PORTRAIT_WIDTH = 1092;
 const PORTRAIT_HEIGHT = 903;
 
-/** Idle float travel (px): 0 → -6 → 0 (task §Animation: "Idle floating 6px"). */
-const FLOAT_DISTANCE = 6;
+/** Idle float travel (px): subtle enough to keep the portrait visually grounded. */
+const FLOAT_DISTANCE = 4;
 /** Idle float duration (s): 8s, infinite, easeInOut. */
 const FLOAT_DURATION = 8;
 
@@ -154,14 +154,14 @@ export function HeroPortrait({
         <div
             aria-hidden="true"
             className={cn(
-                "hero-portrait pointer-events-none absolute right-[2%] top-1/2 z-20 w-full -translate-y-1/2 drop-shadow-[0_24px_48px_rgba(0,0,0,0.38)]",
+                "hero-portrait pointer-events-none absolute right-0 top-1/2 z-20 w-full -translate-y-1/2 [filter:drop-shadow(0_24px_48px_rgba(0,0,0,0.42))_drop-shadow(0_0_36px_rgba(36,150,237,0.12))]",
                 // Tablet: scale down (task §Responsive). Applied at the wrapper
                 // so the whole portrait (image + float) scales together.
                 // origin-right keeps the right edge fixed while scaling so the
                 // portrait stays anchored to the right side as it shrinks
                 // (it is vertically centered, so scaling from the right edge
                 // preserves the centering).
-                "md:origin-right md:scale-95 lg:scale-95 xl:scale-100",
+                "md:origin-right md:scale-95 lg:scale-100",
                 // Mobile: drop the absolute anchor so the portrait re-enters
                 // normal flow below the hero text, center-aligned (task
                 // §Mobile: "Portrait moves below the Hero content. Centered.").
@@ -211,13 +211,13 @@ export function HeroPortrait({
                         width={PORTRAIT_WIDTH}
                         height={PORTRAIT_HEIGHT}
                         priority
-                        sizes="(max-width: 768px) 78vw, (max-width: 1024px) 50vw, 42vw"
+                        sizes="(max-width: 768px) 72vw, (max-width: 1024px) 46vw, 34vw"
                         className={cn(
                             // Frameless, transparent portrait. No card, no
                             // frame, no circular crop, no background (task
                             // §Styling). The transparent WebP alpha shows the
                             // scene through it.
-                            "ml-auto block h-auto w-[92%] max-w-[720px] select-none max-md:mx-auto max-md:w-[78%]",
+                            "ml-auto block h-[440px] w-auto max-w-full select-none object-contain xl:h-[480px] max-md:mx-auto max-md:h-auto max-md:w-[68%]",
                             // Desktop height 650–700px (task §Portrait Size:
                             // "Height 650–700px"), width auto, aspect ratio
                             // preserved (never stretched). The portrait now
@@ -236,7 +236,7 @@ export function HeroPortrait({
                             // `.hero-right` clips it) (task §Size, §Overflow,
                             // §Final Result: "Hero text remains completely
                             // unobstructed").
-                            "max-h-[620px]",
+                            "max-h-[480px]",
                         )}
                         style={{
                             // Explicit visibility flags: display block,

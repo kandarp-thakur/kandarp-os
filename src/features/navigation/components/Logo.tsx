@@ -1,3 +1,6 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 
 import { ROUTES, SITE } from "@utils/constants";
@@ -8,9 +11,7 @@ interface LogoProps {
     scrolled?: boolean;
     /** When true the wordmark is always visible (used in the mobile menu header). */
     alwaysShowWordmark?: boolean;
-    /** When true the logo renders in its active (Home) state — the accent pill
-     *  + indicator dot used by the navbar scroll-spy to mark the Hero section
-     *  (`∞ root@kandarp` represents Home). */
+    /** When true the logo renders in its active (Home) glass-pill state. */
     active?: boolean;
     /** Extra classes (escape hatch). */
     className?: string;
@@ -32,9 +33,8 @@ interface LogoProps {
  *
  * The logo doubles as the **Home** navigation target: it represents the Hero
  * section. When `active` is true (driven by the navbar scroll-spy when the
- * hero is in view) it renders the same accent pill + indicator dot treatment
- * as the active nav links, so the `∞ root@kandarp` mark is the active
- * "Home" tab.
+ * hero is in view) it renders the same blue glass pill as the active nav
+ * links, so the `∞ root@kandarp` mark is the active "Home" tab.
  */
 export function Logo({
     scrolled = false,
@@ -46,24 +46,37 @@ export function Logo({
 }: LogoProps) {
     const name = siteName ?? SITE.name;
     const host = userAtHost ?? SITE.userAtHost;
+    const reduced = useReducedMotion() === true;
+
     return (
         <Link
             href={ROUTES.home}
             aria-label={`${name} — home`}
             aria-current={active ? "true" : undefined}
             className={cn(
-                "group relative inline-flex items-center gap-2 rounded-md",
-                "transition-colors duration-fast ease-standard",
+                "relative inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 [--nav-tone:var(--docker-blue)]",
+                "transition-all duration-[250ms] ease-standard",
+                "hover:-translate-y-0.5 hover:bg-[color-mix(in_srgb,var(--nav-tone)_8%,transparent)] hover:shadow-[0_0_14px_color-mix(in_srgb,var(--nav-tone)_12%,transparent)]",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
-                active && "bg-accent-subtle",
                 className,
             )}
         >
+            {active ? (
+                <motion.span
+                    layoutId="primary-nav-active-pill"
+                    aria-hidden="true"
+                    transition={
+                        reduced
+                            ? { duration: 0 }
+                            : { duration: 0.25, ease: [0.4, 0, 0.2, 1] }
+                    }
+                    className="absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--nav-tone)_12%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--nav-tone)_25%,transparent),0_0_18px_color-mix(in_srgb,var(--nav-tone)_15%,transparent)]"
+                />
+            ) : null}
             <span
                 aria-hidden="true"
                 className={cn(
-                    "inline-block select-none bg-accent-gradient bg-clip-text font-mono font-bold leading-none text-transparent shadow-glow-sm",
-                    "transition-transform duration-slow ease-smooth group-hover:rotate-[12deg]",
+                    "relative z-10 inline-block select-none bg-accent-gradient bg-clip-text font-mono font-bold leading-none text-transparent shadow-glow-sm",
                     scrolled ? "text-xl" : "text-2xl",
                 )}
             >
@@ -71,18 +84,13 @@ export function Logo({
             </span>
             <span
                 className={cn(
-                    "font-mono text-sm font-medium tracking-tight text-text-primary",
+                    "relative z-10 font-mono text-sm font-medium tracking-tight transition-colors duration-[250ms]",
+                    active ? "text-[var(--nav-tone)]" : "text-text-primary",
                     alwaysShowWordmark ? "inline" : "hidden md:inline",
                 )}
             >
                 {host}
             </span>
-            {active ? (
-                <span
-                    aria-hidden="true"
-                    className="absolute -bottom-0.5 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-warm-orange shadow-warm-glow-sm"
-                />
-            ) : null}
         </Link>
     );
 }

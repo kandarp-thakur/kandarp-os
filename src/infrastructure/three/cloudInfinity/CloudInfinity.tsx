@@ -184,10 +184,10 @@ function CloudInfinityImpl({
                 targetRef={groupRef}
                 breathRef={breathRef}
                 tier={tier}
-                rotationSpeed={0.035 * rotationSpeedMultiplier}
-                floatAmplitude={0.09}
-                breathAmplitude={0.012}
-                tiltAmplitude={0.12}
+                rotationSpeed={0.05 * rotationSpeedMultiplier}
+                floatAmplitude={0.38}
+                breathAmplitude={0.018}
+                tiltAmplitude={0.14}
             />
         </group>
     );

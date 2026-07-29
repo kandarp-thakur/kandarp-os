@@ -266,13 +266,13 @@ export function Navbar({
         <>
             <ScrollProgress progress={progress} />
 
-            <header className="pointer-events-none fixed inset-x-0 top-3 z-[55] flex justify-center px-4">
+            <header className="pointer-events-none fixed inset-x-0 top-4 z-[55] flex justify-center">
                 <motion.nav
                     aria-label="Primary"
                     animate={reduced ? undefined : { y: scrolled ? -1 : 0 }}
                     transition={{ duration: 0.25, ease: [0.45, 0, 0.15, 1] }}
                     className={cn(
-                        "pointer-events-auto flex min-h-16 w-full max-w-6xl items-center justify-between gap-4 rounded-2xl px-5 py-3",
+                        "pointer-events-auto flex h-[72px] w-[92%] items-center justify-between gap-4 rounded-[999px] px-5 py-3 lg:px-7",
                         "transition-all duration-slow ease-smooth",
                         scrolled
                             ? "glass-surface-strong shadow-glass"

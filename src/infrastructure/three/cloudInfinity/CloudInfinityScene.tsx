@@ -80,8 +80,8 @@ const PARALLAX_AMP = 0.4;
 /** Damping for the camera parallax (0–1). Lower = smoother/slower. */
 const PARALLAX_SMOOTHING = 0.04;
 
-/** Desktop placement — hero-right, large enough to own the signature identity. */
-const DESKTOP_POSITION: [number, number, number] = [3.55, -0.18, -0.25];
+/** Desktop placement — recessed behind the portrait on the far-right. */
+const DESKTOP_POSITION: [number, number, number] = [4.55, -0.58, -0.25];
 /** Mobile placement — centered behind the stacked hero content. */
 const MOBILE_POSITION: [number, number, number] = [0.15, -0.05, 0.45];
 /** Mobile scale multiplier (object is smaller on narrow viewports). */
@@ -105,7 +105,7 @@ function CloudInfinitySceneImpl({
         return isDesktop ? DESKTOP_POSITION : MOBILE_POSITION;
     }, [position, isDesktop]);
 
-    const objectScale = isDesktop ? scale * 1.14 : scale * MOBILE_SCALE;
+    const objectScale = isDesktop ? scale * 0.8 : scale * MOBILE_SCALE;
 
     // The camera's resting position (hero-wide preset). Parallax offsets from
     // here so the camera always returns to center.
@@ -126,7 +126,7 @@ function CloudInfinitySceneImpl({
         // Frame-rate independent damping toward the parallax target.
         const f = 1 - Math.pow(1 - PARALLAX_SMOOTHING, delta * 60);
         camera.position.lerp(targetPos.current, f);
-        camera.lookAt(isDesktop ? 1.35 : 0, 0, 0);
+        camera.lookAt(isDesktop ? 1.65 : 0, -0.15, 0);
     });
 
     return (

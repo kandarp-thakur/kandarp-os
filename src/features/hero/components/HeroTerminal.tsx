@@ -36,7 +36,7 @@ export function HeroTerminal({
     return (
         <div
             className={cn(
-                "hero-terminal glass-surface-strong flex h-[240px] w-full max-w-[620px] flex-col overflow-hidden rounded-xl shadow-glass",
+                "hero-terminal glass-surface-strong flex h-[300px] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl shadow-glass",
                 className,
             )}
             onMouseEnter={pause}
@@ -46,7 +46,7 @@ export function HeroTerminal({
             aria-hidden="true"
         >
             {/* Title bar — traffic lights + filename */}
-            <div className="flex shrink-0 items-center gap-2 border-b border-border-subtle px-4 py-3">
+            <div className="flex shrink-0 items-center gap-2 border-b border-border-subtle px-4 py-2.5">
                 <span className="h-3 w-3 rounded-full bg-traffic-close" />
                 <span className="h-3 w-3 rounded-full bg-traffic-minimize" />
                 <span className="h-3 w-3 rounded-full bg-traffic-zoom" />
@@ -57,7 +57,7 @@ export function HeroTerminal({
             </div>
 
             {/* Terminal body */}
-            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden p-4 font-mono text-xs text-text-primary sm:text-sm">
+            <div className="terminal-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden p-4 font-mono text-xs leading-relaxed text-text-primary">
                 {lines.map((line) => (
                     <HeroLineView
                         key={line.id}

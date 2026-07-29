@@ -107,18 +107,20 @@ export function useCloudInfinityMaterial(
                 roughness: 0.35,
                 metalness: 0.0,
                 transparent: true,
-                opacity: 0.55,
+                opacity: 0.7,
                 envMapIntensity: 0.6,
             });
             // Subtle rim via emissive — a faint self-glow on the tint.
             mat.emissive = new THREE.Color(rim);
-            mat.emissiveIntensity = rimIntensity * 0.18;
+            mat.emissiveIntensity = rimIntensity * 0.3;
             return mat;
         }
 
         // High / medium: real refractive frosted glass.
         const mat = new THREE.MeshPhysicalMaterial({
             color: new THREE.Color(baseColor),
+            // A slightly brighter base tint makes the loop silhouette readable
+            // even when the transparent canvas samples the dark page behind it.
             roughness,
             metalness: 0.0,
             transmission,
@@ -137,7 +139,9 @@ export function useCloudInfinityMaterial(
             // giving the "inner energy" a coherent hue against the Docker Blue edge.
             attenuationColor: new THREE.Color("#38BDF8"),
             attenuationDistance: 1.8,
-            envMapIntensity: 1.25,
+            // Stronger environment response gives the rotating glass loop a
+            // clearly visible moving highlight instead of a faint outline.
+            envMapIntensity: 1.65,
             transparent: true,
             opacity: 1.0,
             side: THREE.DoubleSide,

@@ -106,7 +106,7 @@ export function HeroSection({
                 // or other sections — everything stays inside the Hero
                 // (task §Overflow). The portrait is anchored to the Hero
                 // (not the viewport) via the right column below.
-                "hero relative isolate z-30 mx-auto flex min-h-screen w-full max-w-[1440px] flex-col justify-center overflow-hidden px-4 pb-20 pt-28 sm:px-6 sm:pb-24 sm:pt-32 lg:px-12 lg:py-8",
+                "hero relative isolate z-30 mx-auto flex min-h-screen w-full max-w-[1500px] flex-col justify-center overflow-hidden px-4 pb-20 pt-[100px] sm:px-6 sm:pb-24 md:pt-[100px] lg:px-12 lg:pt-[120px] 2xl:pt-[140px]",
             )}
         >
             {/* Background placeholder — static layer until the 3D constellation
@@ -128,7 +128,7 @@ export function HeroSection({
                 column"), so it is anchored to the column (position: relative),
                 never to the viewport. */}
             <motion.div
-                className="hero-grid relative z-40 grid w-full grid-cols-1 items-center gap-8 md:gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)] lg:gap-8 xl:grid-cols-[minmax(0,1.08fr)_minmax(500px,0.92fr)] xl:gap-10 lg:translate-y-2"
+                className="hero-grid relative z-40 grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,52fr)_minmax(0,48fr)] lg:gap-12"
                 style={
                     reduced || !mounted
                         ? { opacity: 1, y: 0 }
@@ -139,7 +139,7 @@ export function HeroSection({
                     boot banner, name (LCP <h1>), terminal, and CTA buttons.
                     The portrait on the right never overlaps this column
                     (task §Responsive, §Final Goal). */}
-                <div className="hero-left visible relative z-50 flex w-full min-w-0 flex-col items-start gap-4 opacity-100">
+                <div className="hero-left visible relative z-50 flex w-full min-w-0 max-w-[660px] flex-col items-start gap-4 opacity-100">
                     {/* Boot banner — the OS welcome line */}
                     <motion.div
                         className="flex flex-col gap-1.5"
@@ -161,7 +161,7 @@ export function HeroSection({
 
                     {/* Name — the LCP <h1> */}
                     <motion.h1
-                        className="visible max-w-[760px] font-sans text-[clamp(3.5rem,5vw,5rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-text-primary opacity-100"
+                        className="visible max-w-[660px] font-sans text-[clamp(3.5rem,5vw,5.5rem)] font-black leading-[0.95] tracking-[-0.05em] text-text-primary opacity-100"
                         variants={undefined}
                         initial={false}
                         animate="visible"
@@ -178,11 +178,11 @@ export function HeroSection({
                         )}
                     </motion.h1>
 
-                    <div className="flex max-w-[520px] flex-col gap-4">
-                        <p className="font-mono text-lg font-semibold tracking-[0.02em] text-accent-solid sm:text-xl">
+                    <div className="flex max-w-[580px] flex-col gap-4">
+                        <p className="font-mono text-xl font-semibold tracking-[0.02em] text-accent-solid">
                             DevOps Engineer
                         </p>
-                        <p className="max-w-[520px] text-base leading-[1.7] text-text-secondary">
+                        <p className="max-w-[580px] text-lg leading-[1.65] text-text-secondary">
                             I build reliable cloud infrastructure, secure
                             networks, automated deployment pipelines, and
                             production-ready systems that keep teams shipping
@@ -191,13 +191,13 @@ export function HeroSection({
                     </div>
 
                     <div
-                        className="grid w-full max-w-[520px] grid-cols-1 gap-3 min-[420px]:grid-cols-3"
+                        className="grid w-full max-w-[620px] grid-cols-1 gap-4 min-[420px]:grid-cols-3"
                         aria-label="Hero stats"
                     >
                         {HERO_STATS.map((stat) => (
                             <div
                                 key={stat.label}
-                                className="glass-surface flex h-[72px] flex-col justify-center rounded-lg px-[18px] py-3.5 text-left transition-all duration-slow ease-smooth hover:-translate-y-1 hover:border-accent-solid/30 hover:shadow-glow-sm"
+                                className="glass-surface group flex h-[68px] flex-col justify-center rounded-xl px-[18px] text-left transition-all duration-slow ease-smooth hover:-translate-y-1 hover:border-accent-solid/40 hover:shadow-glow-sm"
                             >
                                 <p className="font-mono text-lg font-bold text-text-primary">
                                     {stat.value}
@@ -231,7 +231,7 @@ export function HeroSection({
                         full column width and, under `flex-col`, stretch every
                         button across the viewport (the reported bug). */}
                     <motion.div
-                        className="flex w-full max-w-[620px] flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-center"
+                        className="flex w-full max-w-[620px] flex-col items-stretch gap-[18px] sm:flex-row sm:flex-wrap sm:items-center"
                         variants={undefined}
                         initial={false}
                         animate="visible"
@@ -277,7 +277,7 @@ export function HeroSection({
                     </motion.div>
 
                     <div
-                        className="flex items-center gap-3"
+                        className="flex items-center gap-3 pt-1"
                         aria-label="Social links"
                     >
                         {HERO_SOCIALS.map((social) => (
@@ -291,7 +291,7 @@ export function HeroSection({
                                         : undefined
                                 }
                                 aria-label={social.label}
-                                className="glass-surface inline-flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition-colors duration-slow hover:text-accent-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid"
+                                className="glass-surface inline-flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition-all duration-slow ease-smooth hover:-translate-y-1 hover:rotate-3 hover:text-accent-solid hover:shadow-glow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid"
                             >
                                 <social.Icon
                                     className="h-4 w-4"
@@ -314,7 +314,7 @@ export function HeroSection({
                     the viewport. On mobile the grid collapses to a single column
                     and the portrait re-enters normal flow below the hero text
                     (task §Mobile). */}
-                <div className="hero-right relative flex min-h-[320px] w-full items-center justify-center overflow-visible md:min-h-[420px] lg:min-h-0 lg:justify-end">
+                <div className="hero-right relative flex min-h-[320px] w-full items-center justify-center overflow-visible md:min-h-[440px] lg:min-h-[480px] lg:justify-end">
                     {/* Portrait — a normal React component (never inside the
                         Canvas). Lives ONLY inside the right column (task
                         §Structure). Anchored to this column (position: absolute;
@@ -370,7 +370,7 @@ function HeroButton({
     const className = cn(
         "group inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 font-sans text-sm font-medium transition-all duration-slow ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid focus-visible:ring-offset-2 focus-visible:ring-offset-canvas-base hover:-translate-y-0.5",
         variant === "primary" &&
-            "bg-accent-solid text-white shadow-glow-sm hover:bg-accent-hover hover:shadow-warm-glow-md hover:-translate-y-0.5",
+            "bg-[linear-gradient(135deg,var(--docker-blue),var(--cloud-cyan))] text-white shadow-glow-sm hover:shadow-glow-md hover:-translate-y-0.5",
         variant === "glass" &&
             "glass-surface text-text-secondary hover:border-cyan/30 hover:text-cyan hover:shadow-glass-hover",
         variant === "ghost" &&

@@ -13,6 +13,8 @@ interface NavDropdownProps {
     item: NavItem;
     /** The currently-active section id (from scroll-spy). */
     activeSection: string | null;
+    /** Accent color shared with the parent navigation item. */
+    tone: string;
 }
 
 /**
@@ -37,7 +39,7 @@ interface NavDropdownProps {
  *
  * A Client Component — it tracks open state, hover timers, and keyboard focus.
  */
-export function NavDropdown({ item, activeSection }: NavDropdownProps) {
+export function NavDropdown({ item, activeSection, tone }: NavDropdownProps) {
     const [open, setOpen] = useState(false);
     const reduced = useReducedMotion() === true;
     const wrapperRef = useRef<HTMLLIElement>(null);
@@ -105,6 +107,7 @@ export function NavDropdown({ item, activeSection }: NavDropdownProps) {
         <li
             ref={wrapperRef}
             className="relative"
+            style={{ "--nav-tone": tone } as React.CSSProperties}
             onMouseEnter={openAfterDelay}
             onMouseLeave={close}
         >
@@ -118,28 +121,38 @@ export function NavDropdown({ item, activeSection }: NavDropdownProps) {
                     setOpen((v) => !v);
                 }}
                 className={cn(
-                    "relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5",
-                    "font-sans text-sm font-medium transition-colors duration-fast ease-standard",
+                    "relative inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5",
+                    "font-sans text-sm font-medium transition-all duration-[250ms] ease-standard",
+                    "hover:-translate-y-0.5 hover:bg-[color-mix(in_srgb,var(--nav-tone)_8%,transparent)] hover:text-[var(--nav-tone)] hover:shadow-[0_0_14px_color-mix(in_srgb,var(--nav-tone)_12%,transparent)]",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                     isChildActive
-                        ? "bg-accent-subtle text-accent-solid"
-                        : "text-text-secondary hover:bg-overlay-hover hover:text-text-primary",
+                        ? "text-[var(--nav-tone)]"
+                        : "text-text-secondary",
                 )}
             >
-                {item.label}
+                {isChildActive ? (
+                    <motion.span
+                        layoutId="primary-nav-active-pill"
+                        aria-hidden="true"
+                        transition={
+                            reduced
+                                ? { duration: 0 }
+                                : {
+                                      duration: 0.25,
+                                      ease: [0.4, 0, 0.2, 1],
+                                  }
+                        }
+                        className="absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--nav-tone)_12%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--nav-tone)_25%,transparent),0_0_18px_color-mix(in_srgb,var(--nav-tone)_15%,transparent)]"
+                    />
+                ) : null}
+                <span className="relative z-10">{item.label}</span>
                 <ChevronDown
                     className={cn(
-                        "h-3.5 w-3.5 transition-transform duration-fast ease-standard",
+                        "relative z-10 h-3.5 w-3.5 transition-transform duration-fast ease-standard",
                         open ? "rotate-180" : "rotate-0",
                     )}
                     aria-hidden="true"
                 />
-                {isChildActive ? (
-                    <span
-                        aria-hidden="true"
-                        className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-accent-solid"
-                    />
-                ) : null}
             </button>
 
             <AnimatePresence>

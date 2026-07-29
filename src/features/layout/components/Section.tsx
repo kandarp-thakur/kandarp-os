@@ -60,18 +60,35 @@ const SPACING_CLASSES: Record<SectionSpacing, string> = {
  *   <Container>...</Container>
  * </Section>
  */
+const SECTION_TONES: Record<string, string> = {
+    whoami: "section-tone-cyan",
+    deployments: "section-tone-green",
+    containers: "section-tone-orange",
+    infrastructure: "section-tone-pink",
+    toolkit: "section-tone-cyan",
+    achievements: "section-tone-orange",
+    logs: "section-tone-pink",
+    ssh: "section-tone-green",
+};
+
 export function Section({
     spacing = "default",
     as: Tag = "section",
     className,
     children,
+    id,
     ...props
 }: SectionProps) {
     return createElement(
         Tag,
         {
             ...props,
-            className: cn(SPACING_CLASSES[spacing], className),
+            id,
+            className: cn(
+                SPACING_CLASSES[spacing],
+                id ? SECTION_TONES[id] : undefined,
+                className,
+            ),
         },
         children,
     );

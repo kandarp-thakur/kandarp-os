@@ -197,7 +197,7 @@ export function CloudInfinityBackground({
         <div
             aria-hidden="true"
             className={cn(
-                "cloud-infinity-bg pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.84] blur-[0.6px]",
+                "cloud-infinity-bg pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-95",
                 className,
             )}
         >
@@ -241,7 +241,7 @@ export function CloudInfinityBackground({
 }
 
 /**
- * The immediate, non-animated backdrop shown before the canvas mounts (and as
+ * The immediate CSS backdrop shown before the canvas mounts (and as
  * the no-WebGL fallback). Two soft, translucent ambient glows only — no opaque
  * base gradient. The body already carries `bg-canvas-base` (#050816), and this
  * layer sits directly above the animated DevOps constellation

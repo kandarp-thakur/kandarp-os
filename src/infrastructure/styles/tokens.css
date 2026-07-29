@@ -37,8 +37,10 @@
        Cloud Cyan provides network energy, cursor, and glow effects. */
     --docker-blue: #2496ED;
     --kubernetes-blue: #326CE5;
-    --cloud-cyan: #38BDF8;
-    --aws-orange: #FF9900;
+    --cloud-cyan: #22D3EE;
+    --aws-orange: #FB923C;
+    --vivid-green: #34D399;
+    --vivid-pink: #F472B6;
     --linux-yellow: #FCC624;
     --amber: #F59E0B;
     --soft-gold: #FBBF24;
@@ -58,13 +60,15 @@
     --warm-accent-subtle: rgba(255, 153, 0, 0.12);
     --warm-accent-glow: rgba(255, 153, 0, 0.2);
     --accent-gradient: linear-gradient(135deg,
-            var(--docker-blue) 0%,
-            var(--cloud-cyan) 52%,
-            var(--kubernetes-blue) 100%);
+            var(--cloud-cyan) 0%,
+            var(--vivid-green) 34%,
+            var(--aws-orange) 68%,
+            var(--vivid-pink) 100%);
     --accent-gradient-hover: linear-gradient(135deg,
-            var(--docker-blue) 0%,
-            var(--cloud-cyan) 35%,
-            var(--aws-orange) 100%);
+            var(--vivid-pink) 0%,
+            var(--aws-orange) 35%,
+            var(--vivid-green) 68%,
+            var(--cloud-cyan) 100%);
 
     /* Glass Surfaces (Dark Glass) */
     --glass-bg: rgba(15, 23, 42, 0.70);

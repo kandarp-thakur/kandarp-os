@@ -23,17 +23,51 @@
         outline: 2px solid var(--border-focus);
         outline-offset: 2px;
     }
+
+    /* Each scrolling chapter gets its own vivid accent while the shared dark
+       canvas and glass surfaces remain unchanged. Existing token-based UI then
+       inherits the section color without component-level overrides. */
+    .section-tone-cyan {
+        --accent-solid: var(--cloud-cyan);
+        --accent-hover: var(--vivid-green);
+        --accent-subtle: rgba(34, 211, 238, 0.14);
+        --border-accent: rgba(34, 211, 238, 0.34);
+        --border-focus: var(--cloud-cyan);
+    }
+
+    .section-tone-green {
+        --accent-solid: var(--vivid-green);
+        --accent-hover: var(--aws-orange);
+        --accent-subtle: rgba(52, 211, 153, 0.14);
+        --border-accent: rgba(52, 211, 153, 0.34);
+        --border-focus: var(--vivid-green);
+    }
+
+    .section-tone-orange {
+        --accent-solid: var(--aws-orange);
+        --accent-hover: var(--vivid-pink);
+        --accent-subtle: rgba(251, 146, 60, 0.14);
+        --border-accent: rgba(251, 146, 60, 0.34);
+        --border-focus: var(--aws-orange);
+    }
+
+    .section-tone-pink {
+        --accent-solid: var(--vivid-pink);
+        --accent-hover: var(--cloud-cyan);
+        --accent-subtle: rgba(244, 114, 182, 0.14);
+        --border-accent: rgba(244, 114, 182, 0.34);
+        --border-focus: var(--vivid-pink);
+    }
 }
 
 @layer utilities {
+
     /* Signature dark glass surface — dual-edge border + blur + layered shadow.
        Premium frosted glass with subtle top reflection and deep shadow. */
     .glass-surface {
         background-color: var(--glass-bg);
-        backdrop-filter: blur(var(--glass-blur))
-            saturate(var(--glass-saturation));
-        -webkit-backdrop-filter: blur(var(--glass-blur))
-            saturate(var(--glass-saturation));
+        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
         border: 1px solid var(--border-default);
         box-shadow:
             inset 0 1px 0 0 var(--border-glass),
@@ -43,10 +77,8 @@
 
     .glass-surface-strong {
         background-color: var(--glass-bg-strong);
-        backdrop-filter: blur(var(--glass-blur-strong))
-            saturate(var(--glass-saturation));
-        -webkit-backdrop-filter: blur(var(--glass-blur-strong))
-            saturate(var(--glass-saturation));
+        backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturation));
+        -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturation));
         border: 1px solid var(--border-default);
         box-shadow:
             inset 0 1px 0 0 var(--border-glass),
@@ -63,10 +95,8 @@
         z-index: 10;
         background-color: var(--term-bg);
         color: var(--term-command);
-        backdrop-filter: blur(var(--glass-blur-strong))
-            saturate(var(--glass-saturation));
-        -webkit-backdrop-filter: blur(var(--glass-blur-strong))
-            saturate(var(--glass-saturation));
+        backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturation));
+        -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturation));
         border: 1px solid var(--border-strong);
         box-shadow:
             inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
@@ -80,6 +110,20 @@
     .terminal-header {
         background-color: var(--term-bg-elevated);
         border-bottom: 1px solid var(--term-divider);
+    }
+
+    /* A subtle top edge makes each chapter's color visible without replacing
+       the dark background or reducing text contrast. */
+    .section-tone-cyan,
+    .section-tone-green,
+    .section-tone-orange,
+    .section-tone-pink {
+        position: relative;
+        isolation: isolate;
+        border-top: 1px solid color-mix(in srgb, var(--accent-solid) 22%, transparent);
+        background-image: radial-gradient(ellipse 55% 22% at 50% 0%,
+                color-mix(in srgb, var(--accent-solid) 7%, transparent),
+                transparent 72%);
     }
 
     /* Gradient text — the signature accent on a word */
@@ -152,19 +196,25 @@
     }
 }
 
-/* Fit the complete desktop hero beneath the 76px floating navbar. Short
-   displays use a denser rhythm rather than allowing the heading or terminal
-   output to paint beneath adjacent controls. */
+/* The fixed 72px navbar starts 16px from the viewport top. Hero padding is
+   breakpoint-specific so content always begins below the floating pill. */
 @media (min-width: 1024px) {
     .hero {
-        padding-block: 6rem 1.25rem;
+        padding-block: 7.5rem 1.25rem;
     }
 }
 
+@media (min-width: 1536px) {
+    .hero {
+        padding-top: 8.75rem;
+    }
+}
+
+/* Preserve a one-viewport desktop composition on laptop-height displays. */
 @media (min-width: 1024px) and (max-height: 900px) {
     .hero {
         justify-content: flex-start;
-        padding-block: 6.25rem 1rem;
+        padding-bottom: 1rem;
     }
 
     .hero-grid {
@@ -175,59 +225,37 @@
         gap: 0.5rem;
     }
 
-    .hero-left h1 {
-        font-size: clamp(3rem, 4.25vw, 3.75rem);
-        line-height: 0.9;
-    }
-
-    .hero-left > div:nth-of-type(2) {
+    .hero-left>div:nth-of-type(2) {
         gap: 0.375rem;
     }
 
-    .hero-left > div:nth-of-type(2) p:first-child {
-        font-size: 1rem;
-    }
-
-    .hero-left > div:nth-of-type(2) p:last-child {
+    .hero-left>div:nth-of-type(2) p:last-child {
         font-size: 0.875rem;
         line-height: 1.5;
     }
 
-    .hero-left > div[aria-label="Hero stats"] > div {
+    .hero-left>div[aria-label="Hero stats"]>div {
         height: 3.5rem;
-        padding-block: 0.5rem;
     }
 
     .hero-terminal {
-        height: 10rem;
+        height: 15rem;
     }
 
-    .hero-left > div[aria-label="Social links"] a {
-        width: 2rem;
-        height: 2rem;
-    }
-
-    .hero > div:last-child {
+    .hero>div:last-child {
         display: none;
     }
 }
 
 @media (min-width: 1024px) and (max-height: 800px) {
-    .hero {
-        padding-top: 5.75rem;
-    }
-
-    .hero-left h1 {
-        font-size: clamp(2.75rem, 4vw, 3.375rem);
-    }
-
     .hero-terminal {
-        height: 8rem;
+        height: 13rem;
     }
 }
 
 /* Respect reduced motion: disable non-essential animation */
 @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {

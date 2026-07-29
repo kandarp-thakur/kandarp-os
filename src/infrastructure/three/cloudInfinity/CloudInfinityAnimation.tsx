@@ -138,15 +138,21 @@ function CloudInfinityAnimationImpl({
         const t = performance.now() * 0.001;
         const ph = phase.current;
 
-        /* Slow rotation — continuous, never stops. Very slow (default
-           ~0.06 rad/s ≈ 3.4°/s → one full turn ≈ 105s). */
+        /* Slow rotation — continuous, never stops. The stronger rotation keeps
+           the loop visibly alive while remaining calm and premium. */
         rotY.current += rotationSpeed * amp * dt;
         group.rotation.y = rotY.current;
 
-        /* Gentle floating — vertical sine bob. Period ~9s, very calm. */
-        group.position.y = Math.sin(t * 0.7 + ph.float) * floatAmplitude * amp;
+        /* Clearly visible top-to-bottom float. A layered sine keeps the motion
+           smooth and organic while covering the full vertical travel instead
+           of appearing almost static. Period is roughly 7 seconds. */
+        const verticalFloat =
+            Math.sin(t * 0.9 + ph.float) * 0.86 +
+            Math.sin(t * 0.45 + ph.float * 0.7) * 0.14;
+        group.position.y = verticalFloat * floatAmplitude * amp;
 
-        /* Small breathing — uniform scale pulse. Period ~6s, subtle. */
+        /* Small breathing — uniform scale pulse. Period ~6s, now visible enough
+           to make the glass silhouette gently expand and contract. */
         const breath =
             1 + Math.sin(t * 1.05 + ph.breath) * breathAmplitude * amp;
         group.scale.setScalar(breath);

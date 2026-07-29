@@ -3,6 +3,7 @@ import {
     Award,
     Boxes,
     GitBranch,
+    Info,
     Network,
     ScrollText,
     TerminalSquare,
@@ -53,39 +54,18 @@ export interface NavItem {
 }
 
 /**
- * Primary navigation links — clean, professional, and intuitive for every
- * visitor (recruiters, clients, and engineers alike).
- *
- * Navigation is anchor-based — every link smooth-scrolls to a section on the
- * single home page (`#id`). All entries are flat top-level links (no
- * dropdowns), ordered for clarity with the primary content first:
- *
- *   ∞ root@kandarp
- *     ├─ Experience      → Deployment History
- *     ├─ Projects        → Running Containers (project fleet, `docker ps`)
- *     ├─ Toolkit         → Service mesh of skills
- *     ├─ Infrastructure  → Cloud topology & nodes
- *     ├─ Achievements    → Unlocked badges & milestones
- *     ├─ Logs            → Engineering Logs (Blog)
- *     └─ SSH             → Interactive Contact Terminal
- *
- * The DevOps theme is expressed through each section's design and
- * interactions (container rows, `docker inspect` panels, topology maps) — not
- * through the navigation labels, which stay plain and universally understood.
- * "Running Containers" is the internal heading of the Projects section, never
- * a navigation label.
- *
- * Note: the nav order need not match the document order (Projects leads the
- * nav but sits mid-page, after Experience). Scroll-spy resolves active state
- * by actual element position, not by nav order.
+ * Primary navigation links, ordered to mirror the page's scrolling sequence:
+ * About → Experience → Projects → Infrastructure → Toolkit → Achievements →
+ * Logs → SSH. Keeping both orders aligned makes the active scroll-spy state
+ * move naturally from left to right while visitors progress down the page.
  */
 export const navItems: NavItem[] = [
     {
-        label: "Projects",
-        shortLabel: "Projects",
-        href: sectionHref(SECTIONS.containers),
-        sectionId: SECTIONS.containers,
-        icon: Boxes,
+        label: "About",
+        shortLabel: "About",
+        href: sectionHref(SECTIONS.whoami),
+        sectionId: SECTIONS.whoami,
+        icon: Info,
     },
     {
         label: "Experience",
@@ -95,11 +75,11 @@ export const navItems: NavItem[] = [
         icon: GitBranch,
     },
     {
-        label: "Toolkit",
-        shortLabel: "Toolkit",
-        href: sectionHref(SECTIONS.toolkit),
-        sectionId: SECTIONS.toolkit,
-        icon: Wrench,
+        label: "Projects",
+        shortLabel: "Projects",
+        href: sectionHref(SECTIONS.containers),
+        sectionId: SECTIONS.containers,
+        icon: Boxes,
     },
     {
         label: "Infrastructure",
@@ -107,6 +87,13 @@ export const navItems: NavItem[] = [
         href: sectionHref(SECTIONS.infrastructure),
         sectionId: SECTIONS.infrastructure,
         icon: Network,
+    },
+    {
+        label: "Toolkit",
+        shortLabel: "Toolkit",
+        href: sectionHref(SECTIONS.toolkit),
+        sectionId: SECTIONS.toolkit,
+        icon: Wrench,
     },
     {
         label: "Achievements",
