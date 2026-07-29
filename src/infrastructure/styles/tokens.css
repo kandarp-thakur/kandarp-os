@@ -1,0 +1,135 @@
+/**
+ * Design Tokens — Kandarp OS
+ * The source of truth for all visual values.
+ *
+ * Premium dark engineering palette inspired by AWS Console, Docker Desktop,
+ * GitHub, Cloudflare Dashboard, Linear, Vercel, and Apple.
+ *
+ * Every color has meaning. Blue (Docker) is the primary identity.
+ * Orange (AWS) is reserved for highlights, status, and hover states.
+ * Cyan (Cloud) provides network energy and cursor glow.
+ */
+
+:root {
+    /* Typography — system font stacks (no network fetch required) */
+    --font-sans:
+        "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Helvetica, Arial, sans-serif;
+    --font-mono:
+        "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular, Menlo,
+        Consolas, "Liberation Mono", monospace;
+
+    /* Canvas (Dark Engineering Palette) */
+    --canvas-base: #050816;
+    --canvas-elevated: #0B1220;
+    --canvas-sunken: #111827;
+    --canvas-tint: #1E293B;
+
+    /* Text */
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --text-tertiary: #94A3B8;
+    --text-quaternary: #64748B;
+    --text-inverse: #FFFFFF;
+
+    /* Cloud / DevOps Accent System — Docker Blue is primary identity.
+       AWS Orange is reserved for deployment status, hover highlights.
+       Cloud Cyan provides network energy, cursor, and glow effects. */
+    --docker-blue: #2496ED;
+    --kubernetes-blue: #326CE5;
+    --cloud-cyan: #38BDF8;
+    --aws-orange: #FF9900;
+    --linux-yellow: #FCC624;
+    --amber: #F59E0B;
+    --soft-gold: #FBBF24;
+    --copper: #C97A2B;
+    --success: #22C55E;
+    --error: #EF4444;
+    --warning: #F59E0B;
+    --muted: #94A3B8;
+    --white: #F8FAFC;
+
+    --accent-from: var(--docker-blue);
+    --accent-via: var(--cloud-cyan);
+    --accent-to: var(--kubernetes-blue);
+    --accent-solid: var(--docker-blue);
+    --accent-hover: var(--aws-orange);
+    --accent-subtle: rgba(36, 150, 237, 0.15);
+    --warm-accent-subtle: rgba(255, 153, 0, 0.12);
+    --warm-accent-glow: rgba(255, 153, 0, 0.2);
+    --accent-gradient: linear-gradient(135deg,
+            var(--docker-blue) 0%,
+            var(--cloud-cyan) 52%,
+            var(--kubernetes-blue) 100%);
+    --accent-gradient-hover: linear-gradient(135deg,
+            var(--docker-blue) 0%,
+            var(--cloud-cyan) 35%,
+            var(--aws-orange) 100%);
+
+    /* Glass Surfaces (Dark Glass) */
+    --glass-bg: rgba(15, 23, 42, 0.70);
+    --glass-bg-strong: rgba(15, 23, 42, 0.82);
+    --glass-bg-subtle: rgba(15, 23, 42, 0.55);
+    --glass-blur: 16px;
+    --glass-blur-strong: 24px;
+    --glass-blur-subtle: 8px;
+    --glass-saturation: 140%;
+
+    /* Semantic Colors */
+    --success: var(--success);
+    --warning: var(--aws-orange);
+    --error: var(--error);
+    --info: var(--docker-blue);
+
+    /* Terminal palette — premium Linux console inspired by Warp / Ghostty.
+       Background is dark glass. Prompt is Docker Blue, directory is AWS Orange,
+       commands are white, output is gray, success is green, cursor is Cloud Cyan. */
+    --term-bg: rgba(15, 23, 42, 0.75);
+    --term-bg-elevated: rgba(15, 23, 42, 0.85);
+    --term-prompt: var(--docker-blue);
+    --term-directory: var(--aws-orange);
+    --term-command: #F8FAFC;
+    --term-value: #94A3B8;
+    --term-label: #64748B;
+    --term-success: var(--success);
+    --term-accent: var(--docker-blue);
+    --term-warning: var(--aws-orange);
+    --term-comment: #64748B;
+    --term-cursor: var(--cloud-cyan);
+    --term-divider: rgba(148, 163, 184, 0.12);
+
+    /* Terminal traffic lights (macOS window controls) */
+    --traffic-close: #FF5F57;
+    --traffic-minimize: #FEBC2E;
+    --traffic-zoom: #28C840;
+
+    /* Borders */
+    --border-subtle: rgba(30, 41, 59, 0.6);
+    --border-default: #1E293B;
+    --border-strong: rgba(36, 150, 237, 0.3);
+    --border-glass: rgba(148, 163, 184, 0.15);
+    --border-focus: var(--cloud-cyan);
+    --border-accent: rgba(36, 150, 237, 0.3);
+
+    /* Overlay & Scrim */
+    --scrim: rgba(2, 6, 23, 0.6);
+    --overlay-hover: rgba(148, 163, 184, 0.08);
+    --overlay-active: rgba(148, 163, 184, 0.15);
+
+    /* Hero background — clean, premium dark engineering backdrop.
+       Deep navy base with very subtle ambient lighting from Docker Blue,
+       Cloud Cyan, and AWS Orange. No visible gradients, no floating blobs. */
+    --hero-bg-from: #050816;
+    --hero-bg-via: #0B1220;
+    --hero-bg-to: #050816;
+    --hero-bg-gradient: linear-gradient(180deg,
+            var(--hero-bg-from) 0%,
+            var(--hero-bg-via) 50%,
+            var(--hero-bg-to) 100%);
+    /* Ambient lighting — very low opacity, large blur radius. */
+    --hero-ambient-blue: rgba(36, 150, 237, 0.15);
+    --hero-ambient-orange: rgba(255, 153, 0, 0.08);
+    --hero-ambient-cyan: rgba(56, 189, 248, 0.12);
+    /* Subtle film grain — 2–3% opacity, no visible pixels. */
+    --hero-grain-opacity: 0.025;
+}
