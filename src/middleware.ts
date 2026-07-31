@@ -169,25 +169,21 @@ function csrfOk(req: NextRequest): boolean {
     const referer = req.headers.get("referer");
     const source = origin ?? referer;
 
-    // If neither header is present, allow it. Browsers always send Origin
-    // for cross-site fetches and same-site POSTs; a missing origin is likely
-    // a non-browser client (curl, Postman) or a same-origin form. The auth
-    // layer (requireAuth) still gates access, so this is safe.
-    if (!source) return true;
+    // Cookie-authenticated browser requests must identify their origin. Public
+    // authentication endpoints are handled separately and have no session yet.
+    if (!source) return isPublic(req.nextUrl.pathname, req.method);
 
-    let sourceHost: string;
+    let sourceUrl: URL;
     try {
-        sourceHost = new URL(source).host;
+        sourceUrl = new URL(source);
     } catch {
-        // Malformed origin/referer — reject to be safe.
         return false;
     }
 
-    // The request host is the authoritative server host.
     const serverHost = req.headers.get("host");
-    if (!serverHost) return true; // Can't verify — don't block (proxy edge case).
+    if (!serverHost) return false;
 
-    return sourceHost === serverHost;
+    return sourceUrl.host.toLowerCase() === serverHost.toLowerCase();
 }
 
 // ── Request body size limit ─────────────────────────────────────────────────
@@ -216,15 +212,15 @@ function isUploadPath(pathname: string): boolean {
 }
 
 /**
- * Returns true if the request body is within the allowed size. Returns true
- * if no `Content-Length` is present (chunked/streaming — the route handler is
- * responsible for enforcing limits in that case).
+ * Returns true if the request body is within the allowed size. Chunked requests
+ * are rejected for state-changing admin APIs because middleware cannot safely
+ * consume and measure their body before the route handler.
  */
 function bodySizeOk(req: NextRequest, pathname: string): boolean {
     const cl = req.headers.get("content-length");
-    if (!cl) return true;
+    if (!cl) return !isStateChanging(req.method);
     const size = Number.parseInt(cl, 10);
-    if (Number.isNaN(size)) return true;
+    if (Number.isNaN(size)) return false;
     const limit = isUploadPath(pathname)
         ? MAX_UPLOAD_BODY_BYTES
         : MAX_BODY_BYTES;
@@ -312,8 +308,9 @@ export async function middleware(req: NextRequest) {
             return jsonError("Too many requests. Please slow down.", 429);
         }
 
-        // CSRF origin check — state-changing requests must be same-origin.
-        if (!csrfOk(req)) {
+        // CSRF origin check — authenticated state-changing requests must be
+        // same-origin. Public auth endpoints have no session cookie yet.
+        if (!isPublic(pathname, req.method) && !csrfOk(req)) {
             return jsonError("Cross-site request blocked (CSRF).", 403);
         }
 
@@ -331,11 +328,12 @@ export async function middleware(req: NextRequest) {
     }
 
     const token = req.cookies.get(SESSION_COOKIE)?.value;
-    const secret =
-        process.env.ADMIN_JWT_SECRET ??
-        "dev-only-insecure-jwt-secret-please-override-in-prod-32b";
+    const secret = process.env.ADMIN_JWT_SECRET;
+    if (!secret && process.env.NODE_ENV === "production") {
+        return jsonError("Server authentication is not configured.", 503);
+    }
 
-    const valid = token ? await verifyOnEdge(token, secret) : false;
+    const valid = token && secret ? await verifyOnEdge(token, secret) : false;
 
     if (!valid) {
         if (isAdminApi) {
