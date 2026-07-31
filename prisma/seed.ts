@@ -212,9 +212,8 @@ async function seedRbac(): Promise<void> {
 /**
  * Seed the owner user — the first admin account. The email + password come
  * from env (`ADMIN_OWNER_EMAIL` / `ADMIN_OWNER_PASSWORD`). The password is
- * hashed with Argon2id before storage. Idempotent — if the owner already
- * exists (by email), the password hash is updated to match the current env
- * value (useful for dev resets).
+ * hashed with Argon2id before storage. Idempotent — an existing owner's
+ * password hash is preserved so production seed runs cannot reset access.
  */
 async function seedOwnerUser(): Promise<void> {
     const email = adminEnv.ownerEmail;
@@ -230,7 +229,7 @@ async function seedOwnerUser(): Promise<void> {
 
     await prisma.user.upsert({
         where: { email },
-        update: { passwordHash, roleId: ownerRole.id, status: "ACTIVE" },
+        update: { roleId: ownerRole.id, status: "ACTIVE" },
         create: {
             name: "Owner",
             email,
