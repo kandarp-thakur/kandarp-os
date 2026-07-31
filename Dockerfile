@@ -59,9 +59,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # because the host has 2 GB of swap backing the build container.
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 
-# Build. `npm run build` runs `prisma generate && next build` (see package.json).
+# Prisma's config validates that DATABASE_URL exists while generating the client,
+# but client generation does not connect to the database. Use a non-secret build-only
+# URL; the real production URL is injected when the container starts.
 # The standalone output lands in .next/standalone/.
-RUN npm run build
+RUN DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build" npm run build
 
 # ── Stage 3: runner (tiny production image) ─────────────────────────────
 FROM node:20-alpine AS runner
