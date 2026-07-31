@@ -1,5 +1,5 @@
 /**
- * Next.js configuration for Kandarp OS — frontend-only build.
+ * Next.js configuration for the Kandarp OS full-stack application.
  *
  * Optimisations enabled:
  *   • `optimizePackageImports` — tree-shakes barrel exports from heavy
@@ -70,6 +70,9 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+    // Emit the self-contained server consumed by the production Docker image.
+    output: "standalone",
+
     // Keep development and production build artifacts isolated. Running
     // `next dev` while a production build/start check uses the default `.next`
     // directory can replace the dev CSS manifest and make the HTML reference

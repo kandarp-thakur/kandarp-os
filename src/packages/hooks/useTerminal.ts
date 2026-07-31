@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { executeCommand } from "@/lib/terminalCommands";
+import {
+    executeCommand,
+    type TerminalCommandOverrides,
+} from "@/lib/terminalCommands";
 import { buildBootLines, inputLine } from "@/lib/terminalLines";
 import { PROMPT } from "@utils/constants";
-import { scrollToSection } from "@utils/navigation";
+import { navigateToTarget } from "@utils/navigation";
 import type { TerminalLine } from "@packages/types/contact";
 
 export interface UseTerminal {
@@ -46,7 +49,7 @@ const INITIAL_TERMINAL_LINES: TerminalLine[] = [
 
 export function useTerminal(
     bootDelay = 200,
-    overrides?: { resumeUrl?: string },
+    overrides?: TerminalCommandOverrides,
 ): UseTerminal {
     const [lines, setLines] = useState<TerminalLine[]>(INITIAL_TERMINAL_LINES);
     const [input, setInput] = useState("");
@@ -125,9 +128,9 @@ export function useTerminal(
             window.open(result.openUrl, "_blank", "noopener,noreferrer");
         }
 
-        // Smooth-scroll to a section (e.g. `cd projects`).
+        // Smooth-scroll and record section history (e.g. `cd projects`).
         if (result.scrollTo) {
-            scrollToSection(result.scrollTo);
+            navigateToTarget(`#${result.scrollTo}`, result.scrollTo);
         }
 
         setInput("");

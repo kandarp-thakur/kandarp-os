@@ -22,6 +22,7 @@ interface FooterSlotProps {
 export function FooterSlot({ children, className }: FooterSlotProps) {
     return (
         <footer
+            id="footer"
             className={cn(
                 "mt-auto border-t border-border-subtle bg-canvas-base",
                 className,

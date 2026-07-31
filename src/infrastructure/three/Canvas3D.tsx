@@ -119,7 +119,10 @@ export function Canvas3D({
         return <SceneFallback className={className} />;
     }
 
-    const pixelRatio = TIER_CONFIG[tier].pixelRatio;
+    const pixelRatio = Math.min(
+        TIER_CONFIG[tier].pixelRatio,
+        typeof window !== "undefined" && window.innerWidth < 768 ? 1.5 : 2,
+    );
     // Shadows are expensive (a separate render pass). Only enable on capable
     // tiers — low/off get the flat look (arch §11).
     const enableShadows = tier === "high" || tier === "medium";

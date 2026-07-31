@@ -26,23 +26,25 @@ export function CommandButton({ onClick, className }: CommandButtonProps) {
         <button
             type="button"
             onClick={onClick}
-            aria-label="Search"
+            aria-label="Run command"
             aria-keyshortcuts="Meta+K Ctrl+K"
             className={cn(
-                "group inline-flex h-11 items-center gap-2 rounded-md pl-3 pr-2.5",
-                "text-text-secondary transition-colors duration-fast ease-standard",
-                "hover:bg-overlay-hover hover:text-text-primary active:bg-overlay-active",
+                "group terminal-command-trigger inline-flex h-9 items-center gap-2 rounded-full bg-white/[0.05] px-2.5",
+                "text-[#94A3B8] transition-all duration-[150ms] ease-out",
+                "hover:bg-[rgba(34,211,238,0.10)] hover:text-[#22D3EE] hover:scale-[1.02]",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                 className,
             )}
         >
-            <Search className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+            <Search
+                className="h-[18px] w-[18px] shrink-0 transition-transform duration-150 ease-out group-hover:scale-[1.08]"
+                aria-hidden="true"
+            />
             <kbd
-                className="hidden shrink-0 items-center rounded-xs border border-border-subtle bg-canvas-sunken px-1.5 py-0.5 font-mono text-2xs text-text-tertiary md:inline-flex"
+                className="hidden h-7 shrink-0 items-center rounded-full bg-white/[0.04] px-2.5 py-1 font-mono text-[10px] tracking-wide text-[#94A3B8] shadow-[0_0_12px_rgba(34,211,238,0.06)] md:inline-flex"
                 aria-hidden="true"
             >
-                <span className="hidden lg:inline">⌘</span>
-                <span className="lg:hidden">⌘</span>K
+                Ctrl + K
             </kbd>
         </button>
     );

@@ -1,5 +1,4 @@
-import { socials } from "@/data/socials";
-import { SITE } from "@utils/constants";
+import type { SocialLink } from "@packages/types/contact";
 
 /**
  * Derive a plain-text contact summary from the socials data.
@@ -7,14 +6,18 @@ import { SITE } from "@utils/constants";
  * Used by the terminal's sr-only block (a11y + SEO) so the semantic copy is
  * never hand-maintained alongside the data layer — one source of truth.
  */
-export function buildContactSummary(): string {
+export function buildContactSummary(socials: SocialLink[]): string {
+    if (socials.length === 0) {
+        return "Use the contact form to start a conversation.";
+    }
+
     const entries = socials
-        .map((s) => `${s.label} at ${s.handle}`)
+        .map((social) => `${social.label} at ${social.handle}`)
         .join(", or ");
-    return `Reach out via ${entries}. Resume details are available from the contact terminal.`;
+    return `Reach out via ${entries}. You can also use the contact form below.`;
 }
 
 /** Heading for the sr-only contact section. */
-export function contactHeading(): string {
-    return `Contact ${SITE.owner}`;
+export function contactHeading(owner: string): string {
+    return `Contact ${owner}`;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import { cn } from "@utils/cn";
@@ -24,13 +24,27 @@ export function CopyButton({
     className,
 }: CopyButtonProps) {
     const [copied, setCopied] = useState(false);
+    const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (resetTimerRef.current !== null) {
+                clearTimeout(resetTimerRef.current);
+            }
+        };
+    }, []);
 
     const handleCopy = useCallback(async () => {
         try {
             await navigator.clipboard.writeText(value);
             setCopied(true);
-            const timer = setTimeout(() => setCopied(false), 1500);
-            return () => clearTimeout(timer);
+            if (resetTimerRef.current !== null) {
+                clearTimeout(resetTimerRef.current);
+            }
+            resetTimerRef.current = setTimeout(() => {
+                resetTimerRef.current = null;
+                setCopied(false);
+            }, 1500);
         } catch {
             // Clipboard API can be unavailable (insecure context). Fail silently —
             // the button is a convenience, not a critical path.

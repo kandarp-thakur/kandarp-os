@@ -55,9 +55,8 @@ export interface NavItem {
 
 /**
  * Primary navigation links, ordered to mirror the page's scrolling sequence:
- * About → Experience → Projects → Infrastructure → Toolkit → Achievements →
- * Logs → SSH. Keeping both orders aligned makes the active scroll-spy state
- * move naturally from left to right while visitors progress down the page.
+ * About → Experience → Projects → Toolkit → Infrastructure → Achievements →
+ * Blog → Contact.
  */
 export const navItems: NavItem[] = [
     {
@@ -82,18 +81,18 @@ export const navItems: NavItem[] = [
         icon: Boxes,
     },
     {
+        label: "Skills",
+        shortLabel: "Skills",
+        href: sectionHref(SECTIONS.toolkit),
+        sectionId: SECTIONS.toolkit,
+        icon: Wrench,
+    },
+    {
         label: "Infrastructure",
         shortLabel: "Infra",
         href: sectionHref(SECTIONS.infrastructure),
         sectionId: SECTIONS.infrastructure,
         icon: Network,
-    },
-    {
-        label: "Toolkit",
-        shortLabel: "Toolkit",
-        href: sectionHref(SECTIONS.toolkit),
-        sectionId: SECTIONS.toolkit,
-        icon: Wrench,
     },
     {
         label: "Achievements",
@@ -103,13 +102,13 @@ export const navItems: NavItem[] = [
         icon: Award,
     },
     {
-        label: "Logs",
+        label: "Blog",
         href: sectionHref(SECTIONS.logs),
         sectionId: SECTIONS.logs,
         icon: ScrollText,
     },
     {
-        label: "SSH",
+        label: "Contact",
         href: sectionHref(SECTIONS.ssh),
         sectionId: SECTIONS.ssh,
         icon: TerminalSquare,

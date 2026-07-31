@@ -1,108 +1,188 @@
-# Architecture — Kandarp OS (Phase 1, Frontend-Only)
+# Architecture — Kandarp OS Full-Stack Platform
 
-> How the frontend-only Kandarp OS is structured, how data flows, and where the seams are for Phase 2.
+> Runtime architecture, data flow, security boundaries, and operational components for the portfolio and administration system.
 
-## 1. Overview
+## Current Architecture
 
-Kandarp OS is a **single-page engineering portfolio** themed as a DevOps operating system. The visitor experiences one continuous scroll through themed sections (hero boot, `whoami`, deployments, containers, infrastructure, toolkit, achievements, logs, ssh) — each rendered as a reusable component with a stable anchor id.
+Kandarp OS is a Next.js 15 App Router application with two integrated surfaces:
 
-Phase 1 is a **clean, standalone frontend**. There is no server runtime, no database, no API, no auth. All content is resolved at build/request time from typed, hardcoded seed files.
+- a public engineering portfolio rendered from PostgreSQL-backed CMS data;
+- an authenticated administration console for content, identity, analytics, media, appearance, and operations.
 
-## 2. Layered Architecture
+The application uses React Server Components by default and client components only for interactive editors, navigation, terminals, animation, and Three.js scenes.
 
+## 2. Runtime Layers
+
+```text
+Browser
+  │
+  ├─ Public routes ──────────────────────────────────────────────┐
+  │                                                             │
+  └─ Admin routes / API requests                                │
+        │                                                       │
+        ▼                                                       ▼
+Next.js middleware                                      App Router pages
+  • signed JWT gate                                     • server rendering
+  • rate limits                                         • public view models
+  • CSRF origin checks                                  • admin client editors
+  • request-size limits                                         │
+        │                                                       │
+        ▼                                                       │
+Route handlers ◄────────────────────────────────────────────────┘
+  • authentication and stateful session validation
+  • request-time RBAC and per-user overrides
+  • Zod validation and consistent errors
+  • audit and request logging
+        │
+        ▼
+Controllers and services
+  • generic CRUD orchestration
+  • domain workflows
+  • public-data mapping and cache invalidation
+  • media, managed secrets, API keys, analytics, health
+        │
+        ▼
+Repository and persistence layer
+  • Prisma singleton
+  • PostgreSQL entities and relationships
+  • soft deletion, archive/restore, versions
+  • local or Cloudinary object storage
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  app/                     Next.js App Router (routes)        │
-│  ├── layout.tsx           root layout (providers + chrome)   │
-│  ├── page.tsx             home (single-page OS experience)   │
-│  └── (public)/            secondary routes (blog, etc.)      │
-├─────────────────────────────────────────────────────────────┤
-│  features/                feature-sliced UI components        │
-│  ├── hero/ about/ experience/ projects/ infrastructure/      │
-│  ├── skills/ blog/ contact/ navigation/ footer/              │
-│  ├── layout/ shared/ background/                             │
-├─────────────────────────────────────────────────────────────┤
-│  lib/                     frontend-only data + helpers        │
-│  ├── public-data.ts       content accessors (the seam)       │
-│  ├── site-types.ts        shared view-model types            │
-│  ├── revalidate.ts        ISR tag registry (inert)           │
-│  └── blog.ts              MDX content loader                 │
-├─────────────────────────────────────────────────────────────┤
-│  data/                    hardcoded content (source of truth) │
-├─────────────────────────────────────────────────────────────┤
-│  packages/                reusable primitives                 │
-│  ├── ui/ hooks/ types/ utils/ config/                        │
-├─────────────────────────────────────────────────────────────┤
-│  infrastructure/          cross-cutting infra                 │
-│  ├── three/ providers/ styles/                               │
-└─────────────────────────────────────────────────────────────┘
+
+## 3. Source Boundaries
+
+| Path | Responsibility |
+| --- | --- |
+| `src/app/(public)` | Public portfolio routes |
+| `src/app/admin` | Login and authenticated administration pages |
+| `src/app/api/admin` | Session-authenticated administration APIs |
+| `src/app/api/v1` | API-key-authenticated programmatic APIs |
+| `src/app/api/health` | Liveness and readiness endpoints |
+| `src/backend/auth` | Passwords, JWTs, TOTP, and session lifecycle |
+| `src/backend/controllers` | Reusable HTTP/CRUD controllers |
+| `src/backend/database` | Prisma client and persistence infrastructure |
+| `src/backend/middlewares` | Auth, API-key auth, validation, logging, and request context |
+| `src/backend/permissions` | Static role matrix and request-time user overrides |
+| `src/backend/repositories` | Entity persistence and mapping |
+| `src/backend/services` | Domain workflows and public CMS view models |
+| `src/backend/storage` | Storage-provider abstraction |
+| `src/backend/schemas` | Zod input and entity contracts |
+| `src/features` | Public and admin feature components |
+| `src/infrastructure` | Providers, styles, and Three.js implementation |
+| `prisma` | PostgreSQL schema, migrations, and idempotent seed |
+
+## 4. Public Content Flow
+
+```text
+PostgreSQL
+  → Prisma repository/service queries
+  → src/backend/services/public-data.ts
+  → validated public view models
+  → cached server components
+  → feature components
 ```
 
-## 3. Data Flow
+`public-data.ts` is the anti-corruption boundary between mutable CMS entities and stable public UI models. It handles status filtering, media resolution, relation mapping, defaults, and cache-aware accessors. Mutating admin handlers invalidate the relevant Next.js cache tags so published changes become visible without coupling public components to Prisma.
 
+Seed constants in `src/data` remain useful defaults and demo inputs, but PostgreSQL is the runtime source of truth.
+
+## 5. Administration Flow
+
+The sidebar configuration lives in `src/features/admin/components/nav-config.ts`. Its links map to pages under the `src/app/admin/(console)` route group; query-string views intentionally share parent pages.
+
+Administration pages call `/api/admin/*` handlers. Shared handler utilities provide:
+
+1. signed-token verification;
+2. persisted session validation and heartbeat;
+3. permission enforcement;
+4. Zod request validation;
+5. normalized JSON errors;
+6. activity/audit recording.
+
+Generic entity modules use the CRUD controller and repository abstractions for list, create, read, update, archive, restore, duplicate, reorder, import/export, bulk operations, and version restoration. Specialized services implement workflows that do not fit generic CRUD.
+
+## 6. Authentication and Authorization
+
+Authentication uses Argon2id password hashes, signed HMAC-SHA256 JWT cookies, optional TOTP, and persisted sessions. Middleware performs the fast signature gate; protected route handlers then verify that the session is present, unrevoked, and unexpired.
+
+Authorization has two layers:
+
+- `ROLE_PERMISSIONS` supplies role defaults for owner, admin, editor, and viewer;
+- `UserPermission` rows explicitly grant or deny one permission for one user.
+
+Explicit user decisions take precedence over role defaults. Protected handlers resolve overrides at request time, so grants and denials apply immediately to active sessions without issuing a new token. Role changes still revoke sessions because the role claim itself is carried by the JWT.
+
+Programmatic `/api/v1` access uses separately stored API keys. Raw keys are shown once; only hashes and safe prefixes are retained. Scope, status, expiration, and revocation are checked on each request.
+
+## 7. Data Model and Lifecycle
+
+The Prisma schema models content, users, sessions, normalized RBAC, API keys, media, analytics, activity logs, settings, profiles, submissions, and version history.
+
+Content entities support soft deletion through archive metadata. Repository queries exclude archived rows by default, while explicit archive/restore endpoints preserve recoverability. Version snapshots support rollback for mutable content.
+
+Migrations are immutable deployment artifacts under `prisma/migrations`. `prisma/seed.ts` is idempotent: repeated execution upserts system RBAC and owner data while avoiding duplicate demo content.
+
+## 8. Media and Managed Secrets
+
+Media storage is selected by configuration:
+
+- local storage writes deploy-local files for development and single-node use;
+- Cloudinary provides durable remote storage and transformations when all provider credentials are present.
+
+Managed integration and environment values are encrypted using AES-256-GCM. The encryption key is separate from authentication signing keys. API responses expose metadata and masked state rather than plaintext secrets.
+
+## 9. Analytics, Monitoring, and Health
+
+The public analytics beacon persists bounded events. Administration views aggregate those events for dashboard and analytics modules. Activity logs separately record security and administrative mutations.
+
+Health endpoints are split by orchestration semantics:
+
+- liveness reports whether the process can answer requests;
+- readiness verifies dependencies required to serve traffic, including PostgreSQL.
+
+Structured Pino logging adds request context and correlation identifiers without exposing managed secret values.
+
+## 10. Rendering, UI, and Three.js
+
+Public pages use server rendering and cached data access. Interactive components are isolated client boundaries. Tailwind CSS and CSS custom properties provide shared public/admin tokens. Appearance settings control brand, theme, typography, color, navigation, footer, SEO, animation, and performance preferences.
+
+Three.js scenes use React Three Fiber and Drei. Device-tier and reduced-motion hooks choose off/low/high fidelity, while Suspense fallbacks protect first paint and non-WebGL clients.
+
+## 11. Deployment
+
+The repository supports native Node deployment and Docker Compose. Production startup follows this order:
+
+1. provide validated environment secrets;
+2. provision PostgreSQL and durable media storage;
+3. apply migrations with `npm run db:migrate:deploy`;
+4. run the idempotent seed when system data is absent;
+5. build and start the Next.js application;
+6. route health probes to `/api/health/live` and `/api/health/ready`.
+
+Do not run development and production processes against the same `.next` directory. On Windows, stop the development server before Prisma generation if its native query-engine DLL is locked.
+
+## 12. Quality Gates
+
+The expected local verification sequence is:
+
+```text
+npm run lint
+npm run typecheck
+npm test
+node --env-file-if-exists=.env.local node_modules/prisma/build/index.js validate
+node --env-file-if-exists=.env.local node_modules/prisma/build/index.js migrate status
+npm run build
 ```
-src/data/*.ts ──► src/lib/public-data.ts ──► app/page.tsx + (public)/* ──► features/*
-```
 
-1. **Content** is authored as typed, Zod-validated constants in [`src/data/`](../src/data/).
-2. **Accessors** in [`src/lib/public-data.ts`](../src/lib/public-data.ts) (`getPublicProjects`, `getPublicSiteIdentity`, `getPublicMetadata`, …) read the seed data and return public view-models.
-3. **Server components** (`app/page.tsx`, the `(public)` route group, `sitemap.ts`) call the accessors and pass data down as props.
-4. **Feature components** are presentational — they receive typed props and render. No data fetching inside feature components.
+The seed should be run twice during release verification to confirm idempotency.
 
-## 4. The Backend Seam
+## Related Documentation
 
-The previous full-stack build read from a Prisma-backed JSON store via `@backend/services/public-data`. For Phase 1:
-
-- The entire `src/backend/` directory was deleted.
-- Three frontend-only shim modules were created in [`src/lib/`](../src/lib/): `public-data.ts`, `site-types.ts`, `revalidate.ts`.
-- The `@backend/*` path aliases in [`tsconfig.json`](../tsconfig.json) now redirect to these shims:
-
-  ```json
-  "@backend/services/public-data": ["./src/lib/public-data.ts"],
-  "@backend/schemas/types":        ["./src/lib/site-types.ts"],
-  "@backend/cache/revalidate":     ["./src/lib/revalidate.ts"]
-  ```
-
-This means **no public component had to be edited** — every existing import resolves to the shim. The accessor signatures are identical to the previous implementation, so **Phase 2 can swap the shim bodies for a CMS-backed implementation without touching any consumer**.
-
-## 5. Rendering Model
-
-- **Server Components by default.** Pages and the root layout are async server components that resolve data at request time.
-- **Client Components** (`"use client"`) are used only where interactivity is required (navbar, terminal typewriter, 3D canvas, command palette, mobile menu).
-- **Static prerendering.** All 18 routes prerender as static content at build time (see the build output). Blog detail/tag pages use `generateStaticParams`.
-- **ISR cache wrapper.** [`src/packages/hooks/useSiteConfig.ts`](../src/packages/hooks/useSiteConfig.ts) wraps the site identity in `unstable_cache` with the (now-inert) ISR tags from [`src/lib/revalidate.ts`](../src/lib/revalidate.ts).
-
-## 6. Styling System
-
-- **Tailwind CSS 3** with a custom design-token theme (see [`tailwind.config.ts`](../tailwind.config.ts)).
-- **CSS custom properties** defined in [`src/infrastructure/styles/tokens.css`](../src/infrastructure/styles/tokens.css) drive colors, typography, spacing, shadows, radii, and animation timings.
-- **Dark-only.** The site is dark-themed (the "OS" aesthetic); `data-theme="dark"` is set statically on `<html>` to avoid FOUC.
-- See [`docs/design-system.md`](design-system.md) and [`docs/STYLE_GUIDE.md`](STYLE_GUIDE.md).
-
-## 7. 3D / WebGL
-
-- The signature **CloudInfinity** background and the **CoderModel** hero avatar are built with Three.js + @react-three/fiber + drei.
-- A device-tier hook (`useDeviceTier`) scales fidelity (off / low / high) based on hardware + reduced-motion preference.
-- All 3D is lazy-loaded and behind a `<Suspense>` fallback so it never blocks first paint.
-
-## 8. Performance
-
-- `optimizePackageImports` tree-shakes barrel exports (lucide, framer-motion, gsap).
-- `removeConsole` strips logs in production (errors preserved).
-- Source maps are not shipped to the browser.
-- Static prerendering + gzip compression.
-- First Load JS shared by all routes: ~103 kB.
-
-## 9. What Was Removed (Phase 1)
-
-- `src/backend/` (Prisma, auth, repositories, services, controllers, middleware, logging, storage)
-- `src/app/admin/` (the entire admin console)
-- `src/app/api/` (all API routes)
-- `src/features/admin/` (admin UI components)
-- `prisma/` (schema, migrations, seed)
-- Docker (`Dockerfile`, `docker-compose*.yml`, `.dockerignore`)
-- Nginx configs, deployment/infra shell scripts
-- `src/middleware.ts` (admin auth gate)
-- Backend-only dependencies (Prisma, next-auth, argon2, cloudinary, pino, sharp, nanoid, tsx, pino-pretty, @auth/prisma-adapter)
-
-See [`CHANGELOG.md`](../CHANGELOG.md) for the full list.
+- `docs/backend/README.md` — backend and database operations
+- `docs/backend/api-reference.md` — HTTP API
+- `docs/backend/security.md` — security controls and RBAC
+- `docs/backend/configuration.md` — environment configuration
+- `docs/backend/media.md` — media providers and processing
+- `docs/deployment-vercel.md` — deployment notes
+- `docs/FOLDER_STRUCTURE.md` — source tree guide
+- `CHANGELOG.md` — release history

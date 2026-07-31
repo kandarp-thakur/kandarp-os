@@ -12,11 +12,28 @@ build/
 
 # Environment files (never commit secrets)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
-# Admin data store (runtime-generated, contains users/hashes)
+# Runtime secret stores and local credentials
 .admin-data/
+.secrets/
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+
+# Database dumps and local data
+*.sql.gz
+*.dump
+*.sqlite
+*.sqlite3
+
 
 # Debug logs
 npm-debug.log*

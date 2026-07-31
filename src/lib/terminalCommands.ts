@@ -1,7 +1,7 @@
 import { commandByName, commands } from "@/data/contactCommands";
-import { socialByCommand, socials } from "@/data/socials";
+import { socials as defaultSocials } from "@/data/socials";
 import { SECTIONS, SITE } from "@utils/constants";
-import type { TerminalLine } from "@packages/types/contact";
+import type { SocialLink, TerminalLine } from "@packages/types/contact";
 import { err, link, out } from "@/lib/terminalLines";
 
 /**
@@ -86,12 +86,18 @@ const DIRECTORY_LIST = [
     "ssh",
 ];
 
+export interface TerminalCommandOverrides {
+    /** CMS-resolved Contact links; static links are used when omitted. */
+    socials?: SocialLink[];
+}
+
 /** Execute a parsed command, returning lines + optional side effects. */
 export function executeCommand(
     rawInput: string,
-    overrides?: { resumeUrl?: string },
+    overrides?: TerminalCommandOverrides,
 ): ExecutionResult {
     const input = rawInput.trim();
+    const socials = overrides?.socials ?? defaultSocials;
     const [name, ...args] = input.split(/\s+/);
     const command = name ?? "";
 
@@ -107,7 +113,7 @@ export function executeCommand(
 
     // `help` lists commands, or describes one if given an argument.
     if (command === "help") {
-        return runHelp(args);
+        return runHelp(args, socials);
     }
 
     // `whoami` prints the current user.
@@ -117,7 +123,7 @@ export function executeCommand(
 
     // `ls` lists contact endpoints like directory entries.
     if (command === "ls") {
-        return runLs();
+        return runLs(socials);
     }
 
     // `cd` navigates to a page section (directory metaphor).
@@ -130,33 +136,16 @@ export function executeCommand(
         return runPwd();
     }
 
-    // External commands — open the matching social link.
-    const social = socialByCommand.get(command);
+    // External commands — open the matching CMS-resolved contact link.
+    const social = socials.find((link) => link.command === command);
     if (social) {
-        if (social.command === "resume") {
-            const resolvedUrl = overrides?.resumeUrl?.trim();
-            if (!resolvedUrl) {
-                return {
-                    lines: [
-                        out(
-                            "Resume PDF is not configured for this site build.",
-                        ),
-                        out("Opening the profile section instead."),
-                    ],
-                    scrollTo: SECTIONS.whoami,
-                };
-            }
-
+        if (social.command === "resume" && social.url === "/#whoami") {
             return {
                 lines: [
-                    out(`Opening ${social.label}…`),
-                    link(
-                        `${social.handle} → ${resolvedUrl}`,
-                        resolvedUrl,
-                        social.description,
-                    ),
+                    out("Resume PDF is not configured for this site build."),
+                    out("Opening the profile section instead."),
                 ],
-                openUrl: resolvedUrl,
+                scrollTo: SECTIONS.whoami,
             };
         }
 
@@ -183,22 +172,53 @@ export function executeCommand(
 }
 
 /** `help` — list all commands, or describe one if given an argument. */
-function runHelp(args: string[]): ExecutionResult {
+function runHelp(args: string[], socials: SocialLink[]): ExecutionResult {
+    const socialCommands = new Set(socials.map((social) => social.command));
+    const availableCommands = commands.filter(
+        (command) => !command.isExternal || socialCommands.has(command.name),
+    );
     const target = args[0];
     if (target) {
-        const meta = commandByName.get(target);
-        if (!meta) {
+        const candidate = commandByName.get(target);
+        const meta =
+            candidate && (!candidate.isExternal || socialCommands.has(target))
+                ? candidate
+                : undefined;
+        const social = socials.find((link) => link.command === target);
+        if (!meta && !social) {
             return { lines: [err(`help: no help entry for '${target}'`)] };
         }
-        return {
-            lines: [
-                out(`${meta.name} — ${meta.summary}`),
-                out(`usage: ${meta.usage}`),
-            ],
-        };
+        if (meta) {
+            return {
+                lines: [
+                    out(`${meta.name} — ${meta.summary}`),
+                    out(`usage: ${meta.usage}`),
+                ],
+            };
+        }
+
+        if (social) {
+            return {
+                lines: [
+                    out(`${social.command} — ${social.description}`),
+                    out(`usage: ${social.command}`),
+                ],
+            };
+        }
+
+        return { lines: [err(`help: no help entry for '${target}'`)] };
     }
 
-    const rows = commands.map((c) => `  ${c.name.padEnd(10)} ${c.summary}`);
+    const staticNames = new Set(commands.map((command) => command.name));
+    const dynamicCommands = socials
+        .filter((social) => !staticNames.has(social.command))
+        .map((social) => ({
+            name: social.command,
+            summary: social.description,
+        }));
+    const rows = [...availableCommands, ...dynamicCommands].map(
+        (command) => `  ${command.name.padEnd(10)} ${command.summary}`,
+    );
     return {
         lines: [
             out(`${SITE.name} — available commands:`),
@@ -210,7 +230,7 @@ function runHelp(args: string[]): ExecutionResult {
 }
 
 /** `ls` — list contact endpoints like directory entries. */
-function runLs(): ExecutionResult {
+function runLs(socials: SocialLink[]): ExecutionResult {
     const entries = socials.map(
         (s) => `${s.command.padEnd(10)}  # ${s.label} — ${s.handle}`,
     );

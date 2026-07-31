@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
+import { ContactForm } from "@features/contact/components/ContactForm";
 import { ContactTerminal } from "@features/contact/components/ContactTerminal";
 import { ConnectLinks } from "@features/contact/components/ConnectLinks";
 import { getSiteConfig } from "@hooks/useSiteConfig";
+import { resolveContactLinks } from "@/lib/contactLinks";
 
 export async function generateMetadata(): Promise<Metadata> {
     const config = await getSiteConfig();
@@ -18,6 +20,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ContactPage() {
     const config = await getSiteConfig();
+    const contactLinks = resolveContactLinks(config);
+    const commandHints = [
+        "help",
+        ...contactLinks.map((link) => link.command),
+        "clear",
+    ];
 
     return (
         <main className="relative isolate z-20 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-4 py-16 sm:px-6">
@@ -37,24 +45,24 @@ export default async function ContactPage() {
             </header>
 
             {/* The interactive terminal */}
-            <ContactTerminal />
+            <ContactTerminal socials={contactLinks} owner={config.owner} />
 
             {/* Visible, clickable connect channels — a single-click
                 companion to the terminal for visitors who don't know to
                 type `github`, `email`, etc. */}
-            <ConnectLinks className="mt-8" />
+            <ConnectLinks socials={contactLinks} className="mt-8" />
+
+            <ContactForm />
 
             {/* Quick command hints */}
             <p className="mt-6 max-w-3xl font-mono text-xs text-text-tertiary">
-                Try: <span className="text-text-secondary">help</span> ·{" "}
-                <span className="text-text-secondary">resume</span> ·{" "}
-                <span className="text-text-secondary">github</span> ·{" "}
-                <span className="text-text-secondary">email</span> ·{" "}
-                <span className="text-text-secondary">phone</span> ·{" "}
-                <span className="text-text-secondary">linkedin</span> ·{" "}
-                <span className="text-text-secondary">hackerrank</span> ·{" "}
-                <span className="text-text-secondary">youtube</span> ·{" "}
-                <span className="text-text-secondary">clear</span>
+                Try:{" "}
+                {commandHints.map((command, index) => (
+                    <span key={command}>
+                        {index > 0 ? " · " : null}
+                        <span className="text-text-secondary">{command}</span>
+                    </span>
+                ))}
             </p>
         </main>
     );

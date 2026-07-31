@@ -43,6 +43,8 @@ export interface DevOpsBackgroundProps {
     className?: string;
     /** Override the deterministic layout seed (default 7). */
     seed?: number;
+    /** Hide constellation particles while retaining ambient framing. */
+    particlesEnabled?: boolean;
     /** Render a faint mono label in the corner (debug/preview). */
     debugLabel?: string;
 }
@@ -73,6 +75,7 @@ export function DevOpsBackground({
     fixed = true,
     className,
     seed = 7,
+    particlesEnabled = true,
     debugLabel,
 }: DevOpsBackgroundProps) {
     const tier = useBackgroundTier();
@@ -119,7 +122,7 @@ export function DevOpsBackground({
                 The clean gradient + ambient lighting live in HeroBackground /
                 the page; this layer is only the slow-floating engineering
                 icons. No wash, no galactic grid — those were visual clutter. */}
-            {medallions.length > 0 ? (
+            {particlesEnabled && medallions.length > 0 ? (
                 <div className="devops-bg__constellation">
                     {medallions.map((m) => (
                         <MedallionView key={m.id} m={m} tier={tier} />

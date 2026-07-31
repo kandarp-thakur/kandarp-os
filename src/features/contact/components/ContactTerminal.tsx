@@ -6,13 +6,16 @@ import { CopyButton } from "@features/shared/components/CopyButton";
 import { TerminalLineView } from "@features/shared/components/TerminalLineView";
 import { useTerminal } from "@hooks/useTerminal";
 import { buildContactSummary, contactHeading } from "@/lib/contactSummary";
+import type { SocialLink } from "@packages/types/contact";
 import { PROMPT, SITE } from "@utils/constants";
 import { cn } from "@utils/cn";
 
 interface ContactTerminalProps {
+    /** CMS-resolved contact links shared with the visible link grid. */
+    socials: SocialLink[];
+    /** CMS-resolved owner name used by the semantic contact heading. */
+    owner?: string;
     className?: string;
-    /** CMS-driven resume URL. When absent, `resume` opens the profile section. */
-    resumeUrl?: string;
 }
 
 /**
@@ -26,8 +29,9 @@ interface ContactTerminalProps {
  * same contact info for screen readers + SEO (per about-page-design §15).
  */
 export function ContactTerminal({
+    socials,
+    owner = SITE.owner,
     className,
-    resumeUrl,
 }: ContactTerminalProps) {
     const {
         lines,
@@ -37,7 +41,7 @@ export function ContactTerminal({
         submit,
         recallHistory,
         clearScreen,
-    } = useTerminal(200, resumeUrl ? { resumeUrl } : undefined);
+    } = useTerminal(200, { socials });
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -161,8 +165,8 @@ export function ContactTerminal({
             {/* Screen-reader-only semantic contact info (a11y + SEO).
                 Derived from the socials data layer — no duplicated copy. */}
             <section className="sr-only">
-                <h2>{contactHeading()}</h2>
-                <p>{buildContactSummary()}</p>
+                <h2>{contactHeading(owner)}</h2>
+                <p>{buildContactSummary(socials)}</p>
             </section>
         </div>
     );

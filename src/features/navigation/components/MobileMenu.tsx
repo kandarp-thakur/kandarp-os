@@ -10,7 +10,7 @@ import {
 import { ChevronDown, Search, X } from "lucide-react";
 
 import { Logo } from "@features/navigation/components/Logo";
-import { scrollToSection } from "@utils/navigation";
+import { isSectionHref, navigateToTarget } from "@utils/navigation";
 import { socials } from "@/data/socials";
 import type { NavChild, NavItem } from "@/data/navigation";
 import { cn } from "@utils/cn";
@@ -187,23 +187,28 @@ export function MobileMenu({
                             >
                                 <a
                                     href={item.href}
-                                    onClick={(e) => {
-                                        e.preventDefault();
+                                    onClick={(event) => {
                                         onClose();
-                                        // Defer the scroll until the menu
-                                        // closing animation frees body scroll.
+                                        if (!isSectionHref(item.href)) return;
+                                        event.preventDefault();
+                                        // Defer navigation until the menu's
+                                        // body-scroll lock has been released.
                                         requestAnimationFrame(() =>
-                                            scrollToSection(item.sectionId),
+                                            navigateToTarget(
+                                                item.href,
+                                                item.sectionId,
+                                            ),
                                         );
                                     }}
                                     aria-current={active ? "true" : undefined}
                                     className={cn(
-                                        "flex items-center gap-3 rounded-lg px-4 py-3",
-                                        "font-sans text-lg font-medium transition-colors duration-fast ease-standard",
+                                        "flex items-center gap-3 px-4 py-3",
+                                        "font-sans text-lg transition-[color,text-shadow] duration-200 ease-out",
+                                        "hover:text-white",
                                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                                         active
-                                            ? "bg-accent-subtle text-accent-solid"
-                                            : "text-text-secondary hover:bg-overlay-hover hover:text-text-primary",
+                                            ? "font-semibold text-[#38BDF8] [text-shadow:0_0_12px_rgba(56,189,248,.35)]"
+                                            : "font-medium text-[#AAB4C5] [text-shadow:none]",
                                     )}
                                 >
                                     <Icon
@@ -316,12 +321,13 @@ function MobileAccordion({
                 aria-controls={`mobile-accordion-${item.sectionId}`}
                 onClick={() => setExpanded((v) => !v)}
                 className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-4 py-3",
-                    "font-sans text-lg font-medium transition-colors duration-fast ease-standard",
+                    "flex w-full items-center gap-3 px-4 py-3",
+                    "font-sans text-lg transition-[color,text-shadow] duration-200 ease-out",
+                    "hover:text-white",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                     isChildActive
-                        ? "bg-accent-subtle text-accent-solid"
-                        : "text-text-secondary hover:bg-overlay-hover hover:text-text-primary",
+                        ? "font-semibold text-[#38BDF8] [text-shadow:0_0_12px_rgba(56,189,248,.35)]"
+                        : "font-medium text-[#AAB4C5] [text-shadow:none]",
                 )}
             >
                 <HeaderIcon
@@ -380,21 +386,23 @@ function MobileChildRow({ child, active, onClose }: MobileChildRowProps) {
         <li>
             <a
                 href={child.href}
-                onClick={(e) => {
-                    e.preventDefault();
+                onClick={(event) => {
                     onClose();
+                    if (!isSectionHref(child.href)) return;
+                    event.preventDefault();
                     requestAnimationFrame(() =>
-                        scrollToSection(child.sectionId),
+                        navigateToTarget(child.href, child.sectionId),
                     );
                 }}
                 aria-current={active ? "true" : undefined}
                 className={cn(
-                    "flex items-center gap-3 rounded-lg px-4 py-2.5",
-                    "font-sans text-base transition-colors duration-fast ease-standard",
+                    "flex items-center gap-3 px-4 py-2.5",
+                    "font-sans text-base transition-[color,text-shadow] duration-200 ease-out",
+                    "hover:text-white",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                     active
-                        ? "bg-accent-subtle text-accent-solid"
-                        : "text-text-tertiary hover:bg-overlay-hover hover:text-text-primary",
+                        ? "font-semibold text-[#38BDF8] [text-shadow:0_0_12px_rgba(56,189,248,.35)]"
+                        : "font-medium text-[#AAB4C5] [text-shadow:none]",
                 )}
             >
                 <Icon className="h-4 w-4" aria-hidden="true" />

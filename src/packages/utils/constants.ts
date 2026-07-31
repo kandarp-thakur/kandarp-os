@@ -58,14 +58,14 @@ export const ROLES = [
 export const SECTIONS = {
     boot: "boot",
     hero: "hero",
-    whoami: "whoami",
-    deployments: "deployments",
-    containers: "containers",
+    whoami: "about",
+    deployments: "experience",
+    containers: "projects",
     infrastructure: "infrastructure",
-    toolkit: "toolkit",
+    toolkit: "skills",
     achievements: "achievements",
-    logs: "logs",
-    ssh: "ssh",
+    logs: "blog",
+    ssh: "contact",
 } as const;
 
 /** A `#id` anchor href for a section. */

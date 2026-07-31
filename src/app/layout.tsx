@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 
 import { fontVariables } from "@/assets/fonts";
 import { Providers } from "@providers";
@@ -114,6 +115,24 @@ export const viewport: Viewport = {
 export default async function RootLayout({
     children,
 }: Readonly<{ children: React.ReactNode }>) {
+    // Middleware marks admin requests so the console does not inherit public
+    // navigation, backgrounds, analytics, or the boot overlay.
+    const headerStore = await headers();
+    const isAdmin = headerStore.get("x-is-admin") === "1";
+
+    if (isAdmin) {
+        return (
+            <html lang="en" data-theme="dark" data-admin="true">
+                <body
+                    className={`${fontVariables} min-h-screen font-sans text-text-primary antialiased admin-surface`}
+                    suppressHydrationWarning
+                >
+                    {children}
+                </body>
+            </html>
+        );
+    }
+
     // Resolve the site config (cached via ISR tags) for theme + identity.
     const config = await getSiteConfig();
     const jsonLd = await buildJsonLd();
@@ -144,12 +163,21 @@ export default async function RootLayout({
                 <Providers>
                     {/* The persistent, page-wide living infrastructure
                         background — fixed behind every section + route. */}
-                    <PageBackground />
+                    <PageBackground
+                        particlesEnabled={
+                            config.hero?.visual?.particlesEnabled ?? true
+                        }
+                    />
 
                     {/* The signature CloudInfinity object — the visual
                         identity of Kandarp OS. Lives behind the hero content,
                         scales + fades as the user scrolls past the hero. */}
-                    <CloudInfinityBackground />
+                    <CloudInfinityBackground
+                        infinityLoopEnabled={
+                            config.hero?.visual?.infinityLoopEnabled ?? true
+                        }
+                        threeEnabled={config.hero?.visual?.threeEnabled ?? true}
+                    />
 
                     {/* Analytics beacon — fires pageview + duration events to
                         the admin analytics ingest endpoint. Renders nothing. */}

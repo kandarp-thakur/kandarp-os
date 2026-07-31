@@ -1,17 +1,19 @@
 "use client";
 
-import { useId } from "react";
+import { memo, useId } from "react";
 
 import { useHeroTerminal } from "@hooks/useHeroTerminal";
-import { HERO_ROLES } from "@/data/hero";
 import type { HeroLine } from "@/data/hero";
+import type { HeroConfig } from "@backend/schemas/types";
 import { cn } from "@utils/cn";
 
 interface HeroTerminalProps {
     /** Extra classes for the outer terminal shell. */
     className?: string;
-    /** SSH-style user@host string for the title bar. Defaults to "kandarp@portfolio". */
-    userAtHost?: string;
+    /** SSH-style user@host string for the title bar. */
+    userAtHost: string;
+    /** CMS-owned roles, script, and animation timings. */
+    terminal: HeroConfig["terminal"];
 }
 
 /**
@@ -28,9 +30,12 @@ interface HeroTerminalProps {
  */
 export function HeroTerminal({
     className,
-    userAtHost = "kandarp@portfolio",
+    userAtHost,
+    terminal,
 }: HeroTerminalProps) {
-    const { lines, typing, roleIndex, pause, resume } = useHeroTerminal();
+    const { lines, typing, roleIndex, pause, resume } =
+        useHeroTerminal(terminal);
+    const activeRole = terminal.roles[roleIndex] ?? "";
     const liveId = useId();
 
     return (
@@ -63,6 +68,7 @@ export function HeroTerminal({
                         key={line.id}
                         line={line}
                         roleIndex={roleIndex}
+                        roles={terminal.roles}
                     />
                 ))}
 
@@ -81,7 +87,7 @@ export function HeroTerminal({
                 )}
 
                 {/* Idle prompt cursor (between commands / before first type) */}
-                {typing === "" && lines.length >= 0 && (
+                {typing === "" && (
                     <div className="flex items-baseline gap-1.5">
                         <span className="select-none text-term-prompt">$</span>
                         <span
@@ -94,7 +100,7 @@ export function HeroTerminal({
 
             {/* Visually-hidden live region: announces the active role for SRs. */}
             <span className="sr-only" aria-live="polite" id={liveId}>
-                {HERO_ROLES[roleIndex]}
+                {activeRole}
             </span>
         </div>
     );
@@ -103,10 +109,15 @@ export function HeroTerminal({
 interface HeroLineViewProps {
     line: HeroLine;
     roleIndex: number;
+    roles: string[];
 }
 
 /** Renders a single committed hero terminal line by kind. */
-function HeroLineView({ line, roleIndex }: HeroLineViewProps) {
+const HeroLineView = memo(function HeroLineView({
+    line,
+    roleIndex,
+    roles,
+}: HeroLineViewProps) {
     if (line.kind === "command") {
         return (
             <div className="flex items-baseline gap-1.5">
@@ -131,10 +142,11 @@ function HeroLineView({ line, roleIndex }: HeroLineViewProps) {
         <div className="flex items-baseline gap-1.5 pl-3">
             <span className="select-none text-text-tertiary">›</span>
             <span className="font-semibold text-accent-solid">
-                {HERO_ROLES[roleIndex]}
+                {roles[roleIndex] ?? ""}
             </span>
         </div>
     );
-}
+});
 
+HeroLineView.displayName = "HeroLineView";
 HeroTerminal.displayName = "HeroTerminal";

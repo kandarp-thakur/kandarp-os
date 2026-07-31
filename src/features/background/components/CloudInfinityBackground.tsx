@@ -78,12 +78,18 @@ const CloudInfinityScene = lazy(() =>
 export interface CloudInfinityBackgroundProps {
     /** Extra classes on the host wrapper. */
     className?: string;
+    /** Disable WebGL while retaining the lightweight CSS fallback. */
+    threeEnabled?: boolean;
+    /** Disable the entire infinity-loop visual, including its fallback. */
+    infinityLoopEnabled?: boolean;
     /** Disable the scroll-progress tracking (e.g. for a preview route). */
     disableScroll?: boolean;
 }
 
 export function CloudInfinityBackground({
     className,
+    threeEnabled = true,
+    infinityLoopEnabled = true,
     disableScroll = false,
 }: CloudInfinityBackgroundProps) {
     // Scroll progress (0 at hero top → 1 as the hero scrolls out of view).
@@ -94,12 +100,15 @@ export function CloudInfinityBackground({
     // visibility effect below still pauses it when the hero/tab is hidden.
     const [frameloop, setFrameloop] = useState<"always" | "never">("always");
 
-    // Single passive scroll listener → write progress into the ref. The hero
-    // is the first section; progress maps the hero's viewport exit to 0→1.
+    // Coalesce bursty scroll events into one geometry read per animation frame.
+    // Progress stays in a ref so this path never causes React re-renders.
     useEffect(() => {
         if (disableScroll) return;
 
+        let pendingFrame: number | null = null;
+
         const update = () => {
+            pendingFrame = null;
             const hero = document.getElementById("hero");
             if (!hero) {
                 scrollProgressRef.current = 0;
@@ -108,16 +117,26 @@ export function CloudInfinityBackground({
             const rect = hero.getBoundingClientRect();
             const vh = window.innerHeight || 1;
             // 0 when hero fills the viewport; 1 once it has fully scrolled past.
-            const progress = Math.max(0, Math.min(1, -rect.top / vh));
-            scrollProgressRef.current = progress;
+            scrollProgressRef.current = Math.max(
+                0,
+                Math.min(1, -rect.top / vh),
+            );
+        };
+
+        const scheduleUpdate = () => {
+            if (pendingFrame !== null) return;
+            pendingFrame = window.requestAnimationFrame(update);
         };
 
         update();
-        window.addEventListener("scroll", update, { passive: true });
-        window.addEventListener("resize", update);
+        window.addEventListener("scroll", scheduleUpdate, { passive: true });
+        window.addEventListener("resize", scheduleUpdate);
         return () => {
-            window.removeEventListener("scroll", update);
-            window.removeEventListener("resize", update);
+            window.removeEventListener("scroll", scheduleUpdate);
+            window.removeEventListener("resize", scheduleUpdate);
+            if (pendingFrame !== null) {
+                window.cancelAnimationFrame(pendingFrame);
+            }
         };
     }, [disableScroll]);
 
@@ -143,8 +162,11 @@ export function CloudInfinityBackground({
         let tabVisible = !document.hidden;
         let winFocused = document.hasFocus();
 
+        let lastShouldRender: boolean | null = null;
         const sync = () => {
             const shouldRender = heroVisible && tabVisible && winFocused;
+            if (shouldRender === lastShouldRender) return;
+            lastShouldRender = shouldRender;
             setFrameloop(shouldRender ? "always" : "never");
         };
 
@@ -193,6 +215,8 @@ export function CloudInfinityBackground({
         };
     }, []);
 
+    if (!infinityLoopEnabled) return null;
+
     return (
         <div
             aria-hidden="true"
@@ -211,31 +235,33 @@ export function CloudInfinityBackground({
                 tab is backgrounded — zero GPU/CPU cost when invisible. The
                 scene drives the camera itself (parallax), so the generic
                 CameraRig loop is skipped via `passiveCamera`. */}
-            <ClientOnly>
-                <Suspense fallback={null}>
-                    <Canvas3D
-                        lightingPreset="soft"
-                        environmentPreset="studio"
-                        effectPreset="off"
-                        enableControls={false}
-                        frameloop={frameloop}
-                        passiveCamera
-                        // The CloudInfinity scene brings its own bespoke
-                        // EnvironmentLights (ambient + directional + rim +
-                        // HDR + contact shadows + fog). Disable the generic
-                        // rig so the glass isn't double-lit and there's no
-                        // second fog pass.
-                        disableLighting
-                        disableEnvironment
-                        className="absolute inset-0"
-                    >
-                        <CloudInfinityScene
-                            tier="medium"
-                            scrollProgressRef={scrollProgressRef}
-                        />
-                    </Canvas3D>
-                </Suspense>
-            </ClientOnly>
+            {threeEnabled ? (
+                <ClientOnly>
+                    <Suspense fallback={null}>
+                        <Canvas3D
+                            lightingPreset="soft"
+                            environmentPreset="studio"
+                            effectPreset="off"
+                            enableControls={false}
+                            frameloop={frameloop}
+                            passiveCamera
+                            // The CloudInfinity scene brings its own bespoke
+                            // EnvironmentLights (ambient + directional + rim +
+                            // HDR + contact shadows + fog). Disable the generic
+                            // rig so the glass isn't double-lit and there's no
+                            // second fog pass.
+                            disableLighting
+                            disableEnvironment
+                            className="absolute inset-0"
+                        >
+                            <CloudInfinityScene
+                                tier="medium"
+                                scrollProgressRef={scrollProgressRef}
+                            />
+                        </Canvas3D>
+                    </Suspense>
+                </ClientOnly>
+            ) : null}
         </div>
     );
 }

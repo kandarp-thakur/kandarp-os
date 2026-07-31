@@ -6,14 +6,59 @@
  * (scroll-spy) rather than the URL pathname, since all sections share one
  * route (`/`).
  *
- * The navbar is a flat list of top-level links (Projects, Experience,
- * Toolkit, Infrastructure, Achievements, Logs, SSH). Consumers that need a
- * flat, ordered list of every scrollable destination (scroll-spy, command
+ * The navbar is a flat list of top-level links (About, Projects, Experience,
+ * Skills, Infrastructure, Blog, Contact). Consumers that need a flat, ordered
+ * list of every scrollable destination (scroll-spy, command
  * palette, footer) use [`flattenNavItems`](#flattennavitems); it expands any
  * dropdown parents into their children and passes direct links through.
  */
 
 import type { NavChild, NavItem } from "@/data/navigation";
+
+const SCROLL_DURATION_MS = 700;
+let activeScrollFrame: number | null = null;
+
+/** Returns whether a navigation href targets a section on the home page. */
+export function isSectionHref(href: string): boolean {
+    return href.startsWith("#");
+}
+
+/**
+ * Navigates to either a home-page section or a regular route.
+ *
+ * Section links scroll in place when their target is mounted. When used from a
+ * standalone route, they navigate back to the matching section on the home
+ * page. Route and external links use normal browser navigation.
+ */
+export function navigateToTarget(href: string, sectionId: string): void {
+    if (typeof window === "undefined") return;
+
+    if (!isSectionHref(href)) {
+        const sectionHref = href.replace(/^\//, "");
+        const targetId = sectionHref || sectionId;
+        const target = document.getElementById(targetId);
+        if (target) {
+            scrollToSection(targetId);
+        }
+        return;
+    }
+
+    const target = document.getElementById(sectionId);
+    if (!target) return;
+
+    // Update the address in place before scrolling. This preserves native
+    // Back/Forward semantics without triggering a route transition or reload;
+    // the observer remains the sole owner of the active visual state.
+    const hash = `#${sectionId}`;
+    if (window.location.hash !== hash) {
+        window.history.pushState(
+            { ...window.history.state, sectionId },
+            "",
+            hash,
+        );
+    }
+    scrollToSection(sectionId);
+}
 
 /**
  * Smooth-scrolls to a section anchor, accounting for the fixed navbar
@@ -23,7 +68,7 @@ import type { NavChild, NavItem } from "@/data/navigation";
  * @param sectionId - The element id (without `#`) to scroll to.
  * @param navbarOffset - Pixels of navbar height to offset the scroll target.
  */
-export function scrollToSection(sectionId: string, navbarOffset = 80): void {
+export function scrollToSection(sectionId: string, navbarOffset = 100): void {
     if (typeof document === "undefined") return;
     const el = document.getElementById(sectionId);
     if (!el) return;
@@ -31,13 +76,34 @@ export function scrollToSection(sectionId: string, navbarOffset = 80): void {
     const prefersReducedMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
     ).matches;
+    const start = window.scrollY;
+    const top = Math.max(
+        0,
+        el.getBoundingClientRect().top + start - navbarOffset,
+    );
 
-    const top = el.getBoundingClientRect().top + window.scrollY - navbarOffset;
+    if (activeScrollFrame !== null) cancelAnimationFrame(activeScrollFrame);
+    if (prefersReducedMotion) {
+        window.scrollTo({ top, behavior: "auto" });
+        activeScrollFrame = null;
+        return;
+    }
 
-    window.scrollTo({
-        top,
-        behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
+    const distance = top - start;
+    const startedAt = performance.now();
+    const step = (now: number) => {
+        const progress = Math.min(1, (now - startedAt) / SCROLL_DURATION_MS);
+        const eased =
+            progress < 0.5
+                ? 4 * progress * progress * progress
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        window.scrollTo(0, start + distance * eased);
+
+        if (progress < 1) activeScrollFrame = requestAnimationFrame(step);
+        else activeScrollFrame = null;
+    };
+
+    activeScrollFrame = requestAnimationFrame(step);
 }
 
 /**
@@ -48,9 +114,8 @@ export function scrollToSection(sectionId: string, navbarOffset = 80): void {
  * if none qualify (near the top), the first section is active.
  *
  * Order-independent: the section ids are sorted by their actual document
- * position before walking the list, so the active detection is correct even
- * when the navigation order does not match the page order (e.g. Projects leads
- * the nav but follows Experience on the page).
+ * position before walking the list, so active detection remains correct if
+ * navigation configuration and document order diverge.
  *
  * @param sectionIds - List of section ids to observe (any order).
  * @param offset - Pixels from the top of the viewport that counts as "active".
@@ -63,10 +128,8 @@ export function getActiveSection(
     if (typeof document === "undefined") return null;
 
     // Collect each section's current viewport position so active detection is
-    // independent of the order the ids were passed in. The navigation order
-    // (e.g. Projects first) need not match the document order (Experience
-    // precedes Projects on the page), so we sort by actual position before
-    // walking the list.
+    // independent of the order the ids were passed in. Sort by actual document
+    // position before walking the list.
     const positioned: { id: string; top: number }[] = [];
     for (const id of sectionIds) {
         const el = document.getElementById(id);

@@ -13,10 +13,7 @@
         "plugin:@typescript-eslint/recommended",
         "prettier"
     ],
-    "plugins": [
-        "@typescript-eslint",
-        "prettier"
-    ],
+    "plugins": ["@typescript-eslint", "prettier"],
     "rules": {
         // "warn" (not "error") so formatting issues are reported but don't
         // abort `next build` — this lets the standalone tracing phase complete
@@ -26,10 +23,7 @@
         "no-console": [
             "warn",
             {
-                "allow": [
-                    "warn",
-                    "error"
-                ]
+                "allow": ["warn", "error"]
             }
         ],
         "no-debugger": "error",
@@ -62,10 +56,7 @@
         "react/jsx-no-duplicate-props": "error",
         "react/no-array-index-key": "warn",
         "react-hooks/exhaustive-deps": "warn",
-        "eqeqeq": [
-            "error",
-            "always"
-        ],
+        "eqeqeq": ["error", "always"],
         "prefer-const": "error",
         "no-var": "error"
     },

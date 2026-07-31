@@ -74,9 +74,11 @@
     /* Self-rotation spins the whole medallion (icon + glass). */
     animation: devops-spin var(--m-spin) linear infinite;
     /* Per-medallion parallax: deeper shells move more (atmospheric). */
-    transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
-            calc(var(--bg-py) * var(--m-parallax) * -1),
-            0);
+    transform: translate3d(
+        calc(var(--bg-px) * var(--m-parallax) * -1),
+        calc(var(--bg-py) * var(--m-parallax) * -1),
+        0
+    );
     will-change: transform, opacity;
     /* No DOF blur — depth comes from opacity + scale only. The blur was the
        primary source of the "blurry / low quality" read. */
@@ -94,10 +96,12 @@
     /* Graphite glass medallion material: dark translucent glass with a soft
        top highlight, Docker Blue edge glow, and Cloud Cyan inner energy.
        Reads like a premium engineered sculpture, not a bright floating disc. */
-    background: radial-gradient(130% 130% at 35% 20%,
-            rgba(56, 189, 248, 0.08),
-            rgba(15, 23, 42, 0.6) 40%,
-            rgba(15, 23, 42, 0.85) 80%);
+    background: radial-gradient(
+        130% 130% at 35% 20%,
+        rgba(56, 189, 248, 0.08),
+        rgba(15, 23, 42, 0.6) 40%,
+        rgba(15, 23, 42, 0.85) 80%
+    );
     border: 1px solid rgba(36, 150, 237, 0.2);
     box-shadow:
         inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
@@ -134,20 +138,25 @@
 
 @keyframes devops-spin {
     from {
-        transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
+        transform: translate3d(
+                calc(var(--bg-px) * var(--m-parallax) * -1),
                 calc(var(--bg-py) * var(--m-parallax) * -1),
-                0) rotate(var(--m-start));
+                0
+            )
+            rotate(var(--m-start));
     }
 
     to {
-        transform: translate3d(calc(var(--bg-px) * var(--m-parallax) * -1),
+        transform: translate3d(
+                calc(var(--bg-px) * var(--m-parallax) * -1),
                 calc(var(--bg-py) * var(--m-parallax) * -1),
-                0) rotate(calc(var(--m-start) + 360deg));
+                0
+            )
+            rotate(calc(var(--m-start) + 360deg));
     }
 }
 
 @keyframes devops-float {
-
     0%,
     100% {
         transform: translateY(0);
@@ -159,7 +168,6 @@
 }
 
 @keyframes devops-tilt {
-
     0%,
     100% {
         transform: rotate(0deg) scale(1);
@@ -194,9 +202,11 @@
     pointer-events: none;
     /* A very soft radial fade so the constellation dissolves toward the edges
        instead of a heavy darkening frame. Keeps the scene clean + open. */
-    background: radial-gradient(130% 100% at 50% 45%,
-            transparent 65%,
-            color-mix(in srgb, var(--canvas-base) 25%, transparent) 100%);
+    background: radial-gradient(
+        130% 100% at 50% 45%,
+        transparent 65%,
+        color-mix(in srgb, var(--canvas-base) 25%, transparent) 100%
+    );
     opacity: 0.5;
 }
 
@@ -241,7 +251,6 @@
 /* -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-
     .devops-bg,
     .devops-bg *,
     .devops-bg *::before,

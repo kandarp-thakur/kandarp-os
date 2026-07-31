@@ -1,11 +1,15 @@
-import Link from "next/link";
+"use client";
 
 import { SocialLinks } from "@features/footer/components/SocialLinks";
 import { FooterBottom } from "@features/footer/components/FooterBottom";
 import { PageContainer } from "@features/layout/components/PageContainer";
 import { navItems as defaultNavItems } from "@/data/navigation";
-import { SITE, ROUTES } from "@utils/constants";
-import { flattenNavItems } from "@utils/navigation";
+import { SECTIONS, SITE } from "@utils/constants";
+import {
+    flattenNavItems,
+    isSectionHref,
+    navigateToTarget,
+} from "@utils/navigation";
 import type { NavItem, SocialLink, FooterColumn } from "@backend/schemas/types";
 import { cn } from "@utils/cn";
 
@@ -45,8 +49,8 @@ interface FooterProps {
  *   3. **Bottom** — [`FooterBottom`](./FooterBottom.tsx) copyright + the
  *      `exit 0` host signature.
  *
- * A Server Component — it composes other Server Components and static data.
- * Designed to be dropped into [`FooterSlot`](../layout/FooterSlot.tsx).
+ * A Client Component so its home-page anchors can update history and smooth
+ * scroll without triggering a route transition.
  */
 export function Footer({
     className,
@@ -63,15 +67,46 @@ export function Footer({
     const name = siteName ?? SITE.name;
     const description = siteDescription ?? SITE.description;
 
+    const sectionTarget = (href: string, fallback: string) => {
+        if (href.startsWith("#")) return href.slice(1);
+        const path = href.split(/[?#]/, 1)[0]?.replace(/^\/+|\/+$/g, "") ?? "";
+        const aliases: Record<string, string> = {
+            about: SECTIONS.whoami,
+            experience: SECTIONS.deployments,
+            projects: SECTIONS.containers,
+            infrastructure: SECTIONS.infrastructure,
+            skills: SECTIONS.toolkit,
+            blog: SECTIONS.logs,
+            contact: SECTIONS.ssh,
+        };
+        return aliases[path] ?? fallback;
+    };
+    const sectionLink = (href: string, fallback: string) => {
+        if (href.startsWith("#")) return href;
+        const path = href.split(/[?#]/, 1)[0]?.replace(/^\/+|\/+$/g, "") ?? "";
+        const publicPaths = new Set([
+            "about",
+            "experience",
+            "projects",
+            "infrastructure",
+            "skills",
+            "blog",
+            "contact",
+        ]);
+        return publicPaths.has(path)
+            ? `#${sectionTarget(href, fallback)}`
+            : href;
+    };
+
     // Resolve footer nav links: prefer CMS footer columns, then flattened
     // CMS nav items, then the hardcoded defaults.
     const footerLinks = (() => {
         if (adminFooterColumns && adminFooterColumns.length > 0) {
             return adminFooterColumns.flatMap((col) =>
                 col.links.map((link) => ({
-                    sectionId: link.id,
+                    sectionId: sectionTarget(link.href, link.id),
                     label: link.label,
-                    href: link.href,
+                    href: sectionLink(link.href, link.id),
                 })),
             );
         }
@@ -79,11 +114,15 @@ export function Footer({
             return adminNavItems
                 .filter((item) => item.visible)
                 .flatMap((item) => [
-                    { sectionId: item.id, label: item.label, href: item.href },
+                    {
+                        sectionId: sectionTarget(item.href, item.id),
+                        label: item.label,
+                        href: sectionLink(item.href, item.id),
+                    },
                     ...(item.children?.map((child) => ({
-                        sectionId: child.id,
+                        sectionId: sectionTarget(child.href, child.id),
                         label: child.label,
-                        href: child.href,
+                        href: sectionLink(child.href, child.id),
                     })) ?? []),
                 ]);
         }
@@ -103,12 +142,19 @@ export function Footer({
                         <span className="text-accent-solid">$</span> systemctl
                         poweroff
                     </p>
-                    <Link
-                        href={ROUTES.home}
+                    <a
+                        href={`#${SECTIONS.hero}`}
+                        onClick={(event) => {
+                            event.preventDefault();
+                            navigateToTarget(
+                                `#${SECTIONS.hero}`,
+                                SECTIONS.hero,
+                            );
+                        }}
                         className="mt-3 inline-block font-sans text-base font-semibold tracking-[-0.01em] text-text-primary"
                     >
                         {name}
-                    </Link>
+                    </a>
                     <p className="mt-2 font-sans text-sm text-text-tertiary">
                         {description}
                     </p>
@@ -120,6 +166,14 @@ export function Footer({
                             <li key={item.sectionId}>
                                 <a
                                     href={item.href}
+                                    onClick={(event) => {
+                                        if (!isSectionHref(item.href)) return;
+                                        event.preventDefault();
+                                        navigateToTarget(
+                                            item.href,
+                                            item.sectionId,
+                                        );
+                                    }}
                                     className={cn(
                                         "font-sans text-sm text-text-secondary",
                                         "transition-colors duration-fast ease-standard",

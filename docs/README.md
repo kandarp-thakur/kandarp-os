@@ -11,7 +11,14 @@
 | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | [`README.md`](./README.md)                                   | Documentation hub & navigation                                                                                                               | Everyone                |
 | [`vision.md`](./vision.md)                                   | Product vision, mission, and north-star goals                                                                                                | All stakeholders        |
-| [`architecture.md`](./architecture.md)                       | System architecture, data flow, and technical decisions                                                                                      | Engineers, Architects   |
+| [`architecture.md`](./architecture.md)                       | Full-stack system architecture, data flow, and technical decisions                                                                          | Engineers, Architects   |
+| [`admin-usage.md`](./admin-usage.md)                         | Admin console workflows, content lifecycle, identity, media, and operations                                                                  | Administrators          |
+| [`backend/README.md`](./backend/README.md)                   | Backend setup, database operations, verification, and deployment boundaries                                                                   | Backend Engineers       |
+| [`backend/api-reference.md`](./backend/api-reference.md)     | Admin, API-key, health, and public ingestion endpoint reference                                                                              | API Consumers           |
+| [`backend/security.md`](./backend/security.md)               | Authentication, sessions, RBAC, API credentials, encryption, and threat controls                                                             | Security Engineers      |
+| [`backend/configuration.md`](./backend/configuration.md)      | Environment variables and provider selection                                                                                                  | Operators               |
+| [`backend/media.md`](./backend/media.md)                     | Local/Cloudinary storage and image processing                                                                                                | Backend Engineers       |
+| [`backend/logging.md`](./backend/logging.md)                 | Pino logging, redaction, and request correlation                                                                                              | Operators               |
 | [`roadmap.md`](./roadmap.md)                                 | Phased delivery plan and milestones                                                                                                          | PMs, Engineers          |
 | [`design-system.md`](./design-system.md)                     | Visual language, tokens, and theming                                                                                                         | Designers, Frontend     |
 | [`ui-system.md`](./ui-system.md)                             | Full UI spec: glassmorphism, colors, type, components, motion                                                                                | Designers, Frontend     |
@@ -26,7 +33,7 @@
 | [`skills-page-design.md`](./skills-page-design.md)           | Skills page as service mesh: topology graph of connected nodes, hover-traced subgraphs                                                       | Designers, Frontend     |
 | [`blog-page-design.md`](./blog-page-design.md)               | Blog page as systemd journal: journalctl stream, units (categories), grep search, Markdown posts                                             | Designers, Frontend     |
 | [`component-rules.md`](./component-rules.md)                 | Component contracts, composition, and conventions                                                                                            | Frontend Engineers      |
-| [`folder-structure.md`](./folder-structure.md)               | Directory layout and file placement rules                                                                                                    | All Engineers           |
+| [`FOLDER_STRUCTURE.md`](./FOLDER_STRUCTURE.md)               | Current full-stack directory layout and file placement rules                                                                                 | All Engineers           |
 | [`coding-standards.md`](./coding-standards.md)               | Code style, linting, formatting, and review rules                                                                                            | All Engineers           |
 | [`optimization-plan.md`](./optimization-plan.md)             | Performance contract: lazy loading, dynamic imports, instancing, LOD, tree shaking, image + Three.js optimization for 95 Lighthouse & 60 FPS | All Engineers           |
 | [`runtime-hydration-fixes.md`](./runtime-hydration-fixes.md) | Runtime hydration, development CSP, terminal lifecycle, and animation troubleshooting                                                        | Frontend Engineers      |
@@ -39,6 +46,11 @@
 # Install dependencies
 npm install
 
+# Configure .env.local with DATABASE_URL and development secrets
+npm run db:generate
+npm run db:migrate:deploy
+npm run db:seed
+
 # Run the development server
 npm run dev
 
@@ -48,8 +60,10 @@ npm run build
 # Start the production server
 npm run start
 
-# Lint the codebase
+# Quality gates
 npm run lint
+npm run typecheck
+npm test
 ```
 
 The development server runs at `http://localhost:3000`.
@@ -61,15 +75,17 @@ The development server runs at `http://localhost:3000`.
 If you are new to the project, read the documents in this order:
 
 1. **[`vision.md`](./vision.md)** — Understand _why_ this project exists.
-2. **[`architecture.md`](./architecture.md)** — Understand _how_ the system is built.
-3. **[`folder-structure.md`](./folder-structure.md)** — Understand _where_ things live.
-4. **[`design-system.md`](./design-system.md)** — Understand _what_ it looks like.
-5. **[`ui-system.md`](./ui-system.md)** — Understand the _full UI specification_.
-6. **[`component-rules.md`](./component-rules.md)** — Understand _how_ components are built.
-7. **[`coding-standards.md`](./coding-standards.md)** — Understand _how_ code is written.
-8. **[`optimization-plan.md`](./optimization-plan.md)** — Understand _how_ the site stays fast (95 Lighthouse, 60 FPS).
-9. **[`runtime-hydration-fixes.md`](./runtime-hydration-fixes.md)** — Understand development hydration and animation runtime requirements.
-10. **[`roadmap.md`](./roadmap.md)** — Understand _when_ things ship.
+2. **[`architecture.md`](./architecture.md)** — Understand _how_ the full-stack system is built.
+3. **[`FOLDER_STRUCTURE.md`](./FOLDER_STRUCTURE.md)** — Understand _where_ things live.
+4. **[`admin-usage.md`](./admin-usage.md)** — Understand _how administrators operate the platform_.
+5. **[`backend/README.md`](./backend/README.md)** — Understand database, API, security, and deployment operations.
+6. **[`design-system.md`](./design-system.md)** — Understand _what it looks like_.
+7. **[`ui-system.md`](./ui-system.md)** — Understand the _full UI specification_.
+8. **[`component-rules.md`](./component-rules.md)** — Understand _how_ components are built.
+9. **[`coding-standards.md`](./coding-standards.md)** — Understand _how_ code is written.
+10. **[`optimization-plan.md`](./optimization-plan.md)** — Understand _how_ the site stays fast (95 Lighthouse, 60 FPS).
+11. **[`runtime-hydration-fixes.md`](./runtime-hydration-fixes.md)** — Understand development hydration and animation runtime requirements.
+12. **[`roadmap.md`](./roadmap.md)** — Understand _when_ things ship.
 
 ### Page Design Documents
 
@@ -89,7 +105,7 @@ Each page is built around a DevOps metaphor. Read these after the foundational d
 
 | Layer           | Technology                  |
 | --------------- | --------------------------- |
-| Framework       | Next.js 14+ (App Router)    |
+| Framework       | Next.js 15 (App Router)     |
 | Language        | TypeScript                  |
 | Styling         | Tailwind CSS + CSS Modules  |
 | 3D / Graphics   | React Three Fiber, Three.js |
@@ -150,6 +166,10 @@ Every document must declare its status at the top.
 
 ---
 
+## 🧭 Backend and Operations
+
+The canonical backend and operations guides are linked above. The application is PostgreSQL-backed at runtime; `src/data` contains typed defaults and seed inputs, not a replacement for CMS persistence. Use [`deployment-vercel.md`](./deployment-vercel.md) for Vercel and hosted-database release procedures.
+
 ## 📂 Subdirectories
 
 | Folder                             | Contents                                 |
@@ -163,5 +183,5 @@ Every document must declare its status at the top.
 
 ---
 
-_Last Updated: 2026-07-29_
+_Last Updated: 2026-07-31_
 _Status: ✅ Active_

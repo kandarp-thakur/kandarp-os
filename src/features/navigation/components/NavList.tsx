@@ -1,8 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import type { CSSProperties } from "react";
 
-import { scrollToSection } from "@utils/navigation";
+import { isSectionHref, navigateToTarget } from "@utils/navigation";
 import { cn } from "@utils/cn";
 import type { NavItem } from "@/data/navigation";
 import { NavDropdown } from "@features/navigation/components/NavDropdown";
@@ -30,18 +30,19 @@ interface NavListProps {
 /**
  * Desktop navigation links — anchor-based smooth-scroll (navigation-design §5).
  *
- * Renders a horizontal row of pill-style links. All current entries are flat
+ * Renders a horizontal row of text-only links. All current entries are flat
  * direct anchor links that smooth-scroll to their section; items with
- * `children` (if any are added later) render as a
- * [`NavDropdown`](./NavDropdown.tsx). The active section (tracked by
- * scroll-spy in the parent, resolved by document position) gets a shared
- * glass pill in its original section accent that animates between targets.
+ * `children` render as a [`NavDropdown`](./NavDropdown.tsx). The active
+ * section is identified solely by cyan text, weight, and a restrained glow.
  */
 export function NavList({ activeSection, items, className }: NavListProps) {
-    const reduced = useReducedMotion() === true;
-
     return (
-        <ul className={cn("hidden items-center gap-1 md:flex", className)}>
+        <ul
+            className={cn(
+                "navbar-primary-links relative hidden items-center gap-[30px] md:flex xl:gap-[36px]",
+                className,
+            )}
+        >
             {items.map((item) => {
                 const tone = NAV_TONES[item.sectionId] ?? "var(--accent-solid)";
 
@@ -57,7 +58,6 @@ export function NavList({ activeSection, items, className }: NavListProps) {
                 }
 
                 const active = activeSection === item.sectionId;
-                const Icon = item.icon;
                 const label =
                     item.shortLabel !== undefined ? (
                         <>
@@ -73,45 +73,28 @@ export function NavList({ activeSection, items, className }: NavListProps) {
                 return (
                     <li
                         key={item.sectionId}
-                        style={{ "--nav-tone": tone } as React.CSSProperties}
+                        data-nav-section={item.sectionId}
+                        style={{ "--nav-tone": tone } as CSSProperties}
                     >
                         <a
                             href={item.href}
                             aria-current={active ? "true" : undefined}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                scrollToSection(item.sectionId);
+                            onClick={(event) => {
+                                if (!isSectionHref(item.href)) return;
+                                event.preventDefault();
+                                navigateToTarget(item.href, item.sectionId);
                             }}
                             className={cn(
-                                "relative inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5",
-                                "font-sans text-sm font-medium transition-all duration-[250ms] ease-standard",
-                                "hover:-translate-y-0.5 hover:bg-[color-mix(in_srgb,var(--nav-tone)_8%,transparent)] hover:text-[var(--nav-tone)] hover:shadow-[0_0_14px_color-mix(in_srgb,var(--nav-tone)_12%,transparent)]",
+                                "inline-flex items-center gap-1.5 py-1.5 no-underline",
+                                "font-sans text-[15px] tracking-[0.2px] transition-[color,text-shadow] duration-200 ease-out",
+                                "hover:text-white",
                                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                                 active
-                                    ? "text-[var(--nav-tone)]"
-                                    : "text-text-tertiary",
+                                    ? "font-semibold text-[#38BDF8] [text-shadow:0_0_12px_rgba(56,189,248,.35)]"
+                                    : "font-medium text-[#AAB4C5] [text-shadow:none]",
                             )}
                         >
-                            {active ? (
-                                <motion.span
-                                    layoutId="primary-nav-active-pill"
-                                    aria-hidden="true"
-                                    transition={
-                                        reduced
-                                            ? { duration: 0 }
-                                            : {
-                                                  duration: 0.25,
-                                                  ease: [0.4, 0, 0.2, 1],
-                                              }
-                                    }
-                                    className="absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--nav-tone)_12%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--nav-tone)_25%,transparent),0_0_18px_color-mix(in_srgb,var(--nav-tone)_15%,transparent)]"
-                                />
-                            ) : null}
-                            <Icon
-                                className="relative z-10 h-3.5 w-3.5 md:hidden"
-                                aria-hidden="true"
-                            />
-                            <span className="relative z-10">{label}</span>
+                            <span>{label}</span>
                         </a>
                     </li>
                 );

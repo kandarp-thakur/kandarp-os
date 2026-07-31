@@ -713,9 +713,9 @@ function CoderModelImpl({
                             </mesh>
                             {/* Fingers — four slim capsules (relaxed, slightly
                                 curled — "interacting", not a fist). */}
-                            {[-0.025, -0.008, 0.009, 0.026].map((fx, i) => (
+                            {[-0.025, -0.008, 0.009, 0.026].map((fx) => (
                                 <mesh
-                                    key={`rf-${i}`}
+                                    key={`rf-${fx}`}
                                     position={[fx, -0.1, 0.06]}
                                     rotation={[0.5, 0, 0]}
                                     material={skinMat}

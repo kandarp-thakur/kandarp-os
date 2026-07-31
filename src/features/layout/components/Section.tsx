@@ -77,6 +77,7 @@ export function Section({
     className,
     children,
     id,
+    style,
     ...props
 }: SectionProps) {
     return createElement(
@@ -84,6 +85,7 @@ export function Section({
         {
             ...props,
             id,
+            style: id ? { scrollMarginTop: "100px", ...style } : style,
             className: cn(
                 SPACING_CLASSES[spacing],
                 id ? SECTION_TONES[id] : undefined,

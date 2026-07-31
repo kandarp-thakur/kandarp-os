@@ -41,13 +41,31 @@ export function useDeviceTier(): DeviceTier {
         const memory =
             (navigator as Navigator & { deviceMemory?: number }).deviceMemory ??
             8;
+        const connection = (
+            navigator as Navigator & {
+                connection?: { saveData?: boolean; effectiveType?: string };
+            }
+        ).connection;
+        const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+        const reducedMotion = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
+        const constrainedNetwork =
+            connection?.saveData ||
+            connection?.effectiveType === "slow-2g" ||
+            connection?.effectiveType === "2g";
 
-        if (cores <= 2 || memory <= 2) {
+        if (
+            cores <= 2 ||
+            memory <= 2 ||
+            reducedMotion ||
+            (coarsePointer && constrainedNetwork)
+        ) {
             setTier("low");
             return;
         }
 
-        if (cores <= 4 || memory <= 4) {
+        if (cores <= 4 || memory <= 4 || coarsePointer || constrainedNetwork) {
             setTier("medium");
             return;
         }

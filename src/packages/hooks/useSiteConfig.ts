@@ -22,7 +22,10 @@ import { PUBLIC_TAGS } from "@backend/cache/revalidate";
  */
 
 /** The stable cache key — all callers share one cached identity. */
-const CACHE_KEY = "site-identity";
+// Version the key when the resolved identity shape changes. This prevents a
+// previously cached pre-Hero identity from surviving a deployment and being
+// passed to client components with `hero` missing.
+const CACHE_KEY = "site-identity-v2";
 
 /** The ISR tags that, when invalidated, purge this cache. */
 const CACHE_TAGS = [PUBLIC_TAGS.settings, PUBLIC_TAGS.profiles];

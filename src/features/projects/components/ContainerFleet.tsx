@@ -229,7 +229,7 @@ export function ContainerFleet({ containers, className }: ContainerFleetProps) {
                                     "h-3 w-3 shrink-0 rounded-full",
                                     STATUS_DOT[inspectedContainer.status],
                                     inspectedContainer.status === "running" &&
-                                    "animate-status-pulse",
+                                        "animate-status-pulse",
                                 )}
                                 role="img"
                                 aria-label={`Status: ${inspectedContainer.status}`}

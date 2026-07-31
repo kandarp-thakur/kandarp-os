@@ -10,7 +10,6 @@ import {
     getPublicBlogWordCount,
 } from "@backend/services/public-data";
 import { blogHeading, blogIntro } from "@/lib/blogSummary";
-import { formatWordCount } from "@/data/blog";
 import { SITE } from "@utils/constants";
 import type { BlogUnit } from "@packages/types/blog";
 
@@ -49,7 +48,16 @@ export default async function BlogPage() {
         { key: "entries", label: "Entries", value: String(posts.length) },
         { key: "units", label: "Units", value: String(units.length) },
         { key: "tags", label: "Tags", value: String(tags.length) },
-        { key: "words", label: "Words", value: formatWordCount(wordCount) },
+        {
+            key: "words",
+            label: "Words",
+            value:
+                wordCount >= 1_000_000
+                    ? `${(wordCount / 1_000_000).toFixed(1)}M`
+                    : wordCount >= 1_000
+                      ? `${(wordCount / 1_000).toFixed(0)}k`
+                      : String(wordCount),
+        },
     ];
 
     return (

@@ -3,6 +3,44 @@
 All notable changes to Kandarp OS are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] — 2026-07-31 — Full-Stack Administration and Verification
+
+### Added
+
+- Restored the PostgreSQL-backed CMS, authenticated administration console, admin APIs, Prisma schema/migrations, Docker deployment assets, and backend service boundaries.
+- Added normalized route helpers for authentication, request validation, API errors, audit activity, request logging, and generic content CRUD operations.
+- Added persisted, revocable sessions, Argon2id passwords, optional TOTP, normalized roles/permissions, and request-time per-user permission grants and denials.
+- Added hashed, scoped, expiring, revocable API credentials for `/api/v1/content` and `/api/v1/analytics/summary`; raw credentials are disclosed only once.
+- Added AES-256-GCM protection for managed integration and environment secrets with masked metadata-only responses.
+- Added PostgreSQL-backed public content view models, cache invalidation, analytics, activity logs, health checks, media handling, local/Cloudinary storage, and image optimization.
+- Added RBAC precedence tests for explicit grant, explicit denial, and role fallback behavior.
+
+### Changed
+
+- Public portfolio pages now consume persisted CMS records through `src/backend/services/public-data.ts`; typed `src/data` values remain seed/default inputs rather than the runtime source of truth.
+- Admin permission checks now resolve `UserPermission` overrides on every protected request, allowing active-session grants and denials to take effect immediately.
+- Prisma's configured seed command now uses `node --import tsx prisma/seed.ts`, while package seed/reset commands load `.env.local` explicitly, avoiding Windows child-shell resolution and missing-environment failures.
+- React list keys now use stable domain identifiers where possible; positional draft-editor keys are narrowly documented and lint-suppressed where no intrinsic identity exists.
+- Architecture, backend operations, security, API, deployment, media, logging, and folder-structure documentation now describe the current full-stack platform.
+
+### Database
+
+- Added five checked-in migrations covering the initial schema, contact submissions, API keys, hero configuration, and managed secrets.
+- Validated the Prisma schema and confirmed all five migrations are applied to the verification database.
+- Executed the PostgreSQL seed twice successfully, confirming command-level idempotency for roles, 23 permissions, 61 role-permission links, owner bootstrap data, and demo content.
+
+### Validation
+
+- `npm run lint` — no warnings or errors.
+- `npm run typecheck` — no TypeScript errors.
+- `npm test` — 15 tests passed, 0 failed.
+- Prisma schema validation — successful.
+- Prisma migration status — database schema up to date.
+- Admin sidebar audit — all 64 configured destinations resolve to route pages.
+- Authenticated development reads for settings, profile, projects, experience, skills, and other console modules successfully exercised persisted session validation and request-time permission lookup.
+- An authenticated project CRUD smoke test passed create, read, update, archive, restore, and delete-as-soft-archive operations; all five mutation audit actions were persisted and the temporary record, history, and audit rows were removed afterward.
+- `npm run build` completed successfully after stopping the development server on Windows to avoid Prisma native-DLL and `.next` contention.
+
 ## [Unreleased] — 2026-07-29 — Runtime Hydration Stability
 
 ### Fixed

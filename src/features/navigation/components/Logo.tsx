@@ -1,9 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import Link from "next/link";
-
-import { ROUTES, SITE } from "@utils/constants";
+import { SECTIONS, SITE } from "@utils/constants";
+import { navigateToTarget } from "@utils/navigation";
 import { cn } from "@utils/cn";
 
 interface LogoProps {
@@ -11,7 +9,7 @@ interface LogoProps {
     scrolled?: boolean;
     /** When true the wordmark is always visible (used in the mobile menu header). */
     alwaysShowWordmark?: boolean;
-    /** When true the logo renders in its active (Home) glass-pill state. */
+    /** When true the logo text is the active Home navigation label. */
     active?: boolean;
     /** Extra classes (escape hatch). */
     className?: string;
@@ -31,10 +29,8 @@ interface LogoProps {
  * on `md`+ in the navbar and always inside the mobile menu. Clicking navigates
  * home.
  *
- * The logo doubles as the **Home** navigation target: it represents the Hero
- * section. When `active` is true (driven by the navbar scroll-spy when the
- * hero is in view) it renders the same blue glass pill as the active nav
- * links, so the `∞ root@kandarp` mark is the active "Home" tab.
+ * The logo doubles as the **Home** navigation target. When `active` is true,
+ * its text alone receives the same restrained cyan glow as active nav links.
  */
 export function Logo({
     scrolled = false,
@@ -46,33 +42,23 @@ export function Logo({
 }: LogoProps) {
     const name = siteName ?? SITE.name;
     const host = userAtHost ?? SITE.userAtHost;
-    const reduced = useReducedMotion() === true;
 
     return (
-        <Link
-            href={ROUTES.home}
+        <a
+            href={`#${SECTIONS.hero}`}
+            onClick={(event) => {
+                event.preventDefault();
+                navigateToTarget(`#${SECTIONS.hero}`, SECTIONS.hero);
+            }}
             aria-label={`${name} — home`}
             aria-current={active ? "true" : undefined}
             className={cn(
-                "relative inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 [--nav-tone:var(--docker-blue)]",
-                "transition-all duration-[250ms] ease-standard",
-                "hover:-translate-y-0.5 hover:bg-[color-mix(in_srgb,var(--nav-tone)_8%,transparent)] hover:shadow-[0_0_14px_color-mix(in_srgb,var(--nav-tone)_12%,transparent)]",
+                "inline-flex items-center gap-2 px-2 py-1 [--nav-tone:var(--docker-blue)]",
+                "transition-[color,text-shadow] duration-200 ease-out hover:text-white",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                 className,
             )}
         >
-            {active ? (
-                <motion.span
-                    layoutId="primary-nav-active-pill"
-                    aria-hidden="true"
-                    transition={
-                        reduced
-                            ? { duration: 0 }
-                            : { duration: 0.25, ease: [0.4, 0, 0.2, 1] }
-                    }
-                    className="absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--nav-tone)_12%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--nav-tone)_25%,transparent),0_0_18px_color-mix(in_srgb,var(--nav-tone)_15%,transparent)]"
-                />
-            ) : null}
             <span
                 aria-hidden="true"
                 className={cn(
@@ -84,14 +70,16 @@ export function Logo({
             </span>
             <span
                 className={cn(
-                    "relative z-10 font-mono text-sm font-medium tracking-tight transition-colors duration-[250ms]",
-                    active ? "text-[var(--nav-tone)]" : "text-text-primary",
+                    "relative z-10 font-mono text-sm tracking-tight transition-[color,text-shadow] duration-200 ease-out",
+                    active
+                        ? "font-semibold text-[#38BDF8] [text-shadow:0_0_12px_rgba(56,189,248,.35)]"
+                        : "font-medium text-[#AAB4C5] [text-shadow:none]",
                     alwaysShowWordmark ? "inline" : "hidden md:inline",
                 )}
             >
                 {host}
             </span>
-        </Link>
+        </a>
     );
 }
 

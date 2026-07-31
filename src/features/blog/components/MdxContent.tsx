@@ -210,10 +210,16 @@ function extractText(node: React.ReactNode): string {
 /** Wrap unordered-list items with an accent `•` marker. */
 function wrapListItems(children: React.ReactNode, marker: string) {
     const items = Array.isArray(children) ? children : [children];
-    return items.map((item, index) => {
-        const el = item as { props?: { children?: React.ReactNode } };
+    return items.map((item) => {
+        const el = item as {
+            key?: React.Key;
+            props?: { children?: React.ReactNode };
+        };
         return (
-            <li key={`${marker}-${index}`} className="flex gap-2.5">
+            <li
+                key={el?.key ?? `${marker}-${extractText(item)}`}
+                className="flex gap-2.5"
+            >
                 <span
                     className="mt-0.5 shrink-0 font-mono text-accent-solid"
                     aria-hidden="true"
@@ -232,9 +238,15 @@ function wrapListItems(children: React.ReactNode, marker: string) {
 function wrapOrderedList(children: React.ReactNode) {
     const items = Array.isArray(children) ? children : [children];
     return items.map((item, index) => {
-        const el = item as { props?: { children?: React.ReactNode } };
+        const el = item as {
+            key?: React.Key;
+            props?: { children?: React.ReactNode };
+        };
         return (
-            <li key={`ol-${index}`} className="flex gap-2.5">
+            <li
+                key={el?.key ?? `ol-${extractText(item)}`}
+                className="flex gap-2.5"
+            >
                 <span
                     className="mt-0.5 shrink-0 font-mono text-accent-solid"
                     aria-hidden="true"

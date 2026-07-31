@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SkillsMesh } from "@features/skills/components/SkillsMesh";
 import { PageHeader } from "@features/shared/components/PageHeader";
 import { StatPills } from "@features/shared/components/StatPills";
-import { deriveEdges } from "@/data/skills";
+import { deriveSkillEdges } from "@/lib/skill-graph";
 import {
     getPublicSkillStats,
     getPublicSkills,
@@ -37,7 +37,7 @@ export default async function SkillsPage() {
         getPublicSkills(),
         getPublicSkillStats(),
     ]);
-    const edges = deriveEdges(nodes);
+    const edges = deriveSkillEdges(nodes);
 
     return (
         <main className="relative isolate z-20 mx-auto flex min-h-screen max-w-5xl flex-col px-4 py-16 sm:px-6">

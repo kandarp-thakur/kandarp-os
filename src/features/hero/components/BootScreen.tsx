@@ -126,14 +126,29 @@ export function BootScreen({ onComplete }: BootScreenProps) {
             doneTimer = window.setTimeout(complete, 500);
         };
 
+        let lastProgress = -1;
+        let lastStageIndex = -1;
+
         const tick = (now: number) => {
             const elapsed = now - start;
             const t = Math.min(elapsed / BOOT_DURATION, 1);
             const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-            setProgress(Math.round(eased * 100));
-            setStageIndex(
-                Math.min(Math.floor(eased * STAGES.length), STAGES.length - 1),
+            const nextProgress = Math.round(eased * 100);
+            const nextStageIndex = Math.min(
+                Math.floor(eased * STAGES.length),
+                STAGES.length - 1,
             );
+
+            // The visual only exposes integer progress and a finite stage index.
+            // Avoid scheduling redundant React updates on every animation frame.
+            if (nextProgress !== lastProgress) {
+                lastProgress = nextProgress;
+                setProgress(nextProgress);
+            }
+            if (nextStageIndex !== lastStageIndex) {
+                lastStageIndex = nextStageIndex;
+                setStageIndex(nextStageIndex);
+            }
 
             if (t < 1) {
                 raf = requestAnimationFrame(tick);

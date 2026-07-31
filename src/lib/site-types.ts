@@ -1,16 +1,7 @@
 /**
- * Frontend-only shared site types.
- *
- * These are the lightweight view-model types the public site consumes for
- * navigation, socials, footer, and analytics. In the previous full-stack
- * architecture these lived in the admin domain schema
- * (`@backend/schemas/types`); for the frontend-only rebuild they are defined
- * here so the public chrome (navbar, footer, hero, layout) has a single,
- * dependency-free source of truth.
- *
- * Phase 2 (Admin Panel) will reintroduce the full CMS entity schemas; until
- * then the public site reads its content from the hardcoded `src/data/*.ts`
- * seed files via `src/lib/public-data.ts`.
+ * Shared public view-model types for navigation, socials, footer, and
+ * analytics. Persisted CMS entities are mapped to these shapes by the backend
+ * public-data service before they reach public components.
  */
 
 /** A single navigation entry. */

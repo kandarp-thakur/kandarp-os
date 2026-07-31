@@ -9,19 +9,22 @@ import {
     type Variants,
 } from "framer-motion";
 import { ArrowRight, BarChart3, Github, Linkedin, Mail } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { HeroBackground } from "@features/hero/components/HeroBackground";
 import { HeroTerminal } from "@features/hero/components/HeroTerminal";
 import { HeroScrollIndicator } from "@features/hero/components/HeroScrollIndicator";
 import { HeroPortrait } from "@features/hero/components/HeroPortrait";
-import { HERO_MOTION, HERO_BOOT_BANNER, HERO_BOOT_STATUS } from "@/data/hero";
-import { SECTIONS, SITE } from "@utils/constants";
-import { scrollToSection } from "@utils/navigation";
+import { HERO_MOTION } from "@/data/hero";
+import type { HeroConfig } from "@backend/schemas/types";
+import { navigateToTarget } from "@utils/navigation";
 import { cn } from "@utils/cn";
 
-/** Default split name for the gradient-on-first-word treatment (hero-design §2). */
-const DEFAULT_FIRST_NAME = "KANDARP";
-const DEFAULT_LAST_NAME = "KUMAR THAKUR";
+const SOCIAL_ICONS: Record<string, LucideIcon> = {
+    github: Github,
+    linkedin: Linkedin,
+    email: Mail,
+};
 
 /**
  * Hero section (hero-design §1–§8).
@@ -37,26 +40,15 @@ const DEFAULT_LAST_NAME = "KUMAR THAKUR";
  * per §8. Reduced motion renders everything statically with no transforms.
  */
 interface HeroSectionProps {
-    /** CMS-driven owner name (falls back to the hardcoded default). */
-    ownerName?: string;
-    /** CMS-driven user@host string (falls back to SITE.userAtHost). */
-    userAtHost?: string;
-    /** Optional CMS-driven resume URL. When absent, CTA scrolls to profile content. */
-    resumeUrl?: string;
+    /** Fully validated CMS-owned Hero view model. */
+    hero: HeroConfig;
+    /** CMS-driven user@host string. */
+    userAtHost: string;
 }
 
-export function HeroSection({
-    ownerName,
-    userAtHost,
-    resumeUrl,
-}: HeroSectionProps) {
-    const prompt = userAtHost ?? SITE.userAtHost;
-    const resumeHref = resumeUrl?.trim();
-
-    // Split the owner name for the gradient-on-first-word treatment. If the
-    // CMS provides a name, split on the first space; otherwise use the
-    // hardcoded default.
-    const fullName = ownerName ?? `${DEFAULT_FIRST_NAME} ${DEFAULT_LAST_NAME}`;
+export function HeroSection({ hero, userAtHost }: HeroSectionProps) {
+    const prompt = userAtHost;
+    const fullName = hero.title;
     const spaceIdx = fullName.indexOf(" ");
     const firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName;
     const lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1) : "";
@@ -109,11 +101,9 @@ export function HeroSection({
                 "hero relative isolate z-30 mx-auto flex min-h-screen w-full max-w-[1500px] flex-col justify-center overflow-hidden px-4 pb-20 pt-[100px] sm:px-6 sm:pb-24 md:pt-[100px] lg:px-12 lg:pt-[120px] 2xl:pt-[140px]",
             )}
         >
-            {/* Background placeholder — static layer until the 3D constellation
-                lands. The animated DevOps Infinity Loop (CloudInfinityBackground)
-                is mounted globally in layout.tsx as a fixed full-viewport
-                canvas at z-index: 0, so it sits behind this hero content. */}
-            <HeroBackground />
+            {/* The CMS can independently hide the Hero-scoped backdrop without
+                changing layout or affecting the page-wide background layers. */}
+            {hero.visual.backgroundEnabled ? <HeroBackground /> : null}
 
             {/* hero-grid — the two-column grid (task §Hero Grid). LEFT (45%)
                 holds the name / terminal / buttons; RIGHT (55%) holds the
@@ -149,13 +139,13 @@ export function HeroSection({
                         custom={HERO_MOTION.delay.eyebrow}
                     >
                         <p className="font-mono text-2xs uppercase tracking-[0.15em] text-text-tertiary">
-                            {prompt}:~$
+                            {hero.eyebrow || `${prompt}:~$`}
                         </p>
                         <p className="font-mono text-sm text-accent-solid">
-                            {HERO_BOOT_BANNER}
+                            {hero.bootBanner}
                         </p>
                         <p className="font-mono text-2xs text-text-tertiary">
-                            {HERO_BOOT_STATUS}
+                            {hero.bootStatus}
                         </p>
                     </motion.div>
 
@@ -180,13 +170,10 @@ export function HeroSection({
 
                     <div className="flex max-w-[580px] flex-col gap-4">
                         <p className="font-mono text-xl font-semibold tracking-[0.02em] text-accent-solid">
-                            DevOps Engineer
+                            {hero.subtitle}
                         </p>
                         <p className="max-w-[580px] text-lg leading-[1.65] text-text-secondary">
-                            I build reliable cloud infrastructure, secure
-                            networks, automated deployment pipelines, and
-                            production-ready systems that keep teams shipping
-                            safely.
+                            {hero.description}
                         </p>
                     </div>
 
@@ -194,7 +181,7 @@ export function HeroSection({
                         className="grid w-full max-w-[620px] grid-cols-1 gap-4 min-[420px]:grid-cols-3"
                         aria-label="Hero stats"
                     >
-                        {HERO_STATS.map((stat) => (
+                        {hero.stats.map((stat) => (
                             <div
                                 key={stat.label}
                                 className="glass-surface group flex h-[68px] flex-col justify-center rounded-xl px-[18px] text-left transition-all duration-slow ease-smooth hover:-translate-y-1 hover:border-accent-solid/40 hover:shadow-glow-sm"
@@ -217,7 +204,10 @@ export function HeroSection({
                         animate="visible"
                         custom={HERO_MOTION.delay.terminal}
                     >
-                        <HeroTerminal userAtHost={prompt} />
+                        <HeroTerminal
+                            userAtHost={prompt}
+                            terminal={hero.terminal}
+                        />
                     </motion.div>
 
                     {/* Buttons — fit content width on every breakpoint.
@@ -237,68 +227,71 @@ export function HeroSection({
                         animate="visible"
                         custom={HERO_MOTION.delay.buttons}
                     >
-                        <HeroButton
-                            onClick={() => scrollToSection(SECTIONS.containers)}
-                            variant="primary"
-                            icon={
-                                <ArrowRight
-                                    className="h-4 w-4"
-                                    strokeWidth={2}
-                                />
-                            }
-                        >
-                            View Containers
-                        </HeroButton>
-                        <HeroButton
-                            href={resumeHref}
-                            onClick={
-                                resumeHref
-                                    ? undefined
-                                    : () => scrollToSection(SECTIONS.whoami)
-                            }
-                            variant="glass"
-                            icon={
-                                <BarChart3
-                                    className="h-4 w-4"
-                                    strokeWidth={2}
-                                />
-                            }
-                            external={Boolean(resumeHref)}
-                        >
-                            System Profile
-                        </HeroButton>
-                        <HeroButton
-                            onClick={() => scrollToSection(SECTIONS.ssh)}
-                            variant="ghost"
-                            icon={<Mail className="h-4 w-4" strokeWidth={2} />}
-                        >
-                            SSH Access
-                        </HeroButton>
+                        {hero.ctas.map((cta, index) => {
+                            const Icon =
+                                index === 0
+                                    ? ArrowRight
+                                    : index === 1
+                                      ? BarChart3
+                                      : Mail;
+                            const anchor = cta.href.startsWith("#")
+                                ? cta.href.slice(1)
+                                : "";
+                            return (
+                                <HeroButton
+                                    key={cta.id}
+                                    href={anchor ? undefined : cta.href}
+                                    onClick={
+                                        anchor
+                                            ? () =>
+                                                  navigateToTarget(
+                                                      cta.href,
+                                                      anchor,
+                                                  )
+                                            : undefined
+                                    }
+                                    variant={cta.variant}
+                                    icon={
+                                        <Icon
+                                            className="h-4 w-4"
+                                            strokeWidth={2}
+                                        />
+                                    }
+                                    external={cta.external}
+                                >
+                                    {cta.label}
+                                </HeroButton>
+                            );
+                        })}
                     </motion.div>
 
                     <div
                         className="flex items-center gap-3 pt-1"
                         aria-label="Social links"
                     >
-                        {HERO_SOCIALS.map((social) => (
-                            <a
-                                key={social.label}
-                                href={social.href}
-                                target={social.external ? "_blank" : undefined}
-                                rel={
-                                    social.external
-                                        ? "noopener noreferrer"
-                                        : undefined
-                                }
-                                aria-label={social.label}
-                                className="glass-surface inline-flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition-all duration-slow ease-smooth hover:-translate-y-1 hover:rotate-3 hover:text-accent-solid hover:shadow-glow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid"
-                            >
-                                <social.Icon
-                                    className="h-4 w-4"
-                                    strokeWidth={2}
-                                />
-                            </a>
-                        ))}
+                        {hero.socials.map((social) => {
+                            const Icon =
+                                SOCIAL_ICONS[social.platform.toLowerCase()] ??
+                                Mail;
+                            return (
+                                <a
+                                    key={social.id}
+                                    href={social.href}
+                                    target={
+                                        social.external ? "_blank" : undefined
+                                    }
+                                    rel={
+                                        social.external
+                                            ? "noopener noreferrer"
+                                            : undefined
+                                    }
+                                    aria-label={social.label}
+                                    className="glass-surface inline-flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition-all duration-slow ease-smooth hover:-translate-y-1 hover:rotate-3 hover:text-accent-solid hover:shadow-glow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-solid"
+                                >
+                                    <Icon className="h-4 w-4" strokeWidth={2} />
+                                </a>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -424,33 +417,6 @@ function HeroButton({
         </motion.button>
     );
 }
-
-const HERO_STATS = [
-    { label: "Cloud", value: "AWS" },
-    { label: "Runtime", value: "Docker" },
-    { label: "Automation", value: "Python" },
-] as const;
-
-const HERO_SOCIALS = [
-    {
-        label: "GitHub profile",
-        href: "https://github.com/kandarp-thakur",
-        external: true,
-        Icon: Github,
-    },
-    {
-        label: "LinkedIn profile",
-        href: "https://www.linkedin.com/in/kandarp-kumar-thakur",
-        external: true,
-        Icon: Linkedin,
-    },
-    {
-        label: "Email Kandarp",
-        href: "mailto:kkthakur100101@gmail.com",
-        external: false,
-        Icon: Mail,
-    },
-] as const;
 
 /* -------------------------------------------------------------------------- */
 /* Motion variants                                                           */

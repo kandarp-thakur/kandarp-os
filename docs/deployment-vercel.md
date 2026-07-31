@@ -1,205 +1,184 @@
-# Deploying Kandarp OS to Vercel with a Custom Domain
+# Deploying Kandarp OS to Vercel
 
-> 🔒 **Security rule:** This document must **never** contain real secret
-> values (API keys, JWT secrets, passwords). All secrets belong only in the
-> Vercel **Environment Variables** dashboard. If a secret was ever committed
-> to this repo by accident, rotate it immediately and purge it from git
-> history.
+> Production deployment guide for the PostgreSQL-backed public portfolio and administration console.
 
-This guide walks you through deploying the portfolio to **Vercel** and
-pointing a **custom domain** at it. The public site (home, blog, projects,
-experience, skills, infrastructure, contact) is fully static/SSR and deploys
-to Vercel with zero changes.
+## Architecture Requirements
 
----
+Kandarp OS runs on Vercel as dynamic Next.js functions backed by external durable services:
 
-## 0. Prerequisites
+- a hosted PostgreSQL database for CMS, identity, sessions, analytics, and audit data;
+- Cloudinary for durable media uploads;
+- Vercel environment variables for runtime secrets;
+- checked-in Prisma migrations applied as a separate release step.
 
-| Requirement | Status |
-|---|---|
-| Code on `main` branch of `github.com/kandarp-thakur/kandarp-os` | ✅ |
-| `npm run build` passes locally (124 routes generated) | ✅ |
-| [`vercel.json`](../vercel.json) committed | ✅ |
-| A Vercel account (free tier is fine) | sign up at vercel.com |
-| A custom domain purchased from a registrar (GoDaddy, Namecheap, Cloudflare, etc.) | you provide |
+Vercel's function filesystem is ephemeral. Do not use the local `public/media` provider for production uploads. The public pages and admin console are both database-backed; neither should be treated as a static, file-only deployment.
 
----
+## 1. Prerequisites
 
-## 1. Import the project into Vercel
+- A Vercel project connected to the repository.
+- A PostgreSQL 14+ database reachable from Vercel functions.
+- A Cloudinary account when administrators will upload media.
+- Node.js 20 selected for the project.
+- Local quality gates and a clean production build completed before release.
 
-1. Go to **https://vercel.com/new**.
-2. Under **Import Git Repository**, find `kandarp-thakur/kandarp-os`.
-   - If it is not listed, click **Adjust GitHub App Permissions** and grant
-     access to the repository (or its organization).
-3. Click **Import**.
+No committed `vercel.json` is required. Vercel detects Next.js from [`package.json`](../package.json) and [`next.config.mjs`](../next.config.mjs).
 
-### Build & Output Settings
+## 2. Configure the Project
 
-Vercel auto-detects Next.js from [`package.json`](../package.json) and
-[`next.config.mjs`](../next.config.mjs). The committed
-[`vercel.json`](../vercel.json) already pins:
+Import the Git repository in Vercel and use:
 
-- **Framework preset:** Next.js
-- **Build command:** `next build`
-- **Install command:** `npm install`
-- **Region:** `bom1` (Mumbai — closest to your Asia/Calcutta timezone)
+| Setting | Value |
+| --- | --- |
+| Framework | Next.js |
+| Install command | `npm install` |
+| Build command | `npm run build` |
+| Output directory | Next.js default |
+| Node.js | 20.x |
 
-Leave the defaults and click **Deploy**. The first deployment will finish in
-~2–3 minutes and you will get a `*.vercel.app` preview URL.
+The build script generates Prisma Client before running `next build`.
 
----
+## 3. Configure Environment Variables
 
-## 2. Add Environment Variables
+Add secrets through **Project Settings → Environment Variables**. Never commit production values.
 
-Go to **Project → Settings → Environment Variables** and add the following.
-Use the **Production** environment (and Preview if you want it there too).
+### Required
 
-> ⚠️ **Never** commit real secrets to git. Add them only in the Vercel dashboard.
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Hosted PostgreSQL connection URL; use the provider's serverless/pooler URL when available |
+| `ADMIN_JWT_SECRET` | HMAC signing key, at least 32 random bytes |
+| `AUTH_SECRET` | Independent authentication key, at least 32 random bytes |
+| `MANAGED_SECRETS_KEY` | Independent AES-256-GCM key material, at least 32 random bytes |
+| `ADMIN_OWNER_EMAIL` | Bootstrap owner email used by the seed |
+| `ADMIN_OWNER_PASSWORD` | Unique bootstrap password; rotate after first login |
+| `NEXT_PUBLIC_SITE_URL` | Canonical HTTPS origin, without a trailing slash |
 
-### Required for the public site
+Generate each secret independently:
 
-| Name | Value | Notes |
-|---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `https://yourdomain.com` | Your final custom domain (with `https://`). Used for canonical URLs, sitemap, and Open Graph tags. |
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
 
-### Required for the admin console to boot in production
+Do not reuse one generated value for all three cryptographic purposes.
 
-| Name | Value | Notes |
-|---|---|---|
-| `ADMIN_JWT_SECRET` | _generate your own — see below_ | 96-byte hex string. HMAC-signs admin session JWTs. **Keep private; never commit to git.** |
-| `ADMIN_OWNER_EMAIL` | `you@yourdomain.com` | The first admin account seeded on boot. Change the password immediately after first login. |
-| `ADMIN_OWNER_PASSWORD` | a strong, unique password | Change on first login. |
+### Durable Media
 
-> **Generate `ADMIN_JWT_SECRET` locally — never paste a real secret into this
-> file or commit it to git.** Run this in your terminal and copy the output
-> into the Vercel dashboard only:
->
-> ```bash
-> node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-> ```
->
-> The result is a 96-character hex string. Paste it into the Vercel
-> **Environment Variables** UI as `ADMIN_JWT_SECRET`. Do **not** store it in
-> `.env.local`, `.env.example`, this doc, or any committed file.
+Configure the complete provider set:
 
-### Optional (only if you use the feature)
+| Variable | Purpose |
+| --- | --- |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary account name |
+| `CLOUDINARY_API_KEY` | Server-side API key |
+| `CLOUDINARY_API_SECRET` | Server-side API secret |
+| `CLOUDINARY_UPLOAD_FOLDER` | Optional folder prefix; defaults to `kandarp-os` |
 
-| Name | Example | Notes |
-|---|---|---|
-| `CONTACT_EMAIL_API_KEY` | `re_xxxxx` | Resend/SendGrid key for the contact form (`/api/contact`). |
-| `CONTACT_EMAIL_TO` | `hello@yourdomain.com` | Where contact submissions are delivered. |
-| `CONTACT_EMAIL_FROM` | `portfolio@yourdomain.com` | Must be a verified sender. |
-| `NEXT_PUBLIC_ANALYTICS_SRC` | `https://plausible.io/js/script.js` | Public analytics script. |
-| `NEXT_PUBLIC_ANALYTICS_DOMAIN` | `yourdomain.com` | Analytics site/domain id. |
-| `GITHUB_TOKEN` | `ghp_xxxxx` | For fetching repos in `/api/projects`. Server-only. |
+If this set is incomplete, the application selects local storage. Local storage is not durable on Vercel and therefore is unsuitable for production administration.
 
-After adding variables, click **Redeploy** so the new build picks them up.
+### Optional Integrations
 
----
+Configure contact email, public analytics, Sentry, and GitHub values only when the corresponding provider is enabled. See [`backend/configuration.md`](./backend/configuration.md) for the complete reference.
 
-## 3. Add your custom domain
+## 4. Apply Database Migrations
 
-1. Go to **Project → Settings → Domains**.
-2. Click **Add**, enter your root domain (e.g. `yourdomain.com`), and click **Add**.
-3. Add the `www` variant too (e.g. `www.yourdomain.com`) and set it to
-   **Redirect to** the root domain.
+Do not rely on request-time schema creation, `prisma db push`, or the Vercel function filesystem. Apply checked-in migrations from CI or a trusted release workstation before directing production traffic to a new application version:
 
-Vercel will show you the DNS records you need to create at your registrar.
+```bash
+npm ci
+node --env-file-if-exists=.env.local node_modules/prisma/build/index.js migrate deploy
+```
 
-### DNS records to add at your registrar
+In CI, `DATABASE_URL` should be supplied by the CI secret store rather than a committed file.
 
-| Type | Name / Host | Value / Points to | TTL |
-|---|---|---|---|
-| **A** | `@` (root) | `76.76.21.21` | Auto / 3600 |
-| **CNAME** | `www` | `cname.vercel-dns.com` | Auto / 3600 |
+Verify state after deployment:
 
-> The exact A-record IP and CNAME target are shown in the Vercel dashboard
-> after you add the domain — use those values if they differ from above.
+```bash
+node --env-file-if-exists=.env.local node_modules/prisma/build/index.js migrate status
+```
 
-### Verify the domain
+For a breaking schema change, use an expand-and-contract migration sequence so the old and new application versions can overlap safely during Vercel's rollout.
 
-1. Back in **Settings → Domains**, wait for the **DNS Configuration** and
-   **Domain Configuration** checks to turn green (usually a few minutes, up to
-   48 hours for slow registrars).
-2. Vercel automatically provisions an SSL/TLS certificate via Let's Encrypt.
-   Once it says **Valid Certificate**, your site is live at `https://yourdomain.com`.
+## 5. Seed System Data
 
----
+Run the idempotent seed once for a new environment and twice during release verification:
 
-## 4. Update `NEXT_PUBLIC_SITE_URL` to your domain
+```bash
+node --env-file-if-exists=.env.local node_modules/prisma/build/index.js db seed
+node --env-file-if-exists=.env.local node_modules/prisma/build/index.js db seed
+```
 
-After the domain is live, make sure `NEXT_PUBLIC_SITE_URL` in the Vercel
-environment variables matches your final domain exactly (including `https://`
-and no trailing slash). This value feeds:
+The configured command uses `node --import tsx prisma/seed.ts`. It upserts system roles, permissions, role links, and the owner while adding demo collections only when absent.
 
-- [`src/app/sitemap.ts`](../src/app/sitemap.ts) — the `<loc>` entries
-- [`src/app/robots.ts`](../src/app/robots.ts) — the sitemap reference
-- [`src/app/layout.tsx`](../src/app/layout.tsx) — canonical + Open Graph metadata
+Never depend on the first web request to initialize production data. Seed explicitly as a controlled deployment action.
 
-Then **Redeploy** so metadata points at the correct domain.
+## 6. Deploy and Verify
 
----
+Deploy only after migrations are current. Then verify:
 
-## 5. Every push deploys automatically
+1. `GET /api/health/live` returns `200`;
+2. `GET /api/health/ready` returns `200` and confirms database readiness;
+3. the public home and content pages render persisted CMS data;
+4. `/admin/login` authenticates the seeded owner;
+5. an authenticated read such as `/api/admin/settings` succeeds;
+6. Cloudinary upload and delivery work if media management is enabled;
+7. logs do not contain cookies, bearer keys, passwords, or managed secrets.
 
-Because the project is connected to GitHub, every `git push origin main`
-triggers a new production deployment. Pull requests get isolated **Preview
-deployments** with their own `*.vercel.app` URL.
+If readiness returns `503`, do not direct production traffic to that deployment until database connectivity and required production configuration are corrected.
 
----
+## 7. Custom Domain
 
-## ⚠️ Important limitation: the admin console on Vercel
+Add the root and optional `www` domains in **Project Settings → Domains**. Create the DNS records shown by Vercel; use those displayed values rather than hard-coding provider addresses from documentation.
 
-The admin console persists data to a **file-based JSON store** at
-`.admin-data/` (see [`src/lib/admin/store.ts`](../src/lib/admin/store.ts)) and
-writes uploaded media to `public/media/`.
+After TLS is active:
 
-**Vercel's serverless filesystem is read-only at runtime.** This means:
+1. set `NEXT_PUBLIC_SITE_URL` to the final root HTTPS URL;
+2. redeploy so sitemap, robots, canonical, and Open Graph metadata use the final origin;
+3. redirect the secondary hostname to the canonical hostname.
 
-- ✅ The **public portfolio site** (blog, projects, skills, etc.) works
-  perfectly — all of that content is read at **build time** from
-  [`content/`](../content) and [`src/data/`](../src/data) and baked into the
-  deployment.
-- ❌ **Admin writes will not persist** on Vercel. Any change made through the
-  admin UI (editing projects, uploading media, changing settings) will be lost
-  when the serverless function's ephemeral filesystem is recycled, and writes
-  may even throw errors.
+## 8. Security and Operations
 
-### Recommended path forward for the admin
+- Keep Production and Preview databases separate.
+- Use different signing/encryption keys in every environment.
+- Restrict database network access and prefer TLS-enabled pooled connections.
+- Rotate the bootstrap owner password immediately.
+- Enable TOTP for privileged accounts.
+- Issue scoped API keys and revoke unused credentials.
+- Use the activity log for administrative mutation review.
+- Use structured logs and request IDs for operational diagnosis.
+- Back up PostgreSQL through the database provider; the admin backup is an application-level export, not a replacement for physical/provider backups.
+- Rotate any secret that was exposed in source control, build logs, screenshots, or support output.
 
-To make the admin console production-usable on Vercel, swap the file store for
-a real database. The codebase is designed for exactly this —
-[`src/lib/admin/store.ts`](../src/lib/admin/store.ts) is documented as
-"the swappable seam" and [`src/lib/admin/repo.ts`](../src/lib/admin/repo.ts)
-is the public API, so only the store adapter needs to change. Good options:
+## 9. Preview Deployments
 
-- **Vercel Postgres** (built-in, free tier available)
-- **Vercel KV / Upstash Redis** for the session cache
-- **Vercel Blob** for media uploads (replaces `public/media/` writes)
+Preview deployments must not share the production database when they may execute migrations, seeds, tests, or administrative writes. Recommended options are:
 
-Until that swap is done, manage your content via the markdown/data files in
-git and rebuild — the public site will be fully functional on Vercel.
+- a dedicated preview database;
+- an isolated provider branch per preview;
+- disabled admin mutation access when only production data can be reached.
 
----
+Use preview-specific `NEXT_PUBLIC_SITE_URL` values only when metadata behavior must be tested; production canonical URLs should otherwise remain isolated from preview traffic.
 
-## 6. Quick troubleshooting
+## 10. Troubleshooting
 
-| Symptom | Fix |
-|---|---|
-| Build fails on Vercel but passes locally | Ensure Node 18.17+ is set in **Settings → General → Node.js Version**. |
-| Domain stays "Pending" | Double-check the A/CNAME records at your registrar; clear the previous DNS cache by lowering TTL. |
-| `ERR: ADMIN_JWT_SECRET must be set...` | You forgot to add the env var in the Vercel dashboard — add it and redeploy. |
-| Admin login works but changes vanish | Expected on Vercel's read-only FS — see the limitation note above. |
-| 404 on `/admin/*` after deploy | The admin routes are dynamic (`ƒ`) and need env vars present; redeploy after adding them. |
+| Symptom | Resolution |
+| --- | --- |
+| Build fails while loading Prisma configuration | Set a valid `DATABASE_URL` in the Vercel build environment |
+| Readiness returns `503` | Check production secrets, database reachability, TLS/pooler settings, and migration state |
+| Admin login fails after first deploy | Run the seed explicitly and verify owner environment values |
+| Admin content is missing | Confirm the deployment points to the intended database and that seed/migrations completed |
+| Uploaded files disappear | Configure all Cloudinary variables; Vercel local storage is ephemeral |
+| Prisma reports connection exhaustion | Use the database provider's serverless pooler and review connection limits |
+| A new API route returns authorization errors | Confirm role defaults, per-user overrides, and active session/API-key scopes |
+| Metadata references the preview domain | Set the production `NEXT_PUBLIC_SITE_URL` and redeploy |
 
----
+## Release Checklist
 
-## Summary checklist
-
-- [ ] Import repo into Vercel
-- [ ] Add environment variables (at least `NEXT_PUBLIC_SITE_URL` + `ADMIN_JWT_SECRET`)
-- [ ] Add custom domain in **Settings → Domains**
-- [ ] Create A + CNAME DNS records at your registrar
-- [ ] Wait for SSL certificate to provision
-- [ ] Set `NEXT_PUBLIC_SITE_URL` to `https://yourdomain.com` and redeploy
-- [ ] (Later) Migrate admin store to Vercel Postgres/Blob for persistence
+- [ ] Local lint, typecheck, tests, Prisma validation, and production build pass
+- [ ] Production and Preview environment variables are isolated
+- [ ] `DATABASE_URL` uses the appropriate hosted pooler/TLS configuration
+- [ ] Authentication and managed-secret keys are strong and independent
+- [ ] Cloudinary is configured for durable media
+- [ ] Checked-in migrations are applied before traffic is shifted
+- [ ] Idempotent seed completes twice without duplication
+- [ ] Liveness and readiness both return `200`
+- [ ] Owner password is rotated and TOTP is enabled
+- [ ] Custom domain, canonical metadata, sitemap, and robots output use the final origin

@@ -1,0 +1,150 @@
+openapi: 3.1.0
+info:
+  title: Kandarp OS API
+  version: 1.0.0
+  description: Public content and authenticated administration API for Kandarp OS.
+servers:
+  - url: /
+security: []
+tags:
+  - name: Health
+  - name: Public Content
+  - name: Public Analytics
+  - name: Authentication
+  - name: Administration
+paths:
+  /api/health/live:
+    get:
+      tags: [Health]
+      summary: Process liveness
+      responses:
+        '200':
+          description: Process is alive
+  /api/health/ready:
+    get:
+      tags: [Health]
+      summary: Dependency readiness
+      responses:
+        '200':
+          description: Dependencies are ready
+        '503':
+          description: A required dependency is unavailable
+  /api/v1/content:
+    get:
+      tags: [Public Content]
+      summary: Read published portfolio content
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200':
+          description: Published content aggregate
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/analytics/summary:
+    get:
+      tags: [Public Analytics]
+      summary: Read analytics summary
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200':
+          description: Analytics summary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/admin/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Start an admin session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Session established or TOTP challenge returned
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/admin/auth/verify-totp:
+    post:
+      tags: [Authentication]
+      summary: Complete a TOTP login challenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TotpVerificationRequest'
+      responses:
+        '200':
+          description: Session established
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/admin/auth/sessions:
+    get:
+      tags: [Authentication]
+      summary: List active sessions
+      security: [{ CookieAuth: [] }]
+      responses:
+        '200':
+          description: Active sessions
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags: [Authentication]
+      summary: Revoke one session or all other sessions
+      security: [{ CookieAuth: [] }]
+      responses:
+        '200':
+          description: Sessions revoked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/admin/backup:
+    get:
+      tags: [Administration]
+      summary: Export sanitized CMS data
+      security: [{ CookieAuth: [] }]
+      responses:
+        '200':
+          description: Backup document
+    post:
+      tags: [Administration]
+      summary: Restore CMS data from a backup document
+      security: [{ CookieAuth: [] }]
+      responses:
+        '200':
+          description: Restore completed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: kos_admin_session
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        remember: { type: boolean, default: false }
+    TotpVerificationRequest:
+      type: object
+      required: [challenge, code]
+      properties:
+        challenge:
+          type: string
+          description: Short-lived signed challenge returned after password verification.
+        code: { type: string, pattern: '^\\s*\\d{6}\\s*$' }
+  responses:
+    BadRequest:
+      description: Invalid request
+    Unauthorized:
+      description: Authentication required or credentials invalid

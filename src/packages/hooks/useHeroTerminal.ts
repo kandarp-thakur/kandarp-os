@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 
-import { HERO_ROLES, HERO_SCRIPT, HERO_TYPING } from "@/data/hero";
 import { useTimerQueue } from "@hooks/useTimerQueue";
 import type { HeroLine } from "@/data/hero";
+import type { HeroConfig } from "@backend/schemas/types";
 
 export interface UseHeroTerminal {
     /** Committed terminal lines (commands + outputs + the role line). */
@@ -20,9 +20,6 @@ export interface UseHeroTerminal {
     resume: () => void;
 }
 
-/** Mount delay before the first command types (hero-design §7.1: 1100ms). */
-const TYPE_START_DELAY = 1100;
-
 /**
  * Drives the hero terminal: a looping, character-by-character typing sequence
  * with a cycling `whoami` role (Concept A). Commands type slow (60ms/char);
@@ -32,7 +29,9 @@ const TYPE_START_DELAY = 1100;
  * Reduced motion renders the full script at once with the first role and a
  * static cursor — no typing, no cycling.
  */
-export function useHeroTerminal(): UseHeroTerminal {
+export function useHeroTerminal(
+    terminal: HeroConfig["terminal"],
+): UseHeroTerminal {
     const reduced = useReducedMotion() === true;
     const [lines, setLines] = useState<HeroLine[]>([]);
     const [typing, setTyping] = useState("");
@@ -49,7 +48,7 @@ export function useHeroTerminal(): UseHeroTerminal {
     useEffect(() => {
         if (!reduced) return;
         setLines(
-            HERO_SCRIPT.map((step): HeroLine => {
+            terminal.script.map((step): HeroLine => {
                 if (step.kind === "command")
                     return { id: nextId(), kind: "command", text: step.text };
                 if (step.kind === "output")
@@ -59,7 +58,7 @@ export function useHeroTerminal(): UseHeroTerminal {
         );
         setTyping("");
         setRoleIndex(0);
-    }, [reduced]);
+    }, [reduced, terminal.script]);
 
     useEffect(() => {
         // Re-arm the queue: StrictMode (dev) double-invokes effects, and the
@@ -97,17 +96,17 @@ export function useHeroTerminal(): UseHeroTerminal {
                 i += 1;
                 setTyping(text.slice(0, i));
                 if (i < text.length) {
-                    guard(tick, HERO_TYPING.char);
+                    guard(tick, terminal.char);
                 } else {
                     setLines((prev) => [
                         ...prev,
                         { id: nextId(), kind: "command", text },
                     ]);
                     setTyping("");
-                    guard(done, HERO_TYPING.pause);
+                    guard(done, terminal.pause);
                 }
             };
-            guard(tick, HERO_TYPING.char);
+            guard(tick, terminal.char);
         };
 
         const showOutput = (text: string, done: () => void) => {
@@ -115,7 +114,7 @@ export function useHeroTerminal(): UseHeroTerminal {
                 ...prev,
                 { id: nextId(), kind: "output", text },
             ]);
-            guard(done, HERO_TYPING.read);
+            guard(done, terminal.read);
         };
 
         const showRole = (done: () => void) => {
@@ -123,13 +122,15 @@ export function useHeroTerminal(): UseHeroTerminal {
             let cycle = 0;
             const next = () => {
                 if (cancelledRef.current) return;
-                setRoleIndex(roleCount.current % HERO_ROLES.length);
+                setRoleIndex(
+                    roleCount.current % Math.max(terminal.roles.length, 1),
+                );
                 roleCount.current += 1;
                 cycle += 1;
-                if (cycle < HERO_TYPING.roleCycles) {
-                    guard(next, HERO_TYPING.roleDwell);
+                if (cycle < terminal.roleCycles) {
+                    guard(next, terminal.roleDwell);
                 } else {
-                    guard(done, HERO_TYPING.read);
+                    guard(done, terminal.read);
                 }
             };
             next();
@@ -139,15 +140,15 @@ export function useHeroTerminal(): UseHeroTerminal {
             let idx = 0;
             const step = () => {
                 if (cancelledRef.current) return;
-                if (idx >= HERO_SCRIPT.length) {
+                if (idx >= terminal.script.length) {
                     guard(() => {
                         setLines([]);
                         idx = 0;
                         step();
-                    }, HERO_TYPING.loop);
+                    }, terminal.loop);
                     return;
                 }
-                const current = HERO_SCRIPT[idx];
+                const current = terminal.script[idx];
                 idx += 1;
                 if (!current) return; // unreachable; satisfies noUncheckedIndexedAccess
                 if (current.kind === "command") typeCommand(current.text, step);
@@ -158,13 +159,13 @@ export function useHeroTerminal(): UseHeroTerminal {
             step();
         };
 
-        guard(runScript, TYPE_START_DELAY);
+        guard(runScript, terminal.startDelay);
         return () => {
             cancelledRef.current = true;
             clearAll();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reduced]);
+    }, [reduced, terminal]);
 
     return {
         lines,

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-import { scrollToSection } from "@utils/navigation";
+import { isSectionHref, navigateToTarget } from "@utils/navigation";
 import { cn } from "@utils/cn";
 import type { NavChild, NavItem } from "@/data/navigation";
 
@@ -34,8 +34,8 @@ interface NavDropdownProps {
  *    open the panel and focus the first item; Escape closes and restores focus.
  *  - **Outside click** dismisses.
  *
- * The trigger is highlighted (accent-tinted) whenever any of its children is
- * the active section, so the user always knows which cluster they're inside.
+ * The trigger uses the same text-only active glow as direct navigation links
+ * whenever any of its children is the active section.
  *
  * A Client Component — it tracks open state, hover timers, and keyboard focus.
  */
@@ -95,10 +95,10 @@ export function NavDropdown({ item, activeSection, tone }: NavDropdownProps) {
     useEffect(() => cancelHover, [cancelHover]);
 
     const handleSelect = useCallback(
-        (sectionId: string) => {
+        (href: string, sectionId: string) => {
             close();
-            // Defer so the panel's exit animation doesn't fight the scroll.
-            requestAnimationFrame(() => scrollToSection(sectionId));
+            // Defer so the panel's exit animation doesn't fight navigation.
+            requestAnimationFrame(() => navigateToTarget(href, sectionId));
         },
         [close],
     );
@@ -106,6 +106,7 @@ export function NavDropdown({ item, activeSection, tone }: NavDropdownProps) {
     return (
         <li
             ref={wrapperRef}
+            data-nav-section={item.sectionId}
             className="relative"
             style={{ "--nav-tone": tone } as React.CSSProperties}
             onMouseEnter={openAfterDelay}
@@ -121,31 +122,16 @@ export function NavDropdown({ item, activeSection, tone }: NavDropdownProps) {
                     setOpen((v) => !v);
                 }}
                 className={cn(
-                    "relative inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5",
-                    "font-sans text-sm font-medium transition-all duration-[250ms] ease-standard",
-                    "hover:-translate-y-0.5 hover:bg-[color-mix(in_srgb,var(--nav-tone)_8%,transparent)] hover:text-[var(--nav-tone)] hover:shadow-[0_0_14px_color-mix(in_srgb,var(--nav-tone)_12%,transparent)]",
+                    "inline-flex items-center gap-1.5 py-1.5",
+                    "font-sans text-[15px] transition-[color,text-shadow] duration-200 ease-out",
+                    "hover:text-white",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
                     isChildActive
-                        ? "text-[var(--nav-tone)]"
-                        : "text-text-secondary",
+                        ? "font-semibold text-[#38BDF8] [text-shadow:0_0_12px_rgba(56,189,248,.35)]"
+                        : "font-medium text-[#AAB4C5] [text-shadow:none]",
                 )}
             >
-                {isChildActive ? (
-                    <motion.span
-                        layoutId="primary-nav-active-pill"
-                        aria-hidden="true"
-                        transition={
-                            reduced
-                                ? { duration: 0 }
-                                : {
-                                      duration: 0.25,
-                                      ease: [0.4, 0, 0.2, 1],
-                                  }
-                        }
-                        className="absolute inset-0 rounded-lg bg-[color-mix(in_srgb,var(--nav-tone)_12%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--nav-tone)_25%,transparent),0_0_18px_color-mix(in_srgb,var(--nav-tone)_15%,transparent)]"
-                    />
-                ) : null}
-                <span className="relative z-10">{item.label}</span>
+                <span>{item.label}</span>
                 <ChevronDown
                     className={cn(
                         "relative z-10 h-3.5 w-3.5 transition-transform duration-fast ease-standard",
@@ -189,7 +175,10 @@ export function NavDropdown({ item, activeSection, tone }: NavDropdownProps) {
                                     child={child}
                                     active={activeSection === child.sectionId}
                                     onSelect={() =>
-                                        handleSelect(child.sectionId)
+                                        handleSelect(
+                                            child.href,
+                                            child.sectionId,
+                                        )
                                     }
                                 />
                             ))}
@@ -220,35 +209,27 @@ function DropdownRow({ child, active, onSelect }: DropdownRowProps) {
             <a
                 role="menuitem"
                 href={child.href}
-                onClick={(e) => {
-                    e.preventDefault();
+                onClick={(event) => {
+                    if (!isSectionHref(child.href)) return;
+                    event.preventDefault();
                     onSelect();
                 }}
                 aria-current={active ? "true" : undefined}
                 className={cn(
-                    "flex items-start gap-3 rounded-lg px-3 py-2.5",
-                    "transition-colors duration-fast ease-standard",
+                    "flex items-start gap-3 px-3 py-2.5",
+                    "transition-[color,text-shadow] duration-200 ease-out",
+                    "hover:text-white",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focus",
-                    active ? "bg-accent-subtle" : "hover:bg-overlay-hover",
+                    active
+                        ? "font-semibold text-[#38BDF8] [text-shadow:0_0_12px_rgba(56,189,248,.35)]"
+                        : "font-medium text-[#AAB4C5] [text-shadow:none]",
                 )}
             >
-                <span
-                    className={cn(
-                        "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-                        active
-                            ? "bg-accent-solid text-text-inverse"
-                            : "bg-canvas-sunken text-text-tertiary",
-                    )}
-                >
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-current">
                     <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="flex flex-col">
-                    <span
-                        className={cn(
-                            "font-sans text-sm font-medium",
-                            active ? "text-accent-solid" : "text-text-primary",
-                        )}
-                    >
+                    <span className="font-sans text-sm text-current">
                         {child.label}
                     </span>
                     {child.description ? (

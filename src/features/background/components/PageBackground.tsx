@@ -37,7 +37,14 @@ const DevOpsBackground = lazy(() =>
     })),
 );
 
-export function PageBackground() {
+export interface PageBackgroundProps {
+    /** CMS-controlled particle visibility for the global background. */
+    particlesEnabled?: boolean;
+}
+
+export function PageBackground({
+    particlesEnabled = true,
+}: PageBackgroundProps) {
     // The constellation is lazy + ClientOnly (see above), so it never blocks
     // first paint / LCP — its JS is fetched async on the client. We mount it
     // immediately (no rAF gate) so the background appears as soon as the
@@ -45,7 +52,7 @@ export function PageBackground() {
     return (
         <ClientOnly>
             <Suspense fallback={null}>
-                <DevOpsBackground fixed />
+                <DevOpsBackground fixed particlesEnabled={particlesEnabled} />
             </Suspense>
         </ClientOnly>
     );

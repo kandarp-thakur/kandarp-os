@@ -2,11 +2,11 @@ import { Fragment } from "react";
 
 import { HeroSection } from "@features/hero/components/HeroSection";
 import { AboutTerminal } from "@features/about/components/AboutTerminal";
+import { AchievementsGrid } from "@features/about/components/AchievementsGrid";
 import { ExperienceTimeline } from "@features/experience/components/ExperienceTimeline";
 import { ContainerFleet } from "@features/projects/components/ContainerFleet";
 import { InfrastructureTopology } from "@features/infrastructure/components/InfrastructureTopology";
 import { SkillsMesh } from "@features/skills/components/SkillsMesh";
-import { AchievementsGrid } from "@features/about/components/AchievementsGrid";
 import { ContactTerminal } from "@features/contact/components/ContactTerminal";
 import { ConnectLinks } from "@features/contact/components/ConnectLinks";
 import { JournalStream } from "@features/blog/components/JournalStream";
@@ -15,30 +15,22 @@ import { StatPills } from "@features/shared/components/StatPills";
 import { SectionErrorBoundary } from "@features/shared/components/SectionErrorBoundary";
 import { Section } from "@features/layout/components/Section";
 import { Container } from "@features/layout/components/Container";
-import { deriveEdges } from "@/data/skills";
+import { deriveSkillEdges } from "@/lib/skill-graph";
 import {
-    getPublicAchievementStats,
-    getPublicAwards,
     getPublicBlogPostMetas,
-    getPublicBlogTags,
-    getPublicBlogUnits,
     getPublicBlogWordCount,
-    getPublicDeploymentStats,
     getPublicExperience,
-    getPublicFleetStats,
     getPublicInfraEdges,
     getPublicInfraNodes,
-    getPublicInfraStats,
     getPublicProjects,
-    getPublicSiteCustomization,
-    getPublicSkillStats,
     getPublicSkills,
+    getPublicAwards,
 } from "@backend/services/public-data";
 import { getSiteConfig } from "@hooks/useSiteConfig";
-import { formatWordCount } from "@/data/blog";
+import { resolveContactLinks } from "@/lib/contactLinks";
 import { SECTIONS } from "@utils/constants";
+import { ACHIEVEMENT_STATS } from "@/data/achievements";
 import type { BlogUnit } from "@packages/types/blog";
-import type { SectionConfig } from "@backend/schemas/types";
 
 /** Value color per fleet-stat key. */
 const FLEET_STAT_COLOR: Record<string, string> = {
@@ -64,14 +56,6 @@ const SKILL_STAT_COLOR: Record<string, string> = {
     learning: "text-warning",
 };
 
-/** Value color per achievement-stat key. */
-const ACHIEVEMENT_STAT_COLOR: Record<string, string> = {
-    total: "text-text-primary",
-    legendary: "text-amber-500",
-    epic: "text-blue-500",
-    rare: "text-sky-500",
-};
-
 /** Value color per journal-stat key. */
 const JOURNAL_STAT_COLOR: Record<string, string> = {
     entries: "text-text-primary",
@@ -81,54 +65,21 @@ const JOURNAL_STAT_COLOR: Record<string, string> = {
 };
 
 /**
- * The default section order, used when the CMS has no SiteCustomization or
- * when a section type is missing from the customization. Maps the
- * SiteCustomization `type` key to the anchor `id` from [`SECTIONS`](../utils/constants.ts).
+ * Canonical homepage order. These sections are always rendered so every
+ * primary navigation target remains present and the document order cannot
+ * drift away from the navbar order because of CMS configuration.
  */
-const DEFAULT_SECTION_ORDER: { type: string; id: string }[] = [
-    { type: "hero", id: SECTIONS.hero },
-    { type: "about", id: SECTIONS.whoami },
-    { type: "experience", id: SECTIONS.deployments },
-    { type: "projects", id: SECTIONS.containers },
-    { type: "infrastructure", id: SECTIONS.infrastructure },
-    { type: "skills", id: SECTIONS.toolkit },
-    { type: "achievements", id: SECTIONS.achievements },
-    { type: "blog", id: SECTIONS.logs },
-    { type: "contact", id: SECTIONS.ssh },
-];
-
-/**
- * Resolve the ordered + visible sections from the CMS SiteCustomization.
- *
- * If the customization is missing or has no sections, returns the default
- * order with all sections visible. Otherwise, filters by `visible` and sorts
- * by `order`, falling back to the default order for any missing types.
- */
-function resolveSectionOrder(
-    customization: { sections: SectionConfig[] } | null,
-): { type: string; id: string }[] {
-    if (!customization?.sections || customization.sections.length === 0) {
-        return DEFAULT_SECTION_ORDER;
-    }
-
-    // Build a lookup: type → { visible, order }
-    const lookup = new Map<string, { visible: boolean; order: number }>();
-    for (const s of customization.sections) {
-        lookup.set(s.type, { visible: s.visible, order: s.order });
-    }
-
-    return DEFAULT_SECTION_ORDER.map((entry) => {
-        const cfg = lookup.get(entry.type);
-        return {
-            type: entry.type,
-            id: entry.id,
-            visible: cfg?.visible ?? true,
-            order: cfg?.order ?? DEFAULT_SECTION_ORDER.indexOf(entry),
-        };
-    })
-        .filter((s) => s.visible)
-        .sort((a, b) => a.order - b.order);
-}
+const SECTION_ORDER = [
+    "hero",
+    "about",
+    "experience",
+    "projects",
+    "skills",
+    "infrastructure",
+    "achievements",
+    "blog",
+    "contact",
+] as const;
 
 /**
  * Kandarp OS — the single-page engineering experience.
@@ -141,7 +92,7 @@ function resolveSectionOrder(
  * All data is CMS-driven: entity lists (experience, projects, infra, skills,
  * awards, blog) and derived stats come from the admin store via the public-data
  * layer, with fallback to the hardcoded `src/data/*.ts` if the store is empty.
- * Section visibility + order come from the SiteCustomization singleton.
+ * The section sequence is intentionally fixed to match primary navigation.
  */
 export default async function HomePage() {
     const [
@@ -152,15 +103,7 @@ export default async function HomePage() {
         infraEdges,
         skillNodes,
         achievements,
-        customization,
         config,
-        deploymentStats,
-        fleetStats,
-        infraStats,
-        skillStats,
-        achievementStats,
-        blogUnits,
-        blogTags,
         blogWordCount,
     ] = await Promise.all([
         getPublicBlogPostMetas(),
@@ -170,41 +113,132 @@ export default async function HomePage() {
         getPublicInfraEdges(),
         getPublicSkills(),
         getPublicAwards(),
-        getPublicSiteCustomization(),
         getSiteConfig(),
-        getPublicDeploymentStats(),
-        getPublicFleetStats(),
-        getPublicInfraStats(),
-        getPublicSkillStats(),
-        getPublicAchievementStats(),
-        getPublicBlogUnits(),
-        getPublicBlogTags(),
         getPublicBlogWordCount(),
     ]);
 
-    const skillEdges = deriveEdges(skillNodes);
-
-    const units = blogUnits.map(({ unit, count }) => ({
-        unit: unit as BlogUnit,
-        count,
-    }));
-
-    // The journal stats from the CMS already include entries/units/tags/words,
-    // but we re-derive from the resolved posts/units/tags/wordCount to ensure
-    // consistency with the actual rendered data (the CMS stats function reads
-    // the store independently). Use the locally-resolved values.
-    const resolvedJournalStats = [
-        { key: "entries", label: "Entries", value: String(posts.length) },
-        { key: "units", label: "Units", value: String(units.length) },
-        { key: "tags", label: "Tags", value: String(blogTags.length) },
+    // Derive all section stats from the collections already loaded for this
+    // page. This preserves the rendered values while avoiding duplicate cache
+    // lookups and repeated collection transformations during the request.
+    const activeDeployments = deployments.filter(
+        (deployment) => deployment.status === "active",
+    ).length;
+    const deploymentStats = [
+        { label: "Deployments", value: String(deployments.length) },
+        { label: "Uptime", value: deployments[0]?.uptime ?? "—" },
+        { label: "Current", value: `${activeDeployments} active` },
         {
-            key: "words",
-            label: "Words",
-            value: formatWordCount(blogWordCount),
+            label: "Focus",
+            value: deployments[0]?.stack?.[0] ?? "Cloud + Security",
         },
     ];
 
-    const orderedSections = resolveSectionOrder(customization);
+    const fleetStats = [
+        { key: "total", label: "Containers", value: String(containers.length) },
+        {
+            key: "running",
+            label: "Running",
+            value: String(
+                containers.filter((container) => container.status === "running")
+                    .length,
+            ),
+        },
+        {
+            key: "exited",
+            label: "Exited",
+            value: String(
+                containers.filter((container) => container.status === "exited")
+                    .length,
+            ),
+        },
+        {
+            key: "created",
+            label: "Created",
+            value: String(
+                containers.filter((container) => container.status === "created")
+                    .length,
+            ),
+        },
+    ];
+
+    const activeInfraNodes = infraNodes.filter(
+        (node) => node.status === "active",
+    ).length;
+    const infraStats = [
+        { key: "nodes", label: "Nodes", value: String(infraNodes.length) },
+        { key: "active", label: "Active", value: String(activeInfraNodes) },
+        { key: "edges", label: "Links", value: String(infraEdges.length) },
+        { key: "uptime", label: "Uptime", value: "—" },
+    ];
+
+    const skillStats = [
+        { key: "nodes", label: "Nodes", value: String(skillNodes.length) },
+        {
+            key: "active",
+            label: "Active",
+            value: String(
+                skillNodes.filter((node) => node.status === "active").length,
+            ),
+        },
+        {
+            key: "idle",
+            label: "Idle",
+            value: String(
+                skillNodes.filter((node) => node.status === "idle").length,
+            ),
+        },
+        {
+            key: "learning",
+            label: "Learning",
+            value: String(
+                skillNodes.filter((node) => node.status === "learning").length,
+            ),
+        },
+    ];
+
+    const blogUnits = posts.reduce<Map<string, number>>((counts, post) => {
+        counts.set(post.unit, (counts.get(post.unit) ?? 0) + 1);
+        return counts;
+    }, new Map());
+    const units = [...blogUnits.entries()]
+        .map(([unit, count]) => ({ unit, count }))
+        .sort((a, b) => b.count - a.count);
+    const blogTags = posts.reduce<Map<string, number>>((counts, post) => {
+        for (const tag of post.tags) {
+            counts.set(tag, (counts.get(tag) ?? 0) + 1);
+        }
+        return counts;
+    }, new Map());
+    const tags = [...blogTags.entries()]
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+
+    const skillEdges = deriveSkillEdges(skillNodes);
+
+    const unitsForDisplay = units.map(({ unit, count }) => ({
+        unit: unit as BlogUnit,
+        count,
+    }));
+    const tagsForDisplay = tags.map(({ tag, count }) => ({ tag, count }));
+
+    // Reuse metadata-derived units and tags; only word count needs full bodies.
+    const resolvedJournalStats = [
+        { key: "entries", label: "Entries", value: String(posts.length) },
+        { key: "units", label: "Units", value: String(units.length) },
+        { key: "tags", label: "Tags", value: String(tags.length) },
+        {
+            key: "words",
+            label: "Words",
+            value:
+                blogWordCount >= 1_000_000
+                    ? `${(blogWordCount / 1_000_000).toFixed(1)}M`
+                    : blogWordCount >= 1_000
+                      ? `${(blogWordCount / 1_000).toFixed(0)}k`
+                      : String(blogWordCount),
+        },
+    ];
+
+    const contactLinks = resolveContactLinks(config);
 
     // Build a lookup so we can render each section by type.
     const sectionMap: Record<string, React.ReactNode> = {
@@ -217,9 +251,8 @@ export default async function HomePage() {
             >
                 <Container maxWidth="full" className="px-0">
                     <HeroSection
-                        ownerName={config.owner}
+                        hero={config.hero}
                         userAtHost={config.userAtHost}
-                        resumeUrl={undefined}
                     />
                 </Container>
             </Section>
@@ -364,19 +397,15 @@ export default async function HomePage() {
                 <Container maxWidth="wide">
                     <PageHeader
                         eyebrow="// ACHIEVEMENTS"
-                        title="Unlocked Badges"
-                        command="cat /var/log/achievements.log"
+                        title="Achievements"
+                        command="achievementctl list --unlocked"
                         className="mb-8"
                     />
                     <StatPills
-                        stats={achievementStats}
-                        colorByKey={ACHIEVEMENT_STAT_COLOR}
+                        stats={[...ACHIEVEMENT_STATS]}
                         className="mb-12"
                     />
-                    <AchievementsGrid
-                        achievements={achievements}
-                        className="w-full"
-                    />
+                    <AchievementsGrid achievements={achievements} />
                 </Container>
             </Section>
         ),
@@ -401,8 +430,8 @@ export default async function HomePage() {
                     />
                     <JournalStream
                         posts={posts}
-                        units={units}
-                        tags={blogTags}
+                        units={unitsForDisplay}
+                        tags={tagsForDisplay}
                         className="w-full"
                     />
                 </Container>
@@ -422,12 +451,12 @@ export default async function HomePage() {
                         command={`ssh ${config.userAtHost}`}
                         className="mb-10"
                     />
-                    <ContactTerminal />
+                    <ContactTerminal socials={contactLinks} />
 
                     {/* Visible, clickable connect channels — a single-click
                         companion to the terminal for visitors who don't know
                         to type `github`, `email`, etc. */}
-                    <ConnectLinks className="mt-8" />
+                    <ConnectLinks socials={contactLinks} className="mt-8" />
                 </Container>
             </Section>
         ),
@@ -435,7 +464,7 @@ export default async function HomePage() {
 
     return (
         <main className="relative isolate z-20">
-            {/* Render sections in the CMS-driven order, skipping hidden ones.
+            {/* Render every section in the canonical navigation order.
 
                 NOTE: The BootScreen overlay is intentionally NOT rendered here.
                 It used to live as the first child of <main>, but its
@@ -447,16 +476,16 @@ export default async function HomePage() {
                 fixed-position sibling of AppShell, where it cannot affect the
                 page's render strategy. It is `position: fixed`, so placement in
                 the tree does not change its visual behavior. */}
-            {orderedSections.map((entry) => (
-                <Fragment key={entry.type}>
+            {SECTION_ORDER.map((type) => (
+                <Fragment key={type}>
                     {/* Per-section error boundary (Phase 6 resilience): if any
                         single section throws during render/hydration, only that
                         section falls back to an inline "unavailable" notice.
                         Every sibling section — and the navbar + footer — keep
                         rendering, so the homepage can never be blanked by one
                         failing component. */}
-                    <SectionErrorBoundary label={entry.type}>
-                        {sectionMap[entry.type]}
+                    <SectionErrorBoundary label={type}>
+                        {sectionMap[type]}
                     </SectionErrorBoundary>
                 </Fragment>
             ))}

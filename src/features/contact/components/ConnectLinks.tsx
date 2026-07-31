@@ -1,7 +1,9 @@
-import { socials } from "@/data/socials";
+import type { SocialLink } from "@packages/types/contact";
 import { cn } from "@utils/cn";
 
 interface ConnectLinksProps {
+    /** CMS-resolved contact links rendered in display order. */
+    socials: SocialLink[];
     /** Extra classes (escape hatch). */
     className?: string;
 }
@@ -11,17 +13,17 @@ interface ConnectLinksProps {
  *
  * The connect section's terminal is the primary interaction, but a visitor who
  * doesn't know to type `github` should still be able to reach the channels in a
- * single click. This grid renders the validated [`socials`](../../data/socials.ts)
- * as accessible anchor cards — one source of truth, no duplicated copy.
+ * single click. This grid renders validated, CMS-resolved links as accessible
+ * anchor cards — one source of truth, no duplicated copy.
  *
  * Each card shows the channel label, its handle, and a one-line description,
  * styled as a terminal directory entry (`drwxr-xr-x`-style) to match the OS
  * aesthetic. External links open in a new tab with `noopener noreferrer`;
  * `mailto:` / `tel:` / internal paths stay in-tab.
  *
- * A Server Component — it renders static data with no interactivity.
+ * A Server Component — it renders data with no interactivity.
  */
-export function ConnectLinks({ className }: ConnectLinksProps) {
+export function ConnectLinks({ socials, className }: ConnectLinksProps) {
     return (
         <ul
             className={cn(

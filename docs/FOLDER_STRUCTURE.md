@@ -1,149 +1,125 @@
-# Folder Structure — Kandarp OS (Phase 1)
+# Folder Structure — Kandarp OS Full-Stack Platform
 
-The full source tree of the frontend-only build. Paths are relative to the repo root.
+Paths are relative to the repository root.
 
-```
+```text
 kandarp-os/
-├── README.md
-├── CHANGELOG.md
-├── next.config.mjs              # Next.js config (security headers, optimisations)
-├── package.json                 # scripts + dependencies (frontend-only)
-├── tsconfig.json                # strict TS + path aliases (@backend/* → src/lib/*)
-├── tailwind.config.ts           # Tailwind theme (design tokens)
-├── postcss.config.js
-├── .eslintrc.json
-├── .prettierrc / .prettierignore
-├── .gitignore / .npmrc
+├── README.md                     # setup and project overview
+├── CHANGELOG.md                  # release history
+├── Dockerfile                    # production application image
+├── docker-compose.yml            # local application + PostgreSQL
+├── docker-compose.server.yml     # server deployment composition
+├── next.config.mjs               # Next.js, CSP, headers, image policy
+├── prisma.config.ts              # Prisma schema, migrations, seed command
+├── package.json                  # scripts and dependencies
+├── tsconfig.json                 # strict TypeScript and aliases
 │
-├── content/
-│   └── blog/                    # MDX blog posts (frontmatter + body)
+├── prisma/
+│   ├── schema.prisma             # PostgreSQL data model
+│   ├── seed.ts                   # idempotent RBAC, owner, and demo seed
+│   └── migrations/               # immutable migration history
 │
 ├── public/
-│   ├── images/profile/          # hero portrait (webp)
-│   ├── media/                   # generated media variants
-│   ├── icons/                   # favicon, icons
-│   ├── fonts/                   # self-hosted fonts
+│   ├── media/                    # local-storage media objects
 │   └── opengraph-image.svg
 │
-├── docs/                        # ← this documentation set
-│   ├── README.md
-│   ├── ARCHITECTURE.md
-│   ├── FOLDER_STRUCTURE.md
-│   ├── PROJECT_SPEC.md
-│   ├── COMPONENT_GUIDE.md
-│   ├── STYLE_GUIDE.md
-│   ├── ROADMAP.md
-│   ├── CHANGELOG.md
-│   └── (design docs: hero-design, blog-page-design, …)
+├── docs/
+│   ├── architecture.md           # full-stack runtime design
+│   ├── FOLDER_STRUCTURE.md       # this guide
+│   ├── deployment-vercel.md      # deployment guidance
+│   ├── backend/
+│   │   ├── README.md             # backend/admin operations
+│   │   ├── api-reference.md      # route contract reference
+│   │   ├── openapi.yaml          # machine-readable API specification
+│   │   ├── security.md           # auth, RBAC, API keys, and controls
+│   │   ├── configuration.md      # environment variables and providers
+│   │   ├── media.md              # storage and image processing
+│   │   └── logging.md            # structured logging
+│   └── ...                       # UI, design, Three.js, and feature guides
 │
 └── src/
-    ├── app/                     # Next.js App Router
-    │   ├── layout.tsx           # root layout (providers, background, chrome)
-    │   ├── page.tsx             # home — single-page OS experience
-    │   ├── loading.tsx          # route loading UI
-    │   ├── error.tsx            # route error boundary
-    │   ├── not-found.tsx        # 404
-    │   ├── globals.css          # global styles + token imports
-    │   ├── icon.svg             # favicon
-    │   ├── manifest.ts          # PWA manifest
-    │   ├── robots.ts            # robots.txt
-    │   ├── sitemap.ts           # dynamic sitemap
-    │   └── (public)/            # public route group
-    │       ├── about/           # /about
-    │       ├── background-preview/
-    │       ├── blog/            # /blog, /blog/[slug], /blog/tags, /blog/tags/[tag]
-    │       ├── cloud-infinity-preview/
-    │       ├── contact/         # /contact
-    │       ├── experience/      # /experience
-    │       ├── infrastructure/  # /infrastructure
-    │       ├── projects/        # /projects
-    │       └── skills/          # /skills
+    ├── middleware.ts             # admin JWT gate, rate limit, CSRF, limits
     │
-    ├── assets/
-    │   └── fonts.ts             # next/font loaders (Space Grotesk, Inter, JetBrains Mono)
+    ├── app/                      # Next.js App Router
+    │   ├── (public)/             # public portfolio routes
+    │   ├── admin/
+    │   │   ├── login/            # authentication entry
+    │   │   └── (console)/        # authenticated administration pages
+    │   ├── api/
+    │   │   ├── admin/            # cookie/session-authenticated APIs
+    │   │   ├── v1/               # API-key-authenticated APIs
+    │   │   ├── health/           # live and ready probes
+    │   │   └── contact/          # public bounded contact submission
+    │   ├── layout.tsx
+    │   ├── page.tsx
+    │   └── globals.css
     │
-    ├── data/                    # hardcoded content (single source of truth)
-    │   ├── about.ts             # about terminal commands + bio
-    │   ├── achievements.ts      # achievement badges + stats
-    │   ├── blog.ts              # blog unit registry, tints, stat labels
-    │   ├── contactCommands.ts   # contact terminal commands
-    │   ├── experience.ts        # experience deployments + stats
-    │   ├── hero.ts              # hero boot script, roles, motion tokens
-    │   ├── infrastructure.ts    # infra nodes/edges/stats
-    │   ├── navigation.ts        # nav items
-    │   ├── projects.ts          # project containers + fleet stats
-    │   ├── site.ts              # site metadata
-    │   ├── skills.ts            # skill nodes/edges/stats
-    │   └── socials.ts           # social/contact links
+    ├── backend/
+    │   ├── auth/                 # JWT, Argon2id, TOTP, sessions
+    │   ├── cache/                # revalidation tags and invalidation
+    │   ├── config/               # typed environment configuration
+    │   ├── controllers/          # generic CRUD and HTTP orchestration
+    │   ├── database/             # Prisma singleton
+    │   ├── logging/              # Pino logging
+    │   ├── middlewares/          # API auth, validation, request context
+    │   ├── permissions/          # role matrix and per-user overrides
+    │   ├── repositories/         # persistence and entity mapping
+    │   ├── schemas/              # Zod contracts and entity types
+    │   ├── security/             # encryption and TOTP utilities/tests
+    │   ├── services/             # domain workflows and public CMS data
+    │   └── storage/              # local/Cloudinary abstraction
     │
-    ├── features/                # feature-sliced UI components
-    │   ├── about/               # AboutTerminal, AboutOutputView, AchievementsGrid
-    │   ├── background/          # PageBackground, CloudInfinityBackground, DevOpsBackground
-    │   ├── blog/                # JournalStream, JournalEntry, MdxContent, TableOfContents…
-    │   ├── contact/             # ContactTerminal, ConnectLinks
-    │   ├── experience/          # ExperienceTimeline, DeploymentCard
-    │   ├── footer/              # Footer, FooterBottom, SocialLinks
-    │   ├── hero/                # BootScreen, HeroSection, HeroTerminal, HeroBackground…
-    │   ├── infrastructure/      # InfrastructureTopology, NodeInspect
-    │   ├── layout/              # AppShell, Container, Section, PageContainer…
-    │   ├── navigation/          # Navbar, NavList, MobileMenu, Logo, ScrollProgress…
-    │   ├── projects/            # ContainerFleet, ContainerInspect, ContainerRow
-    │   ├── shared/              # PageHeader, StatPills, CopyButton, ResponsiveImage…
-    │   └── skills/              # SkillsMesh
+    ├── data/                     # typed defaults and seed source content
     │
-    ├── infrastructure/          # cross-cutting infrastructure
-    │   ├── providers/           # AnimationProvider, ThreeProvider, Providers
-    │   ├── styles/              # tokens.css, devops-background.css, admin-tokens.css
-    │   └── three/               # Three.js scenes + hooks
-    │       ├── cloudInfinity/   # the signature background object
-    │       ├── coderModel/      # the hero coder avatar
-    │       ├── Avatar/          # avatar loader/materials/scene
-    │       ├── scenes/          # Scene3D, SceneFallback
-    │       └── hooks/           # useDeviceTier, useMouse, useReducedMotion…
+    ├── features/
+    │   ├── admin/                # admin shell, navigation, editors, tables
+    │   ├── hero/                 # public hero and terminal
+    │   ├── about/                # profile and achievements
+    │   ├── experience/           # deployment timeline
+    │   ├── projects/             # container-style portfolio
+    │   ├── infrastructure/       # topology visualization
+    │   ├── skills/               # skill graph
+    │   ├── blog/                 # journal and MDX rendering
+    │   ├── contact/              # contact UI and form
+    │   ├── navigation/           # public navigation
+    │   ├── footer/               # public footer
+    │   ├── background/           # animated backgrounds
+    │   ├── layout/               # layout primitives
+    │   └── shared/               # reusable public components
     │
-    ├── lib/                     # frontend-only data layer + helpers
-    │   ├── public-data.ts       # content accessors (the @backend seam)
-    │   ├── site-types.ts        # shared view-model types (NavItem, SocialLink…)
-    │   ├── revalidate.ts        # ISR tag registry (inert in FE-only build)
-    │   ├── blog.ts              # MDX content loader (fs + gray-matter)
-    │   ├── aboutSummary.ts      # about view-model helpers
-    │   ├── blogSummary.ts       # blog view-model helpers
-    │   ├── contactSummary.ts
-    │   ├── experienceSummary.ts
-    │   ├── infrastructureSummary.ts
-    │   ├── projectsSummary.ts
-    │   ├── skillsSummary.ts
-    │   ├── terminalCommands.ts
-    │   └── terminalLines.ts
+    ├── infrastructure/
+    │   ├── providers/            # application providers
+    │   ├── styles/               # public/admin design tokens
+    │   └── three/                # React Three Fiber scenes and hooks
     │
-    └── packages/                # reusable primitives
-        ├── config/              # site config
-        ├── hooks/               # useTerminal, useHeroTerminal, useSiteConfig, useAnalyticsBeacon…
-        ├── types/               # Zod schemas + inferred types (per domain)
-        ├── ui/                  # Button, Card, GlassCard, Badge, Modal, Input…
-        └── utils/               # cn, constants, navigation, index
+    ├── lib/                      # public view helpers and terminal utilities
+    └── packages/                 # reusable config, hooks, types, UI, utils
 ```
 
 ## Path Aliases
 
-Defined in [`tsconfig.json`](../tsconfig.json):
+Aliases are defined in `tsconfig.json`.
 
-| Alias                | Resolves to                |
-| -------------------- | -------------------------- |
-| `@/*`                | `src/*`                    |
-| `@packages/*`        | `src/packages/*`           |
-| `@features/*`        | `src/features/*`           |
-| `@hooks/*`           | `src/packages/hooks/*`     |
-| `@utils/*`           | `src/packages/utils/*`     |
-| `@config/*`          | `src/packages/config/*`    |
-| `@data/*`            | `src/data/*`               |
-| `@lib/*`             | `src/lib/*`                |
-| `@assets/*`          | `src/assets/*`             |
-| `@styles/*`          | `src/infrastructure/styles/*` |
-| `@providers`         | `src/infrastructure/providers/index.tsx` |
-| `@3d/*`              | `src/infrastructure/three/*` |
-| `@backend/services/public-data` | `src/lib/public-data.ts` (shim) |
-| `@backend/schemas/types`        | `src/lib/site-types.ts` (shim) |
-| `@backend/cache/revalidate`     | `src/lib/revalidate.ts` (shim) |
+| Alias | Target |
+| --- | --- |
+| `@/*` | `src/*` |
+| `@backend/*` | `src/backend/*` |
+| `@features/*` | `src/features/*` |
+| `@packages/*` | `src/packages/*` |
+| `@hooks/*` | `src/packages/hooks/*` |
+| `@utils/*` | `src/packages/utils/*` |
+| `@config/*` | `src/packages/config/*` |
+| `@data/*` | `src/data/*` |
+| `@lib/*` | `src/lib/*` |
+| `@styles/*` | `src/infrastructure/styles/*` |
+| `@providers` | `src/infrastructure/providers/index.tsx` |
+| `@3d/*` | `src/infrastructure/three/*` |
 
-> The `@backend/*` aliases are intentional seams. They redirect to the frontend-only shims so the public components keep their original imports. Phase 2 will repoint them to the new CMS implementation.
+## Placement Rules
+
+- Route-specific composition belongs in `src/app`; reusable UI belongs in `src/features` or `src/packages/ui`.
+- Database access belongs behind backend repositories/services, not public feature components.
+- Request validation contracts belong in `src/backend/schemas`.
+- Shared authentication and authorization belong in backend middleware and permission modules.
+- Public pages consume stable view models from `src/backend/services/public-data.ts` rather than Prisma records.
+- Migrations are append-only after deployment; schema changes require a new directory under `prisma/migrations`.
