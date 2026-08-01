@@ -97,6 +97,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # preflight. The CLI dependency graph is not included in Next's standalone trace,
 # so retain the complete installed dependency tree for this operational command.
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/src ./src
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
