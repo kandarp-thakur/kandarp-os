@@ -31,6 +31,11 @@ import { cn } from "@utils/cn";
  * synchronous (file-system read), while the CMS `getPublicBlogPosts()` is
  * async (store read). We merge the slug lists to cover both.
  */
+// Runtime CMS slugs can be created after a deployment. Rendering this route
+// dynamically also lets `notFound()` resolve through the request-aware root
+// layout instead of producing a DYNAMIC_SERVER_USAGE error.
+export const dynamic = "force-dynamic";
+
 export async function generateStaticParams() {
     const mdxPosts = getAllPosts().map((post) => ({ slug: post.slug }));
     const cmsPosts = await getPublicBlogPosts();
