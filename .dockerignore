@@ -44,8 +44,14 @@ Thumbs.db
 *.swp
 *.swo
 
-# Documentation (not needed at runtime)
+# Documentation (not needed at runtime), except the OpenAPI specification
+# consumed while statically generating /api/openapi.
 docs
+!docs/
+docs/*
+!docs/backend/
+docs/backend/*
+!docs/backend/openapi.yaml
 README.md
 *.md
 
