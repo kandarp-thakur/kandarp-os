@@ -113,6 +113,17 @@ export function JournalEntry({
                     </span>
                 </div>
 
+                {post.featuredImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={post.featuredImage}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="mt-3 aspect-[16/7] w-full rounded-lg object-cover"
+                    />
+                ) : null}
+
                 {/* Title (§5.5). */}
                 <h2
                     id={`entry-${post.slug}-title`}

@@ -85,7 +85,12 @@ jobs:
                   test -f docker-compose.server.yml
                   test -f .env
                   git fetch --prune origin main
-                  git checkout --detach "$DEPLOY_SHA"
+
+                  # The server checkout is deployment-only. Force the exact immutable
+                  # revision so a stale tracked file cannot block an otherwise valid release.
+                  # Untracked runtime files such as .env and uploaded media are preserved.
+                  git checkout --force --detach "$DEPLOY_SHA"
+                  test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
 
                   # Build before the migration preflight so the checked-in Prisma CLI and
                   # migrations match the revision that will receive production traffic.
@@ -93,21 +98,27 @@ jobs:
                   docker compose -f docker-compose.server.yml up -d db
                   docker compose -f docker-compose.server.yml run --rm app \
                     node node_modules/prisma/build/index.js migrate deploy
-                  docker compose -f docker-compose.server.yml up -d --no-build app
+                  docker compose -f docker-compose.server.yml up -d --no-build --force-recreate app
 
-                  for attempt in 1 2 3 4 5 6 7 8 9 10; do
-                    if curl --fail --silent --show-error "$EXPECTED_URL/api/health/live" >/dev/null; then
+                  # Check the application through the host loopback first. This diagnoses
+                  # container failures independently of DNS, TLS, CDN, and nginx state.
+                  for attempt in $(seq 1 24); do
+                    if curl --fail --silent --show-error \
+                      "http://127.0.0.1:3000/api/health/ready" >/dev/null; then
                       break
                     fi
-                    if [ "$attempt" -eq 10 ]; then
+                    if [ "$attempt" -eq 24 ]; then
                       docker compose -f docker-compose.server.yml ps
-                      docker compose -f docker-compose.server.yml logs --tail=100 app
+                      docker compose -f docker-compose.server.yml logs --tail=200 app
                       exit 1
                     fi
                     sleep 5
                   done
 
+                  # Verify the public reverse-proxy path without depending on mutable CMS
+                  # content. A deleted or renamed blog post must not fail a healthy release.
+                  curl --fail --silent --show-error "$EXPECTED_URL/api/health/live" >/dev/null
                   curl --fail --silent --show-error "$EXPECTED_URL/api/health/ready" >/dev/null
-                  curl --fail --silent --show-error "$EXPECTED_URL/blog/hye" >/dev/null
+                  curl --fail --silent --show-error "$EXPECTED_URL/" >/dev/null
                   test "$(curl --silent --output /dev/null --write-out '%{http_code}' "$EXPECTED_URL/blog/does-not-exist")" = 404
                   REMOTE

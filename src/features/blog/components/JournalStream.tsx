@@ -316,7 +316,9 @@ export function JournalStream({
                                 journalctl
                             </p>
                             <p className="mt-2 text-sm text-text-secondary">
-                                No entries match.
+                                {posts.length === 0
+                                    ? "No blog posts available."
+                                    : "No entries match."}
                             </p>
                         </div>
                     )}

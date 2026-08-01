@@ -440,6 +440,7 @@ function blogPostToPublic(p: AdminBlogPost): BlogPost {
 
     return {
         slug: p.slug,
+        featuredImage: p.featuredImage ?? p.coverImage,
         title: p.title,
         unit,
         priority,
@@ -478,8 +479,7 @@ export async function getPublicBlogPosts(): Promise<BlogPost[]> {
 
 /**
  * Fetch all published blog posts as lightweight metadata (no body) — for the
- * index stream, related-entries cards, and tag pages. Falls back to the MDX
- * pipeline if the store is empty.
+ * index stream, related-entries cards, and tag pages.
  */
 export async function getPublicBlogPostMetas(): Promise<BlogPostMeta[]> {
     const posts = await getPublicBlogPosts();
@@ -497,10 +497,7 @@ export async function getPublicBlogPostBySlug(
     return blogPostToPublic(post);
 }
 
-/**
- * Fetch the chronological neighbors (previous/next) of a blog post by slug.
- * Falls back to the MDX pipeline.
- */
+/** Fetch the chronological neighbors (previous/next) of a blog post by slug. */
 export async function getPublicBlogPostNeighbors(
     slug: string,
 ): Promise<{ previous: BlogPostMeta | null; next: BlogPostMeta | null }> {
@@ -515,10 +512,7 @@ export async function getPublicBlogPostNeighbors(
     return { previous: older ?? null, next: newer ?? null };
 }
 
-/**
- * Fetch related blog posts for a given slug (by shared tags + unit). Falls
- * back to the MDX pipeline.
- */
+/** Fetch related blog posts for a given slug (by shared tags + unit). */
 export async function getPublicRelatedPosts(
     slug: string,
     count = 3,
@@ -561,9 +555,7 @@ export async function getPublicRelatedPosts(
     return related;
 }
 
-/**
- * Fetch all blog posts carrying a given tag. Falls back to the MDX pipeline.
- */
+/** Fetch all blog posts carrying a given tag. */
 export async function getPublicPostsByTag(
     tag: string,
 ): Promise<BlogPostMeta[]> {
@@ -571,10 +563,7 @@ export async function getPublicPostsByTag(
     return posts.filter((post) => post.tags.includes(tag));
 }
 
-/**
- * Every unique tag across all published blog posts, with its post count.
- * Falls back to the MDX pipeline.
- */
+/** Every unique tag across all published blog posts, with its post count. */
 export async function getPublicBlogTags(): Promise<
     { tag: string; count: number }[]
 > {
@@ -590,10 +579,7 @@ export async function getPublicBlogTags(): Promise<
         .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
 
-/**
- * Every blog unit that has at least one published post, with its post count.
- * Falls back to the MDX pipeline.
- */
+/** Every blog unit that has at least one published post, with its post count. */
 export async function getPublicBlogUnits(): Promise<
     { unit: string; count: number }[]
 > {
@@ -607,10 +593,7 @@ export async function getPublicBlogUnits(): Promise<
         .sort((a, b) => b.count - a.count);
 }
 
-/**
- * Total word count across all published blog posts. Falls back to the MDX
- * pipeline.
- */
+/** Total word count across all published blog posts. */
 export async function getPublicBlogWordCount(): Promise<number> {
     const posts = await getPublicBlogPosts();
     return posts.reduce(

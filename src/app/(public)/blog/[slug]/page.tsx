@@ -113,6 +113,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     <span>{formatReadingTime(post.readingTime)}</span>
                 </div>
 
+                {post.featuredImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={post.featuredImage}
+                        alt=""
+                        loading="eager"
+                        decoding="async"
+                        className="mt-5 aspect-[16/7] w-full rounded-xl object-cover"
+                    />
+                ) : null}
+
                 {/* Title (§12.2). */}
                 <h1 className="mt-3 text-h1 font-bold tracking-tight text-text-primary">
                     {post.title}

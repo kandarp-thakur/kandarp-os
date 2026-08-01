@@ -135,9 +135,8 @@ interface RawFrontmatter {
 }
 
 /**
- * Parse a single `.mdx` file into a validated `BlogPost`. Throws on a
- * malformed entry so the build fails fast in dev rather than rendering a
- * broken journal — mirroring the projects/experience loader pattern.
+ * Parse a single `.mdx` file into a validated `BlogPost`. Callers log and
+ * isolate malformed files so one broken entry cannot take down the journal.
  */
 function parsePost(filePath: string, slug: string): BlogPost {
     const raw = fs.readFileSync(filePath, "utf8");
@@ -189,16 +188,13 @@ export function getAllPosts(): BlogPost[] {
             try {
                 return parsePost(filePath, slug);
             } catch (error) {
-                // Re-throw with the filename so the author knows which post
-                // has malformed frontmatter.
-                const message =
-                    error instanceof Error ? error.message : String(error);
-                throw new Error(
-                    `Failed to parse blog post "${file}": ${message}`,
-                );
+                // Keep malformed content visible in server/build logs while
+                // isolating the invalid file from the public collection.
+                console.error(`Failed to parse blog post "${file}":`, error);
+                return null;
             }
         })
-        .filter((post) => !post.draft)
+        .filter((post): post is BlogPost => post !== null && !post.draft)
         .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
     postsCache = posts;

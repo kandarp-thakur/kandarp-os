@@ -66,6 +66,8 @@ export type BlogHeading = z.infer<typeof blogHeadingSchema>;
 export const blogPostSchema = z.object({
     /** URL slug — the post path (`/blog/<slug>`). */
     slug: z.string(),
+    /** Optional featured/cover image URL or public media path. */
+    featuredImage: z.string().optional(),
     /** Post title. */
     title: z.string(),
     /** Category as a systemd unit, e.g. `devops` → `devops.service`. */
