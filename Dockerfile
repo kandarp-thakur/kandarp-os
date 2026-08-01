@@ -120,6 +120,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://127.0.0.1:3000/api/health/ready || exit 1
 
-# Apply committed migrations before accepting traffic, then hand PID 1 to Node.
-# Calling Prisma's bundled CLI directly avoids runtime package installation.
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && exec node server.js"]
+# Migrations are applied as an explicit deployment preflight before this image is
+# recreated. Keeping the web process independent from Prisma's development CLI
+# avoids bundling the CLI's large, rapidly changing dependency graph at runtime.
+CMD ["node", "server.js"]
