@@ -15,8 +15,7 @@ import { blogUnitSchema } from "@packages/types/blog";
 
 import { PUBLIC_TAGS } from "@backend/cache/revalidate";
 import { env } from "@backend/config/env-schema";
-import { ensureSeeded } from "@backend/services/seed";
-import { query } from "@backend/repositories/repo";
+import { query, findByField } from "@backend/repositories/repo";
 import {
     heroSchema,
     type Award,
@@ -96,7 +95,7 @@ export interface PublicImage {
 export async function resolveMediaAsset(
     mediaId: string | null | undefined,
 ): Promise<PublicImage | null> {
-    if (!mediaId || !(await ensureReady())) return null;
+    if (!mediaId || !hasDatabase()) return null;
     const asset = await findById<MediaAsset>("media", mediaId);
     if (!asset) return null;
     if (!asset.mimeType.startsWith("image/")) return null;
@@ -123,20 +122,14 @@ export async function resolveMediaAsset(
 /* ── Store-readiness guard ──────────────────────────────────────────────── */
 
 /**
- * Ensure the store has been seeded before reading. Returns true if the store
- * is ready; false if seeding failed (caller should use fallback data).
+ * Return whether the CMS database is configured.
+ *
+ * Public reads must not lazily seed the entire store. Seeding RBAC and every
+ * collection from a request path makes a blog page depend on unrelated writes
+ * and can block the request behind a database failure.
  */
-async function ensureReady(): Promise<boolean> {
-    // The public site remains usable with its static data when the CMS database
-    // is intentionally not configured (for example, frontend-only local work).
-    if (!env.DATABASE_URL) return false;
-
-    try {
-        await ensureSeeded();
-        return true;
-    } catch {
-        return false;
-    }
+function hasDatabase(): boolean {
+    return Boolean(env.DATABASE_URL);
 }
 
 /* ── Mappers: admin entity → public view-model ──────────────────────────── */
@@ -236,8 +229,7 @@ async function loadPublicCollection<TAdmin, TPublic>(
     mapper: (row: TAdmin) => TPublic,
     filters?: Record<string, unknown>,
 ): Promise<TPublic[]> {
-    const ready = await ensureReady();
-    if (!ready) return [];
+    if (!hasDatabase()) return [];
 
     const { rows } = await query<
         TAdmin & { id: string; createdAt: string; updatedAt: string }
@@ -287,7 +279,7 @@ const cachedInfraNodes = unstable_cache(
 );
 const cachedInfraEdges = unstable_cache(
     async (): Promise<InfraEdge[]> => {
-        if (!(await ensureReady())) return [];
+        if (!hasDatabase()) return [];
         const rows = await list<
             { from: string; to: string; label?: string } & {
                 id: string;
@@ -342,7 +334,7 @@ export async function getPublicAwards(): Promise<Achievement[]> {
  */
 const cachedSettings = unstable_cache(
     async (): Promise<Settings | null> => {
-        if (!(await ensureReady())) return null;
+        if (!hasDatabase()) return null;
         const rows = await list<Settings>("settings");
         return rows[0] ?? null;
     },
@@ -360,7 +352,7 @@ export async function getPublicSettings(): Promise<Settings | null> {
  */
 const cachedProfile = unstable_cache(
     async (): Promise<Profile | null> => {
-        if (!(await ensureReady())) return null;
+        if (!hasDatabase()) return null;
         const rows = await list<Profile>("profiles");
         return rows[0] ?? null;
     },
@@ -396,7 +388,7 @@ export async function getPublicHeroPortrait(): Promise<PublicImage | null> {
  */
 const cachedSiteCustomization = unstable_cache(
     async (): Promise<SiteCustomization | null> => {
-        if (!(await ensureReady())) return null;
+        if (!hasDatabase()) return null;
         const rows = await list<SiteCustomization>("siteCustomization");
         return rows[0] ?? null;
     },
@@ -465,7 +457,7 @@ function blogPostToPublic(p: AdminBlogPost): BlogPost {
 /** Fetch all published PostgreSQL blog posts, newest first. */
 const cachedBlogPosts = unstable_cache(
     async (): Promise<BlogPost[]> => {
-        if (!(await ensureReady())) return [];
+        if (!hasDatabase()) return [];
         const { rows } = await query<AdminBlogPost>("blogPosts", {
             filters: { status: "published" },
             includeArchived: false,
@@ -498,8 +490,11 @@ export async function getPublicBlogPostMetas(): Promise<BlogPostMeta[]> {
 export async function getPublicBlogPostBySlug(
     slug: string,
 ): Promise<BlogPost | null> {
-    const posts = await getPublicBlogPosts();
-    return posts.find((post) => post.slug === slug) ?? null;
+    if (!hasDatabase()) return null;
+
+    const post = await findByField<AdminBlogPost>("blogPosts", "slug", slug);
+    if (!post || post.status !== "published" || post.archivedAt) return null;
+    return blogPostToPublic(post);
 }
 
 /**
@@ -632,8 +627,7 @@ export async function getPublicBlogWordCount(): Promise<number> {
  * store is unavailable (the about section omits the education block).
  */
 export async function getPublicEducation(): Promise<Education[]> {
-    const ready = await ensureReady();
-    if (!ready) return [];
+    if (!hasDatabase()) return [];
 
     const { rows } = await query<Education>("education", {
         includeArchived: false,
@@ -653,8 +647,7 @@ export async function getPublicEducation(): Promise<Education[]> {
  * is unavailable.
  */
 export async function getPublicCertificates(): Promise<Certificate[]> {
-    const ready = await ensureReady();
-    if (!ready) return [];
+    if (!hasDatabase()) return [];
 
     const { rows } = await query<Certificate>("certificates", {
         includeArchived: false,
@@ -674,8 +667,7 @@ export async function getPublicCertificates(): Promise<Certificate[]> {
  * unavailable.
  */
 export async function getPublicServices(): Promise<Service[]> {
-    const ready = await ensureReady();
-    if (!ready) return [];
+    if (!hasDatabase()) return [];
 
     const { rows } = await query<Service>("services", {
         includeArchived: false,
@@ -695,8 +687,7 @@ export async function getPublicServices(): Promise<Service[]> {
  * unavailable.
  */
 export async function getPublicResumes(): Promise<Resume[]> {
-    const ready = await ensureReady();
-    if (!ready) return [];
+    if (!hasDatabase()) return [];
 
     const { rows } = await query<Resume>("resumes", {
         includeArchived: false,

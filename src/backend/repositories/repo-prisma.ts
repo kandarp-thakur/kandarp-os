@@ -795,20 +795,17 @@ export async function findById<T extends Entity>(
     return row ? (toEntity(name, row) as unknown as T) : null;
 }
 
-/** Find a single row by a field value (first match). */
+/** Find a single row by a scalar Prisma field value. */
 export async function findByField<T extends Entity>(
     name: CollectionName,
     field: string,
     value: unknown,
 ): Promise<T | null> {
-    const rows = await list<T>(name);
-    return (
-        rows.find(
-            (r) =>
-                getField(r as unknown as Record<string, unknown>, field) ===
-                value,
-        ) ?? null
-    );
+    const row = (await delegate(name).findFirst({
+        where: { [field]: value },
+        include: includeFor(name),
+    })) as Record<string, unknown> | null;
+    return row ? (toEntity(name, row) as unknown as T) : null;
 }
 
 /* ── Version history helpers ────────────────────────────────────────────── */
