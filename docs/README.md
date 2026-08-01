@@ -11,14 +11,14 @@
 | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | [`README.md`](./README.md)                                   | Documentation hub & navigation                                                                                                               | Everyone                |
 | [`vision.md`](./vision.md)                                   | Product vision, mission, and north-star goals                                                                                                | All stakeholders        |
-| [`architecture.md`](./architecture.md)                       | Full-stack system architecture, data flow, and technical decisions                                                                          | Engineers, Architects   |
+| [`architecture.md`](./architecture.md)                       | Full-stack system architecture, data flow, and technical decisions                                                                           | Engineers, Architects   |
 | [`admin-usage.md`](./admin-usage.md)                         | Admin console workflows, content lifecycle, identity, media, and operations                                                                  | Administrators          |
-| [`backend/README.md`](./backend/README.md)                   | Backend setup, database operations, verification, and deployment boundaries                                                                   | Backend Engineers       |
+| [`backend/README.md`](./backend/README.md)                   | Backend setup, database operations, verification, and deployment boundaries                                                                  | Backend Engineers       |
 | [`backend/api-reference.md`](./backend/api-reference.md)     | Admin, API-key, health, and public ingestion endpoint reference                                                                              | API Consumers           |
 | [`backend/security.md`](./backend/security.md)               | Authentication, sessions, RBAC, API credentials, encryption, and threat controls                                                             | Security Engineers      |
-| [`backend/configuration.md`](./backend/configuration.md)      | Environment variables and provider selection                                                                                                  | Operators               |
+| [`backend/configuration.md`](./backend/configuration.md)     | Environment variables and provider selection                                                                                                 | Operators               |
 | [`backend/media.md`](./backend/media.md)                     | Local/Cloudinary storage and image processing                                                                                                | Backend Engineers       |
-| [`backend/logging.md`](./backend/logging.md)                 | Pino logging, redaction, and request correlation                                                                                              | Operators               |
+| [`backend/logging.md`](./backend/logging.md)                 | Pino logging, redaction, and request correlation                                                                                             | Operators               |
 | [`roadmap.md`](./roadmap.md)                                 | Phased delivery plan and milestones                                                                                                          | PMs, Engineers          |
 | [`design-system.md`](./design-system.md)                     | Visual language, tokens, and theming                                                                                                         | Designers, Frontend     |
 | [`ui-system.md`](./ui-system.md)                             | Full UI spec: glassmorphism, colors, type, components, motion                                                                                | Designers, Frontend     |
@@ -168,7 +168,7 @@ Every document must declare its status at the top.
 
 ## 🧭 Backend and Operations
 
-The canonical backend and operations guides are linked above. The application is PostgreSQL-backed at runtime; `src/data` contains typed defaults and seed inputs, not a replacement for CMS persistence. Use [`deployment-vercel.md`](./deployment-vercel.md) for Vercel and hosted-database release procedures.
+The canonical backend and operations guides are linked above. The application is PostgreSQL-backed at runtime; `src/data` contains typed defaults and seed inputs, not a replacement for CMS persistence. Use [`deployment-oracle.md`](./deployment-oracle.md) for GitHub Actions and Oracle Cloud release procedures.
 
 ## 📂 Subdirectories
 

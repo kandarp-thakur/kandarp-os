@@ -1,0 +1,113 @@
+# =============================================================================
+# Kandarp OS - Oracle Cloud deployment
+# =============================================================================
+# Required repository/environment secrets:
+#   ORACLE_HOST       Public DNS name or IP of the Oracle server
+#   ORACLE_USER       SSH user with Docker Compose access
+#   ORACLE_SSH_KEY    Private SSH key for that user
+#   ORACLE_APP_DIR    Absolute checkout path on the server
+# Optional:
+#   ORACLE_PORT       SSH port (defaults to 22)
+# Required production variable:
+#   PRODUCTION_URL    Public HTTPS origin, without a trailing slash
+#
+# The server must already have Docker Engine, Compose v2, Git, and a checkout
+# of this repository. This workflow never writes application secrets to GitHub
+# logs or the repository; runtime secrets remain in the server-side .env file.
+# =============================================================================
+
+name: Deploy Oracle Production
+
+on:
+    workflow_dispatch:
+    push:
+        branches: [main]
+
+permissions:
+    contents: read
+
+concurrency:
+    group: oracle-production
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        name: Deploy to Oracle Cloud
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        environment:
+            name: production
+            url: ${{ vars.PRODUCTION_URL }}
+
+        steps:
+            - name: Checkout deployment revision
+              uses: actions/checkout@v4
+
+            - name: Configure SSH
+              shell: bash
+              env:
+                  ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+              run: |
+                  set -euo pipefail
+                  test -n "$ORACLE_SSH_KEY"
+                  install -d -m 700 "$HOME/.ssh"
+                  printf '%s\n' "$ORACLE_SSH_KEY" > "$HOME/.ssh/oracle_deploy_key"
+                  chmod 600 "$HOME/.ssh/oracle_deploy_key"
+                  ssh-keyscan -p "${{ secrets.ORACLE_PORT || 22 }}" -H "${{ secrets.ORACLE_HOST }}" >> "$HOME/.ssh/known_hosts"
+
+            - name: Deploy and verify
+              shell: bash
+              env:
+                  ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+                  ORACLE_USER: ${{ secrets.ORACLE_USER }}
+                  ORACLE_PORT: ${{ secrets.ORACLE_PORT || 22 }}
+                  ORACLE_APP_DIR: ${{ secrets.ORACLE_APP_DIR }}
+                  PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+                  DEPLOY_SHA: ${{ github.sha }}
+              run: |
+                  set -euo pipefail
+                  test -n "$ORACLE_HOST"
+                  test -n "$ORACLE_USER"
+                  test -n "$ORACLE_APP_DIR"
+                  test -n "$PRODUCTION_URL"
+
+                  ssh -i "$HOME/.ssh/oracle_deploy_key" \
+                    -p "$ORACLE_PORT" \
+                    -o BatchMode=yes \
+                    -o StrictHostKeyChecking=yes \
+                    "$ORACLE_USER@$ORACLE_HOST" \
+                    bash -s -- "$ORACLE_APP_DIR" "$PRODUCTION_URL" "$DEPLOY_SHA" <<'REMOTE'
+                  set -euo pipefail
+                  APP_DIR="$1"
+                  EXPECTED_URL="$2"
+                  DEPLOY_SHA="$3"
+                  cd "$APP_DIR"
+                  test -f docker-compose.server.yml
+                  test -f .env
+                  git fetch --prune origin main
+                  git checkout --detach "$DEPLOY_SHA"
+
+                  # Build before the migration preflight so the checked-in Prisma CLI and
+                  # migrations match the revision that will receive production traffic.
+                  docker compose -f docker-compose.server.yml build app
+                  docker compose -f docker-compose.server.yml up -d db
+                  docker compose -f docker-compose.server.yml run --rm app \
+                    node node_modules/prisma/build/index.js migrate deploy
+                  docker compose -f docker-compose.server.yml up -d --no-build app
+
+                  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+                    if curl --fail --silent --show-error "$EXPECTED_URL/api/health/live" >/dev/null; then
+                      break
+                    fi
+                    if [ "$attempt" -eq 10 ]; then
+                      docker compose -f docker-compose.server.yml ps
+                      docker compose -f docker-compose.server.yml logs --tail=100 app
+                      exit 1
+                    fi
+                    sleep 5
+                  done
+
+                  curl --fail --silent --show-error "$EXPECTED_URL/api/health/ready" >/dev/null
+                  curl --fail --silent --show-error "$EXPECTED_URL/blog/hye" >/dev/null
+                  test "$(curl --silent --output /dev/null --write-out '%{http_code}' "$EXPECTED_URL/blog/does-not-exist")" = 404
+                  REMOTE

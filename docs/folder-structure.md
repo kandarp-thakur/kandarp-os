@@ -37,7 +37,7 @@ Portfolio/
 ├── package.json
 ├── tailwind.config.ts   # Tailwind / design token config
 ├── tsconfig.json        # TypeScript config (path aliases)
-├── vercel.json          # Vercel deployment config (headers, caching)
+├── docker-compose.server.yml # Oracle production composition
 └── README.md            # Project entry (links to /docs)
 ```
 
@@ -99,6 +99,7 @@ src/app/
 ```
 
 **Rules:**
+
 - Each route folder contains a `page.tsx`. Optionally: `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`.
 - Route groups `(name)` are for **organization without URL impact**.
 - Pages are **thin** — they compose feature components, they don't contain logic.
@@ -129,6 +130,7 @@ src/backend/
 ```
 
 **Rules:**
+
 - A lower layer **never** imports from a higher one.
 - Controllers depend on the repository **interface**, not the Prisma implementation.
 - Every state-changing operation is audit-logged at the repository layer.
@@ -162,6 +164,7 @@ src/features/
 ```
 
 **Rules:**
+
 - One component per file, `PascalCase.tsx`.
 - Import via `@features/<feature>/components/<Component>`.
 - Cross-feature imports go through `@features/shared/` or `@packages/ui/`.
@@ -192,6 +195,7 @@ src/infrastructure/
 ```
 
 **Rules:**
+
 - All 3D components are **Client Components** (`"use client"`).
 - 3D scenes are **always** dynamically imported with `{ ssr: false }`.
 - Every scene has a 2D fallback.
@@ -214,6 +218,7 @@ src/packages/
 ```
 
 **Rules:**
+
 - **Pure functions only** in `utils/` — no side effects, no React, no DOM.
 - One hook per file in `hooks/`, `camelCase.ts`, prefixed with `use`.
 - 3D-specific hooks live in `@3d/hooks/`, not here.
@@ -234,6 +239,7 @@ src/services/
 ```
 
 **Rules:**
+
 - Services return **validated, typed** data (Zod-parsed).
 - Services never return raw API responses.
 - Services are **server-only** — never imported by Client Components.
@@ -256,6 +262,7 @@ src/data/
 ```
 
 **Rules:**
+
 - All data is **typed** via schemas in `src/types/`.
 - Data files export typed constants, not raw objects.
 - This is the source of truth for content until a CMS is introduced.
@@ -275,6 +282,7 @@ src/types/
 ```
 
 **Rules:**
+
 - **Zod schema is the source of truth.** Types are inferred: `type Project = z.infer<typeof projectSchema>`.
 - No `any`. No `unknown` without a narrowing guard.
 - Types are shared across server and client (no server-only secrets here).
@@ -290,6 +298,7 @@ src/styles/
 ```
 
 **Rules:**
+
 - Design tokens live in `tokens.css` as CSS custom properties.
 - Tailwind config maps these variables to utilities.
 - No component-specific styles here — those use Tailwind or CSS Modules.
@@ -310,6 +319,7 @@ src/assets/
 ```
 
 **Rules:**
+
 - Distinguish from `public/`: `public/` is served as-is by URL; `src/assets/` is imported and bundled.
 - Prefer `public/` for large files referenced by URL.
 - Prefer `src/assets/` for icons/SVGs imported as React components.
@@ -328,6 +338,7 @@ src/providers/
 ```
 
 **Rules:**
+
 - All files are Client Components.
 - The root `layout.tsx` wraps children in the composed provider tree.
 - Providers are **thin** — they provide context, not logic.
@@ -343,6 +354,7 @@ src/context/
 ```
 
 **Rules:**
+
 - Context is defined here; the **provider component** lives in `src/providers/`.
 - Context value types are explicitly defined.
 - Hooks to consume context live here or in `src/hooks/`.
@@ -358,6 +370,7 @@ src/lib/
 ```
 
 **Rules:**
+
 - Configuration and initialization of external libraries.
 - Not for business logic (that's `src/services/`).
 - Not for utilities (that's `src/utils/`).
@@ -380,6 +393,7 @@ public/
 ```
 
 **Rules:**
+
 - Files here are **not processed** by the bundler.
 - Referenced by absolute path: `/images/hero.jpg`.
 - Large 3D assets go here (loaded via `useGLTF` at runtime).
@@ -427,21 +441,21 @@ config/
 
 Configured in `tsconfig.json` and `next.config.mjs`:
 
-| Alias | Resolves To |
-|-------|-------------|
-| `@/` | `src/` |
+| Alias          | Resolves To       |
+| -------------- | ----------------- |
+| `@/`           | `src/`            |
 | `@components/` | `src/components/` |
-| `@hooks/` | `src/hooks/` |
-| `@utils/` | `src/utils/` |
-| `@services/` | `src/services/` |
-| `@data/` | `src/data/` |
-| `@types/` | `src/types/` |
-| `@styles/` | `src/styles/` |
-| `@assets/` | `src/assets/` |
-| `@providers/` | `src/providers/` |
-| `@context/` | `src/context/` |
-| `@3d/` | `src/3d/` |
-| `@lib/` | `src/lib/` |
+| `@hooks/`      | `src/hooks/`      |
+| `@utils/`      | `src/utils/`      |
+| `@services/`   | `src/services/`   |
+| `@data/`       | `src/data/`       |
+| `@types/`      | `src/types/`      |
+| `@styles/`     | `src/styles/`     |
+| `@assets/`     | `src/assets/`     |
+| `@providers/`  | `src/providers/`  |
+| `@context/`    | `src/context/`    |
+| `@3d/`         | `src/3d/`         |
+| `@lib/`        | `src/lib/`        |
 
 **Rule:** Always use aliases. Never use relative paths deeper than one level (`../`).
 
@@ -499,17 +513,17 @@ Is it tool config?
 
 ## 10. Naming Summary
 
-| Item | Convention | Example |
-|------|-----------|---------|
-| Directories | `kebab-case` or `camelCase` (see rules) | `components/`, `3d/` |
-| Component files | `PascalCase.tsx` | `ProjectCard.tsx` |
-| Hook files | `camelCase.ts` | `useTheme.ts` |
-| Util files | `camelCase.ts` or `kebab-case.ts` | `formatDate.ts` |
-| Type files | `kebab-case.ts` | `project.ts` |
-| Data files | `camelCase.ts` | `projects.ts` |
-| Service files | `camelCase.ts` | `github.ts` |
-| Test files | `<name>.test.ts(x)` | `ProjectCard.test.tsx` |
-| Config files | `kebab-case` or conventional | `tailwind.config.ts` |
+| Item            | Convention                              | Example                |
+| --------------- | --------------------------------------- | ---------------------- |
+| Directories     | `kebab-case` or `camelCase` (see rules) | `components/`, `3d/`   |
+| Component files | `PascalCase.tsx`                        | `ProjectCard.tsx`      |
+| Hook files      | `camelCase.ts`                          | `useTheme.ts`          |
+| Util files      | `camelCase.ts` or `kebab-case.ts`       | `formatDate.ts`        |
+| Type files      | `kebab-case.ts`                         | `project.ts`           |
+| Data files      | `camelCase.ts`                          | `projects.ts`          |
+| Service files   | `camelCase.ts`                          | `github.ts`            |
+| Test files      | `<name>.test.ts(x)`                     | `ProjectCard.test.tsx` |
+| Config files    | `kebab-case` or conventional            | `tailwind.config.ts`   |
 
 ---
 

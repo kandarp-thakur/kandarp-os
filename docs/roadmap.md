@@ -44,8 +44,8 @@ A phased plan for rebuilding Kandarp OS from a clean frontend foundation into a 
 - [ ] Security hardening (rate limiting, CSRF, body-size limits, CSP nonces).
 - [ ] Observability (structured logging, request context, activity logs).
 - [ ] Docker (multi-stage build, standalone output) + docker-compose.
-- [ ] CI/CD pipeline.
-- [ ] Cloud deployment (AWS / Vercel) with TLS, CDN, backups.
+- [x] GitHub Actions CI/CD pipeline for Oracle Cloud.
+- [ ] Complete Oracle Cloud operations with TLS, monitoring, and tested backups.
 
 ---
 

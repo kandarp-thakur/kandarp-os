@@ -20,23 +20,23 @@ Public pages do not query Prisma directly. `src/backend/services/public-data.ts`
 
 ### Key Files
 
-| File | Purpose |
-| --- | --- |
-| [`src/middleware.ts`](../../src/middleware.ts) | Fast JWT gate, CSRF/origin checks, rate limits, body limits, and security headers |
-| [`src/backend/database/db.ts`](../../src/backend/database/db.ts) | Development-safe Prisma client singleton |
-| [`src/backend/repositories/repo.ts`](../../src/backend/repositories/repo.ts) | Repository interface and persistence access point |
-| [`src/backend/controllers/crud.ts`](../../src/backend/controllers/crud.ts) | Generic list/create/update/archive/restore/bulk/version handlers |
-| [`src/backend/middlewares/api.ts`](../../src/backend/middlewares/api.ts) | Session auth, request-time RBAC, Zod parsing, errors, and audit helpers |
-| [`src/backend/auth/auth.ts`](../../src/backend/auth/auth.ts) | Argon2id password and signed JWT implementation |
-| [`src/backend/auth/session-service.ts`](../../src/backend/auth/session-service.ts) | Persisted session creation, validation, heartbeat, and revocation |
-| [`src/backend/permissions/rbac.ts`](../../src/backend/permissions/rbac.ts) | Static role defaults and override precedence |
-| [`src/backend/permissions/user-permissions.ts`](../../src/backend/permissions/user-permissions.ts) | Request-time per-user grant/deny lookup |
-| [`src/backend/services/public-data.ts`](../../src/backend/services/public-data.ts) | Public CMS anti-corruption/view-model layer |
-| [`src/backend/storage/storage.ts`](../../src/backend/storage/storage.ts) | Local and Cloudinary storage abstraction |
-| [`src/backend/services/image-optimization.ts`](../../src/backend/services/image-optimization.ts) | Sharp image variants and placeholders |
-| [`src/backend/config/env-schema.ts`](../../src/backend/config/env-schema.ts) | Zod environment validation and production assertions |
-| [`prisma/schema.prisma`](../../prisma/schema.prisma) | PostgreSQL data model |
-| [`prisma/seed.ts`](../../prisma/seed.ts) | Idempotent RBAC, owner, and demo-content seed |
+| File                                                                                               | Purpose                                                                           |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`src/middleware.ts`](../../src/middleware.ts)                                                     | Fast JWT gate, CSRF/origin checks, rate limits, body limits, and security headers |
+| [`src/backend/database/db.ts`](../../src/backend/database/db.ts)                                   | Development-safe Prisma client singleton                                          |
+| [`src/backend/repositories/repo.ts`](../../src/backend/repositories/repo.ts)                       | Repository interface and persistence access point                                 |
+| [`src/backend/controllers/crud.ts`](../../src/backend/controllers/crud.ts)                         | Generic list/create/update/archive/restore/bulk/version handlers                  |
+| [`src/backend/middlewares/api.ts`](../../src/backend/middlewares/api.ts)                           | Session auth, request-time RBAC, Zod parsing, errors, and audit helpers           |
+| [`src/backend/auth/auth.ts`](../../src/backend/auth/auth.ts)                                       | Argon2id password and signed JWT implementation                                   |
+| [`src/backend/auth/session-service.ts`](../../src/backend/auth/session-service.ts)                 | Persisted session creation, validation, heartbeat, and revocation                 |
+| [`src/backend/permissions/rbac.ts`](../../src/backend/permissions/rbac.ts)                         | Static role defaults and override precedence                                      |
+| [`src/backend/permissions/user-permissions.ts`](../../src/backend/permissions/user-permissions.ts) | Request-time per-user grant/deny lookup                                           |
+| [`src/backend/services/public-data.ts`](../../src/backend/services/public-data.ts)                 | Public CMS anti-corruption/view-model layer                                       |
+| [`src/backend/storage/storage.ts`](../../src/backend/storage/storage.ts)                           | Local and Cloudinary storage abstraction                                          |
+| [`src/backend/services/image-optimization.ts`](../../src/backend/services/image-optimization.ts)   | Sharp image variants and placeholders                                             |
+| [`src/backend/config/env-schema.ts`](../../src/backend/config/env-schema.ts)                       | Zod environment validation and production assertions                              |
+| [`prisma/schema.prisma`](../../prisma/schema.prisma)                                               | PostgreSQL data model                                                             |
+| [`prisma/seed.ts`](../../prisma/seed.ts)                                                           | Idempotent RBAC, owner, and demo-content seed                                     |
 
 ## Quick Start
 
@@ -60,17 +60,17 @@ The development seed defaults to `admin@kandarp.online` / `ChangeMe!2026` only w
 
 All server environment values are parsed by `src/backend/config/env-schema.ts`. Production requests additionally enforce the required secrets.
 
-| Variable | Production requirement | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | Required PostgreSQL URL | Prisma datasource |
-| `ADMIN_JWT_SECRET` | Required, at least 32 bytes | Admin JWT signing |
-| `AUTH_SECRET` | Required, at least 32 bytes | General authentication key material |
-| `MANAGED_SECRETS_KEY` | Required, at least 32 bytes | AES-256-GCM managed-secret encryption |
-| `ADMIN_OWNER_EMAIL` | Configure explicitly | Seed owner identity |
-| `ADMIN_OWNER_PASSWORD` | Configure explicitly | Seed owner bootstrap password |
-| `NEXT_PUBLIC_SITE_URL` | Recommended | Canonical public URL |
-| `CONTACT_HASH_SECRET` | Recommended | Contact-address privacy hashing |
-| `CLOUDINARY_*` | Optional as a complete set | Durable remote media storage |
+| Variable               | Production requirement      | Purpose                               |
+| ---------------------- | --------------------------- | ------------------------------------- |
+| `DATABASE_URL`         | Required PostgreSQL URL     | Prisma datasource                     |
+| `ADMIN_JWT_SECRET`     | Required, at least 32 bytes | Admin JWT signing                     |
+| `AUTH_SECRET`          | Required, at least 32 bytes | General authentication key material   |
+| `MANAGED_SECRETS_KEY`  | Required, at least 32 bytes | AES-256-GCM managed-secret encryption |
+| `ADMIN_OWNER_EMAIL`    | Configure explicitly        | Seed owner identity                   |
+| `ADMIN_OWNER_PASSWORD` | Configure explicitly        | Seed owner bootstrap password         |
+| `NEXT_PUBLIC_SITE_URL` | Recommended                 | Canonical public URL                  |
+| `CONTACT_HASH_SECRET`  | Recommended                 | Contact-address privacy hashing       |
+| `CLOUDINARY_*`         | Optional as a complete set  | Durable remote media storage          |
 
 Generate independent random secrets; do not reuse authentication and encryption keys:
 
@@ -145,13 +145,13 @@ See [`security.md`](./security.md) for the permission model, API-key controls, C
 
 ## API Surfaces
 
-| Surface | Authentication | Purpose |
-| --- | --- | --- |
-| `/api/admin/*` | HttpOnly admin session cookie | Console operations and CMS CRUD |
-| `/api/v1/*` | Scoped bearer API key | Programmatic content and analytics reads |
-| `/api/health/live` | Public | Process liveness |
-| `/api/health/ready` | Public | Production configuration and dependency readiness |
-| `/api/contact` and analytics beacon routes | Public with dedicated controls | Bounded public ingestion |
+| Surface                                    | Authentication                 | Purpose                                           |
+| ------------------------------------------ | ------------------------------ | ------------------------------------------------- |
+| `/api/admin/*`                             | HttpOnly admin session cookie  | Console operations and CMS CRUD                   |
+| `/api/v1/*`                                | Scoped bearer API key          | Programmatic content and analytics reads          |
+| `/api/health/live`                         | Public                         | Process liveness                                  |
+| `/api/health/ready`                        | Public                         | Production configuration and dependency readiness |
+| `/api/contact` and analytics beacon routes | Public with dedicated controls | Bounded public ingestion                          |
 
 Admin API keys are disclosed once on creation. Only hashes and safe prefixes are stored. Every use checks scope, owner status, disabled/revoked state, and expiration.
 
@@ -161,17 +161,17 @@ See [`api-reference.md`](./api-reference.md) and [`openapi.yaml`](./openapi.yaml
 
 Content collections generally expose:
 
-| Method | Path | Operation |
-| --- | --- | --- |
-| `GET`, `POST` | `/api/admin/<collection>` | List and create |
-| `GET`, `PATCH`, `DELETE` | `/api/admin/<collection>/<id>` | Read, update, and soft-delete |
-| `POST` | `/api/admin/<collection>/<id>/archive` | Archive |
-| `POST` | `/api/admin/<collection>/<id>/restore` | Restore |
-| `POST` | `/api/admin/<collection>/<id>/duplicate` | Duplicate |
-| `POST` | `/api/admin/<collection>/<id>/restore-version` | Restore a snapshot |
-| `POST` | `/api/admin/<collection>/bulk` | Bulk lifecycle/status action |
-| `POST` | `/api/admin/<collection>/reorder` | Update display order |
-| `GET`, `POST` | `/api/admin/<collection>/export`, `/import` | JSON transfer |
+| Method                   | Path                                           | Operation                     |
+| ------------------------ | ---------------------------------------------- | ----------------------------- |
+| `GET`, `POST`            | `/api/admin/<collection>`                      | List and create               |
+| `GET`, `PATCH`, `DELETE` | `/api/admin/<collection>/<id>`                 | Read, update, and soft-delete |
+| `POST`                   | `/api/admin/<collection>/<id>/archive`         | Archive                       |
+| `POST`                   | `/api/admin/<collection>/<id>/restore`         | Restore                       |
+| `POST`                   | `/api/admin/<collection>/<id>/duplicate`       | Duplicate                     |
+| `POST`                   | `/api/admin/<collection>/<id>/restore-version` | Restore a snapshot            |
+| `POST`                   | `/api/admin/<collection>/bulk`                 | Bulk lifecycle/status action  |
+| `POST`                   | `/api/admin/<collection>/reorder`              | Update display order          |
+| `GET`, `POST`            | `/api/admin/<collection>/export`, `/import`    | JSON transfer                 |
 
 Every protected mutation passes through permission checks and activity/audit recording. Zod validation failures and server errors use normalized JSON responses.
 
@@ -208,7 +208,7 @@ On Windows, stop the development server before Prisma generation or production b
 
 ## Deployment
 
-The multi-stage [`Dockerfile`](../../Dockerfile) produces Next.js standalone output and applies checked-in migrations before startup. [`docker-compose.yml`](../../docker-compose.yml) provides a local/single-server PostgreSQL and application stack. Vercel deployments require hosted PostgreSQL plus durable remote media storage; see [`../deployment-vercel.md`](../deployment-vercel.md).
+The multi-stage [`Dockerfile`](../../Dockerfile) produces Next.js standalone output. [`docker-compose.yml`](../../docker-compose.yml) provides the local PostgreSQL and application stack, while [`docker-compose.server.yml`](../../docker-compose.server.yml) defines the Oracle Cloud production services. See [`../deployment-oracle.md`](../deployment-oracle.md) for GitHub Actions deployment and server operations.
 
 ## Related Documentation
 
