@@ -93,24 +93,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Public folder (favicon, robots, og-image, media) — served at /.
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Prisma: the schema + generated client are needed for `prisma migrate deploy`
-# and for the runtime query engine. The standalone bundler does not always
-# include @prisma/client, so we copy it explicitly.
+# Prisma migrations and the generated client are needed by the explicit deployment
+# preflight. The CLI dependency graph is not included in Next's standalone trace,
+# so retain the complete installed dependency tree for this operational command.
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-# Prisma's CLI loads @prisma/config, whose runtime dependencies are not traced
-# into Next's standalone output because the CLI only runs during container boot.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/config ./node_modules/@prisma/config
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/c12 ./node_modules/c12
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/deepmerge-ts ./node_modules/deepmerge-ts
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/effect ./node_modules/effect
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/empathic ./node_modules/empathic
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@standard-schema ./node_modules/@standard-schema
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/fast-check ./node_modules/fast-check
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pure-rand ./node_modules/pure-rand
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/tsx ./node_modules/tsx
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
