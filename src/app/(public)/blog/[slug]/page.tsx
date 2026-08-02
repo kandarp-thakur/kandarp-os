@@ -13,10 +13,8 @@ import { UnitChip } from "@features/blog/components/UnitChip";
 import {
     getPublicBlogPostBySlug,
     getPublicBlogPostNeighbors,
-    getPublicBlogPosts,
     getPublicRelatedPosts,
 } from "@backend/services/public-data";
-import { getAllPosts } from "@/lib/blog";
 import {
     formatJournalDate,
     formatReadingTime,
@@ -25,30 +23,12 @@ import {
 import { SITE } from "@utils/constants";
 import { cn } from "@utils/cn";
 
-/**
- * Pre-render every post at build time. Combines CMS store posts with MDX
- * file posts so both sources are covered. The MDX `getAllPosts()` is
- * synchronous (file-system read), while the CMS `getPublicBlogPosts()` is
- * async (store read). We merge the slug lists to cover both.
- */
-// Runtime CMS slugs can be created after a deployment. Rendering this route
-// dynamically also lets `notFound()` resolve through the request-aware root
-// layout instead of producing a DYNAMIC_SERVER_USAGE error.
+// CMS slugs can be created after deployment, so this route must be rendered
+// per request. Keeping it out of the static-parameter pipeline also ensures
+// `notFound()` determines the HTTP status before streamed response headers are
+// committed by the request-aware root layout.
 export const dynamic = "force-dynamic";
-
-export async function generateStaticParams() {
-    const mdxPosts = getAllPosts().map((post) => ({ slug: post.slug }));
-    const cmsPosts = await getPublicBlogPosts();
-    const cmsSlugs = cmsPosts.map((post) => ({ slug: post.slug }));
-    // Deduplicate by slug (a post may exist in both sources).
-    const seen = new Set<string>();
-    const all = [...mdxPosts, ...cmsSlugs].filter(({ slug }) => {
-        if (seen.has(slug)) return false;
-        seen.add(slug);
-        return true;
-    });
-    return all;
-}
+export const dynamicParams = true;
 
 /** Per-post SEO metadata (§22.2). */
 type BlogPostPageProps = {
