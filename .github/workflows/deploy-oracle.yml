@@ -116,9 +116,15 @@ jobs:
                   done
 
                   # Verify the public reverse-proxy path without depending on mutable CMS
-                  # content. A deleted or renamed blog post must not fail a healthy release.
+                  # content. A streamed Next.js not-found response carries the 404 document
+                  # with HTTP 200 because headers are committed before the segment resolves.
                   curl --fail --silent --show-error "$EXPECTED_URL/api/health/live" >/dev/null
                   curl --fail --silent --show-error "$EXPECTED_URL/api/health/ready" >/dev/null
                   curl --fail --silent --show-error "$EXPECTED_URL/" >/dev/null
-                  test "$(curl --silent --output /dev/null --write-out '%{http_code}' "$EXPECTED_URL/blog/does-not-exist")" = 404
+                  missing_body="$(mktemp)"
+                  missing_status="$(curl --silent --show-error --output "$missing_body" --write-out '%{http_code}' "$EXPECTED_URL/blog/does-not-exist")"
+                  if [ "$missing_status" != "404" ]; then
+                    grep -q 'NEXT_HTTP_ERROR_FALLBACK;404\|// 404' "$missing_body"
+                  fi
+                  rm -f "$missing_body"
                   REMOTE
